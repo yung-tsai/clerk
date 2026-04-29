@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import clerkLogo from "@/assets/clerk-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { TaskCard, type ClerkCol, type TaskCardData } from "@/components/TaskCard";
@@ -160,12 +161,13 @@ export default function AppHome() {
   async function acceptProposals() {
     if (!proposals || !user) return;
     const supabase = await getLovableCloudClient();
+    const baseSec = Math.floor(Date.now() / 1000);
     const rows = proposals.map((p, i) => ({
       user_id: user.id,
       title: p.title,
       col: p.col,
       reason: p.reason,
-      position: Date.now() + i,
+      position: baseSec + i,
     }));
     const { data, error } = await supabase.from("tasks").insert(rows).select();
     if (error) {
@@ -266,9 +268,7 @@ export default function AppHome() {
         <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ClerkCharacter variant={variant} size={26} />
-            <span className="font-plex-mono text-[11px] font-medium uppercase tracking-[0.1em]">
-              Clerk
-            </span>
+            <img src={clerkLogo} alt="Clerk" className="h-[22px] w-auto select-none" draggable={false} />
           </div>
 
           {/* Toggle Focus | Planner */}
