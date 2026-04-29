@@ -186,6 +186,26 @@ export default function AppHome() {
     if (!user) return;
     const supabase = await getLovableCloudClient();
     setTasks((prev) => prev.filter((x) => x.id !== t.id));
+
+    // Compute new streak / counters
+    const today = new Date().toISOString().slice(0, 10);
+    const last = profile?.last_active_date ?? null;
+    let nextStreak = profile?.streak ?? 0;
+    if (last !== today) {
+      const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+      nextStreak = last === yesterday ? nextStreak + 1 : 1;
+    }
+    const nextCompleted = (profile?.tasks_completed ?? 0) + 1;
+
+    if (profile) {
+      setProfile({
+        ...profile,
+        streak: nextStreak,
+        tasks_completed: nextCompleted,
+        last_active_date: today,
+      });
+    }
+
     await Promise.all([
       supabase.from("tasks").delete().eq("id", t.id),
       supabase.from("completed_tasks").insert({
@@ -194,6 +214,14 @@ export default function AppHome() {
         category: t.category,
         cat_color: t.cat_color,
       }),
+      supabase
+        .from("profiles")
+        .update({
+          streak: nextStreak,
+          tasks_completed: nextCompleted,
+          last_active_date: today,
+        })
+        .eq("id", user.id),
     ]);
     showBubble("Done. Next.");
   }
@@ -211,11 +239,19 @@ export default function AppHome() {
     await supabase.from("tasks").update({ col }).eq("id", t.id);
   }
 
-  async function setCharacter(c: CharacterVariant) {
+  function previewCharacter(c: CharacterVariant) {
+    if (profile) setProfile({ ...profile, character: c });
+  }
+
+  async function saveSettings(next: { display_name: string; character: CharacterVariant }) {
     if (!user || !profile) return;
-    setProfile({ ...profile, character: c });
+    setProfile({ ...profile, display_name: next.display_name || null, character: next.character });
     const supabase = await getLovableCloudClient();
-    await supabase.from("profiles").update({ character: c }).eq("id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ display_name: next.display_name || null, character: next.character })
+      .eq("id", user.id);
+    if (error) toast.error(error.message);
   }
 
   const variant = profile?.character ?? "blue";
