@@ -2,8 +2,14 @@ import { Link } from "react-router-dom";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { useAuth } from "@/contexts/AuthContext";
 
+const backendReady = Boolean(
+  import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+);
+
 export default function Landing() {
   const { user } = useAuth();
+  const primaryPath = backendReady ? (user ? "/app" : "/onboarding") : "/auth";
+
   return (
     <div className="min-h-screen landing-bg">
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[540px] flex-col items-center px-6 pt-7 pb-20">
@@ -51,7 +57,7 @@ export default function Landing() {
 
           <div className="mt-10 flex flex-col items-center gap-4">
             <Link
-              to={user ? "/app" : "/onboarding"}
+              to={primaryPath}
               className="rounded-full bg-foreground px-7 py-3 font-plex text-[14px] font-medium text-background transition-transform hover:scale-[1.02]"
             >
               {user ? "Open Clerk" : "Get started"}
