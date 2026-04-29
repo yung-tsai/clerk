@@ -43,6 +43,7 @@ const GREETINGS = [
 export default function AppHome() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profile, setProfile] = useState<{
     display_name: string | null;
@@ -99,7 +100,18 @@ export default function AppHome() {
           tasks_completed: p.tasks_completed ?? 0,
           last_active_date: p.last_active_date ?? null,
         });
-        setView(vm);
+
+        // Coming from onboarding with pending proposals → land on Planner + open modal
+        const pending = (location.state as { pendingProposals?: Proposal[] } | null)?.pendingProposals;
+        if (pending && pending.length) {
+          setView("planner");
+          setProposals(pending);
+          // Persist planner as default and clear router state so refresh doesn't reopen
+          supabase.from("profiles").update({ view_mode: "planner" }).eq("id", user.id);
+          window.history.replaceState(null, "", location.pathname);
+        } else {
+          setView(vm);
+        }
       }
       const greet = p?.display_name
         ? `Morning, ${p.display_name}.`
