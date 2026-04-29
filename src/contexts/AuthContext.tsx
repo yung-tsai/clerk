@@ -1,6 +1,15 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+
+const backendEnvReady = Boolean(
+  import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+);
+
+async function getSupabaseClient() {
+  if (!backendEnvReady) throw new Error("Backend environment is not ready");
+  const { supabase } = await import("@/integrations/supabase/client");
+  return supabase;
+}
 
 interface AuthCtx {
   user: User | null;
@@ -21,16 +30,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listener FIRST, then existing session
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
+    if (!backendEnvReady) {
       setLoading(false);
-    });
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-    return () => sub.subscription.unsubscribe();
+      return;
+    }
+
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
+
+    getSupabaseClient()
+      .then((supabase) => {
+        if (!active) return;
+        const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+          if (!active) return;
+          setSession(s);
+          setLoading(false);
+        });
+        unsubscribe = () => sub.subscription.unsubscribe();
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!active) return;
+          setSession(session);
+          setLoading(false);
+        });
+      })
+      .catch(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
   }, []);
 
   return (
@@ -40,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         loading,
         signOut: async () => {
+          if (!backendEnvReady) return;
+          const supabase = await getSupabaseClient();
           await supabase.auth.signOut();
         },
       }}
