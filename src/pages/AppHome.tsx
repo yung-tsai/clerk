@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { TaskCard, type ClerkCol, type TaskCardData } from "@/components/TaskCard";
 import { AppBar } from "@/components/AppBar";
-import { CHARACTERS, CHARACTER_LABELS, type CharacterVariant } from "@/lib/characters";
+import { type CharacterVariant } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
