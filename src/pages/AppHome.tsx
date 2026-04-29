@@ -78,7 +78,7 @@ export default function AppHome() {
           .order("created_at", { ascending: false }),
         supabase
           .from("profiles")
-          .select("display_name, character, view_mode, onboarded")
+          .select("display_name, character, view_mode, onboarded, streak, tasks_completed, last_active_date")
           .eq("id", user.id)
           .single(),
       ]);
@@ -90,7 +90,14 @@ export default function AppHome() {
         }
         const char = (p.character as CharacterVariant) ?? "blue";
         const vm = (p.view_mode as ViewMode) ?? "focus";
-        setProfile({ display_name: p.display_name, character: char, view_mode: vm });
+        setProfile({
+          display_name: p.display_name,
+          character: char,
+          view_mode: vm,
+          streak: p.streak ?? 0,
+          tasks_completed: p.tasks_completed ?? 0,
+          last_active_date: p.last_active_date ?? null,
+        });
         setView(vm);
       }
       const greet = p?.display_name
