@@ -275,6 +275,62 @@ export default function AppHome() {
     await supabase.from("tasks").update({ col }).eq("id", t.id);
   }
 
+  // ─── Drag & drop ───
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || !user) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    if (activeId === overId) return;
+
+    const activeTask = tasks.find((x) => x.id === activeId);
+    if (!activeTask) return;
+
+    // Determine target column: `over` is either a column droppable (id startsWith "col:")
+    // or another task card.
+    let targetCol: ClerkCol;
+    let overTask: Task | undefined;
+    if (overId.startsWith("col:")) {
+      targetCol = overId.slice(4) as ClerkCol;
+    } else {
+      overTask = tasks.find((x) => x.id === overId);
+      if (!overTask) return;
+      targetCol = overTask.col;
+    }
+
+    // Compute new ordering within the target column
+    const colTasks = tasks.filter((x) => x.col === targetCol && x.id !== activeId);
+    let insertIdx = colTasks.length;
+    if (overTask) {
+      insertIdx = colTasks.findIndex((x) => x.id === overTask!.id);
+      if (insertIdx < 0) insertIdx = colTasks.length;
+    }
+    const before = colTasks[insertIdx - 1];
+    const after = colTasks[insertIdx];
+    const newPos = before && after
+      ? Math.floor((before.position + after.position) / 2)
+      : before
+        ? before.position + 1000
+        : after
+          ? after.position - 1000
+          : Math.floor(Date.now() / 1000);
+
+    // Optimistic update
+    setTasks((prev) =>
+      prev
+        .map((x) => (x.id === activeId ? { ...x, col: targetCol, position: newPos } : x))
+        .sort((a, b) => a.position - b.position)
+    );
+
+    const supabase = await getLovableCloudClient();
+    await supabase
+      .from("tasks")
+      .update({ col: targetCol, position: newPos })
+      .eq("id", activeId);
+  }
+
   function previewCharacter(c: CharacterVariant) {
     if (profile) setProfile({ ...profile, character: c });
   }
