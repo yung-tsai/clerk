@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasLovableCloudEnv } from "@/lib/lovable-cloud";
+import clerkLogo from "@/assets/clerk-logo.png";
 
 export default function Landing() {
   const { user } = useAuth();
@@ -13,9 +14,7 @@ export default function Landing() {
         <header className="mb-16 flex w-full items-center justify-between">
           <div className="flex items-center gap-2">
             <ClerkCharacter size={28} />
-            <span className="font-mono-plex text-[11px] font-semibold uppercase tracking-[0.1em]">
-              Clerk
-            </span>
+            <img src={clerkLogo} alt="Clerk" className="h-[24px] w-auto select-none" draggable={false} />
           </div>
           <nav className="flex items-center gap-6">
             <a

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import clerkLogo from "@/assets/clerk-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { TaskCard, type ClerkCol, type TaskCardData } from "@/components/TaskCard";
@@ -42,6 +43,7 @@ const GREETINGS = [
 export default function AppHome() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profile, setProfile] = useState<{
     display_name: string | null;
@@ -98,7 +100,18 @@ export default function AppHome() {
           tasks_completed: p.tasks_completed ?? 0,
           last_active_date: p.last_active_date ?? null,
         });
-        setView(vm);
+
+        // Coming from onboarding with pending proposals → land on Planner + open modal
+        const pending = (location.state as { pendingProposals?: Proposal[] } | null)?.pendingProposals;
+        if (pending && pending.length) {
+          setView("planner");
+          setProposals(pending);
+          // Persist planner as default and clear router state so refresh doesn't reopen
+          supabase.from("profiles").update({ view_mode: "planner" }).eq("id", user.id);
+          window.history.replaceState(null, "", location.pathname);
+        } else {
+          setView(vm);
+        }
       }
       const greet = p?.display_name
         ? `Morning, ${p.display_name}.`
@@ -160,12 +173,13 @@ export default function AppHome() {
   async function acceptProposals() {
     if (!proposals || !user) return;
     const supabase = await getLovableCloudClient();
+    const baseSec = Math.floor(Date.now() / 1000);
     const rows = proposals.map((p, i) => ({
       user_id: user.id,
       title: p.title,
       col: p.col,
       reason: p.reason,
-      position: Date.now() + i,
+      position: baseSec + i,
     }));
     const { data, error } = await supabase.from("tasks").insert(rows).select();
     if (error) {
@@ -266,9 +280,7 @@ export default function AppHome() {
         <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ClerkCharacter variant={variant} size={26} />
-            <span className="font-plex-mono text-[11px] font-medium uppercase tracking-[0.1em]">
-              Clerk
-            </span>
+            <img src={clerkLogo} alt="Clerk" className="h-[22px] w-auto select-none" draggable={false} />
           </div>
 
           {/* Toggle Focus | Planner */}
