@@ -389,16 +389,17 @@ function YourTurnStep({
   saving: boolean;
   onFinish: () => void;
 }) {
+  const isMobile = useIsMobile();
   return (
-    <div className="animate-fade-up w-full max-w-[360px] flex flex-col items-start">
-      <div className="flex items-end gap-3 mb-9">
-        <div className="rounded-[20px_20px_20px_4px] bg-white border border-black/[0.08] px-4 py-3 text-[14px] leading-[1.55] shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+    <div className="animate-fade-up w-full max-w-full sm:max-w-[360px] flex flex-col items-start">
+      <div className="flex items-end gap-2 sm:gap-3 mb-7 sm:mb-9">
+        <ClerkCharacter variant={character} size={isMobile ? 52 : 58} />
+        <div className="rounded-[4px_20px_20px_20px] bg-white border border-black/[0.08] px-4 py-3 text-[13px] sm:text-[14px] leading-[1.55] shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-w-[calc(100vw-120px)] sm:max-w-none">
           Your turn{name ? `, ${name}` : ""}.<br />Give me everything.
         </div>
-        <ClerkCharacter variant={character} size={58} />
       </div>
-      <h2 className="font-plex text-[26px] font-semibold tracking-[-0.025em] mb-2">What's on your mind?</h2>
-      <p className="font-plex-mono text-[12px] font-light text-muted-foreground mb-6 leading-[1.6]">
+      <h2 className="font-plex text-[22px] sm:text-[26px] font-semibold tracking-[-0.025em] mb-2">What's on your mind?</h2>
+      <p className="font-plex-mono text-[12px] font-light text-muted-foreground mb-5 sm:mb-6 leading-[1.6]">
         Work, home, errands — anything. Don't think, just type. I'll sort it out.
       </p>
       <textarea
@@ -406,7 +407,7 @@ function YourTurnStep({
         onChange={(e) => setValue(e.target.value)}
         rows={4}
         placeholder="Call dentist, finish report by Friday, pick up groceries, learn guitar someday..."
-        className="w-full font-plex text-[16px] bg-white/70 border-[1.5px] border-black/10 rounded-[14px] px-5 py-4 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/15 mb-3 min-h-[90px] leading-[1.5] placeholder:text-[#C4C8CC] resize-none"
+        className="w-full font-plex text-[15px] sm:text-[16px] bg-white/70 border-[1.5px] border-black/10 rounded-[14px] px-5 py-4 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/15 mb-3 min-h-[110px] sm:min-h-[90px] leading-[1.5] placeholder:text-[#C4C8CC] resize-none"
       />
       <p className="font-plex-mono text-[11px] font-light text-faint mb-5 leading-[1.5]">
         Separate tasks with a comma, or just write naturally.
@@ -414,7 +415,7 @@ function YourTurnStep({
       <button
         disabled={saving}
         onClick={onFinish}
-        className="w-full rounded-[14px] bg-foreground py-4 font-plex text-[15px] font-medium text-background disabled:opacity-50 hover:bg-[#2A2A2A] transition-colors"
+        className="w-full rounded-[14px] bg-foreground py-4 min-h-[52px] font-plex text-[15px] font-medium text-background disabled:opacity-50 hover:bg-[#2A2A2A] transition-colors"
       >
         {saving ? "..." : "Let's go →"}
       </button>
