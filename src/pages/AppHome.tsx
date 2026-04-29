@@ -61,6 +61,7 @@ export default function AppHome() {
   const [bubble, setBubble] = useState("");
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const bubbleTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -112,12 +113,12 @@ export default function AppHome() {
           window.history.replaceState(null, "", location.pathname);
         } else {
           setView(vm);
+          const greet = p.display_name
+            ? `Morning, ${p.display_name}.`
+            : GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+          showBubble(greet, 4500);
         }
       }
-      const greet = p?.display_name
-        ? `Morning, ${p.display_name}.`
-        : GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-      showBubble(greet, 4500);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
