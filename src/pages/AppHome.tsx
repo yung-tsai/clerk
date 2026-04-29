@@ -389,74 +389,20 @@ export default function AppHome() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Settings sheet ── */}
-      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-[400px]">
-          <SheetHeader>
-            <SheetTitle className="font-plex">Settings</SheetTitle>
-          </SheetHeader>
-          <div className="mt-6 space-y-6">
-            <section>
-              <div className="font-plex-mono text-[10px] uppercase tracking-[0.1em] text-faint mb-2">
-                Account
-              </div>
-              <div className="rounded-[12px] border border-[#D7D7D7] bg-white/50 p-4 space-y-1">
-                <div className="text-[13px] font-medium">{profile?.display_name ?? "Anonymous"}</div>
-                <div className="font-plex-mono text-[11px] text-muted-foreground">{user?.email}</div>
-              </div>
-            </section>
-
-            <section>
-              <div className="font-plex-mono text-[10px] uppercase tracking-[0.1em] text-faint mb-2">
-                Character
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {CHARACTERS.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setCharacter(c)}
-                    className={cn(
-                      "flex flex-col items-center gap-2 px-2 pt-3 pb-2.5 rounded-[14px] border-2 bg-white/50 transition-all",
-                      variant === c ? "bg-white/90 border-foreground" : "border-transparent hover:bg-white/80"
-                    )}
-                  >
-                    <ClerkCharacter variant={c} size={36} animated={false} />
-                    <span className="font-plex-mono text-[10px] text-muted-foreground tracking-[0.04em]">
-                      {CHARACTER_LABELS[c]}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section>
-              <div className="font-plex-mono text-[10px] uppercase tracking-[0.1em] text-faint mb-2">
-                Stats
-              </div>
-              <div className="rounded-[12px] border border-[#D7D7D7] bg-white/50 p-4 grid grid-cols-2 gap-3 text-center">
-                <div>
-                  <div className="font-plex text-[22px] font-light">{tasks.length}</div>
-                  <div className="font-plex-mono text-[10px] uppercase tracking-wider text-faint">Open</div>
-                </div>
-                <div>
-                  <div className="font-plex text-[22px] font-light">{grouped.today.length}</div>
-                  <div className="font-plex-mono text-[10px] uppercase tracking-wider text-faint">Today</div>
-                </div>
-              </div>
-            </section>
-
-            <button
-              onClick={async () => {
-                await signOut();
-                navigate("/");
-              }}
-              className="w-full rounded-full border border-border py-2.5 text-[13px] font-medium hover:bg-secondary"
-            >
-              Sign out
-            </button>
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* ── Settings modal ── */}
+      <SettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        data={{
+          display_name: profile?.display_name ?? null,
+          character: variant,
+          streak: profile?.streak ?? 0,
+          tasks_completed: profile?.tasks_completed ?? 0,
+          email: user?.email ?? null,
+        }}
+        onSave={saveSettings}
+        onCharacterPreview={previewCharacter}
+      />
     </div>
   );
 }
