@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { CHARACTERS, CHARACTER_LABELS, type CharacterVariant } from "@/lib/characters";
