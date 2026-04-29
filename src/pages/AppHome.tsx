@@ -351,56 +351,58 @@ export default function AppHome() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Fixed header ── */}
-      <header
-        className="fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider"
-        style={{ height: 64 }}
-      >
-        <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
-          <img src={clerkLogo} alt="Clerk" className="h-[22px] w-auto select-none" draggable={false} />
+      {!proposals && !settingsOpen && (
+        <header
+          className="fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider"
+          style={{ height: 64 }}
+        >
+          <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
+            <img src={clerkLogo} alt="Clerk" className="h-[22px] w-auto select-none" draggable={false} />
 
-          {/* Toggle Focus | Planner */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => persistView("focus")}
-              className={cn(
-                "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
-                view === "focus" ? "text-foreground" : "text-faint hover:text-muted-foreground"
-              )}
-            >
-              Focus
-            </button>
-            <span className="text-faint text-[12px]">|</span>
-            <button
-              onClick={() => persistView("planner")}
-              className={cn(
-                "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
-                view === "planner" ? "text-foreground" : "text-faint hover:text-muted-foreground"
-              )}
-            >
-              Planner
-            </button>
+            {/* Toggle Focus | Planner */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => persistView("focus")}
+                className={cn(
+                  "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
+                  view === "focus" ? "text-foreground" : "text-faint hover:text-muted-foreground"
+                )}
+              >
+                Focus
+              </button>
+              <span className="text-faint text-[12px]">|</span>
+              <button
+                onClick={() => persistView("planner")}
+                className={cn(
+                  "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
+                  view === "planner" ? "text-foreground" : "text-faint hover:text-muted-foreground"
+                )}
+              >
+                Planner
+              </button>
+            </div>
+
+            <div className="w-[26px]" aria-hidden />
           </div>
-
-          {/* Spacer to balance header (settings is reachable from the bottom-bar menu) */}
-          <div className="w-[26px]" aria-hidden />
-
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* ── Views ── */}
       <main
         className="fixed inset-0 overflow-y-auto"
         style={{ paddingTop: 64, paddingBottom: 120 }}
       >
-        {view === "focus" ? (
-          <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} />
-        ) : (
-          <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} />
-        )}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          {view === "focus" ? (
+            <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} />
+          ) : (
+            <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} />
+          )}
+        </DndContext>
       </main>
 
-      {/* ── Bottom bar (hidden while proposal modal is open) ── */}
-      {!proposals && (
+      {/* ── Bottom bar (hidden while proposal/settings modal is open) ── */}
+      {!proposals && !settingsOpen && (
         <AppBar
           variant={variant}
           thinking={thinking}
