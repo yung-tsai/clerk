@@ -1,14 +1,11 @@
 import { Link } from "react-router-dom";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { useAuth } from "@/contexts/AuthContext";
-
-const backendReady = Boolean(
-  import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-);
+import { hasLovableCloudEnv } from "@/lib/lovable-cloud";
 
 export default function Landing() {
   const { user } = useAuth();
-  const primaryPath = backendReady ? (user ? "/app" : "/onboarding") : "/auth";
+  const primaryPath = hasLovableCloudEnv ? (user ? "/app" : "/onboarding") : "/auth";
 
   return (
     <div className="min-h-screen landing-bg">
