@@ -200,21 +200,21 @@ function CharacterStep({
   onNext: () => void;
 }) {
   return (
-    <div className="animate-fade-up w-full max-w-[380px] flex flex-col items-center">
-      <h2 className="font-plex text-[24px] font-semibold tracking-[-0.025em] mb-2 text-center">
+    <div className="animate-fade-up w-full max-w-full sm:max-w-[380px] flex flex-col items-center">
+      <h2 className="font-plex text-[22px] sm:text-[24px] font-semibold tracking-[-0.025em] mb-2 text-center">
         Pick your Clerk, {name || "friend"}.
       </h2>
-      <p className="font-plex-mono text-[12px] font-light text-muted-foreground text-center mb-9">
+      <p className="font-plex-mono text-[12px] font-light text-muted-foreground text-center mb-7 sm:mb-9">
         Two are ready. More are on the way.
       </p>
 
-      <div className="grid grid-cols-4 gap-3 w-full mb-8">
+      <div className="grid grid-cols-3 min-[400px]:grid-cols-4 gap-2 sm:gap-3 w-full mb-7 sm:mb-8">
         {CHARACTERS.map((c) => (
           <button
             key={c}
             onClick={() => setCharacter(c)}
             className={cn(
-              "flex flex-col items-center gap-2 px-2 pt-4 pb-3.5 rounded-[18px] border-2 bg-white/50 transition-all",
+              "flex flex-col items-center gap-2 px-2 pt-3 sm:pt-4 pb-3 sm:pb-3.5 rounded-[18px] border-2 bg-white/50 transition-all",
               character === c ? "bg-white/90 border-foreground" : "border-transparent hover:bg-white/80 hover:-translate-y-0.5"
             )}
           >
@@ -229,7 +229,7 @@ function CharacterStep({
         {[0, 1].map((i) => (
           <div
             key={i}
-            className="relative flex flex-col items-center gap-2 px-2 pt-4 pb-3.5 rounded-[18px] bg-white/50 border-2 border-transparent opacity-50 cursor-not-allowed"
+            className="relative flex flex-col items-center gap-2 px-2 pt-3 sm:pt-4 pb-3 sm:pb-3.5 rounded-[18px] bg-white/50 border-2 border-transparent opacity-50 cursor-not-allowed"
           >
             <span className="absolute top-2 right-2 text-[11px]">🔒</span>
             <div className="h-9 w-11 rounded-full bg-gray-300/40" />
@@ -242,7 +242,7 @@ function CharacterStep({
 
       <button
         onClick={onNext}
-        className="w-full max-w-[320px] rounded-[14px] bg-foreground py-4 font-plex text-[15px] font-medium text-background hover:bg-[#2A2A2A] transition-colors"
+        className="w-full max-w-[320px] rounded-[14px] bg-foreground py-4 min-h-[52px] font-plex text-[15px] font-medium text-background hover:bg-[#2A2A2A] transition-colors"
       >
         This one →
       </button>
