@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface ClerkCharacterProps {
@@ -12,12 +12,10 @@ interface ClerkCharacterProps {
  * Clerk's mascot — blue star with two eyes.
  * Pupils follow cursor; eyelids blink every 3-5s.
  */
-export function ClerkCharacter({
-  size = 60,
-  thinking = false,
-  onClick,
-  className,
-}: ClerkCharacterProps) {
+export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>(function ClerkCharacter(
+  { size = 60, thinking = false, onClick, className },
+  forwardedRef
+) {
   const svgRef = useRef<SVGSVGElement>(null);
   const pupilLRef = useRef<SVGEllipseElement>(null);
   const pupilRRef = useRef<SVGEllipseElement>(null);
@@ -94,6 +92,7 @@ export function ClerkCharacter({
 
   return (
     <button
+      ref={forwardedRef}
       type="button"
       onClick={handleClick}
       aria-label="Clerk"
@@ -176,4 +175,4 @@ export function ClerkCharacter({
       </svg>
     </button>
   );
-}
+});
