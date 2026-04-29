@@ -111,6 +111,7 @@ export default function App() {
 
     let sorted: Proposal[] = [];
     try {
+      const supabase = await getLovableCloudClient();
       const { data, error } = await supabase.functions.invoke("sort-tasks", {
         body: { titles: parts },
       });
@@ -139,6 +140,7 @@ export default function App() {
 
   async function acceptProposals() {
     if (!proposals || !user) return;
+    const supabase = await getLovableCloudClient();
     const rows = proposals.map((p, i) => ({
       user_id: user.id,
       title: p.title,
@@ -166,6 +168,7 @@ export default function App() {
 
   async function completeTask(t: Task) {
     if (!user) return;
+    const supabase = await getLovableCloudClient();
     setTasks((prev) => prev.filter((x) => x.id !== t.id));
     await Promise.all([
       supabase.from("tasks").delete().eq("id", t.id),
@@ -180,12 +183,14 @@ export default function App() {
   }
 
   async function deleteTask(t: Task) {
+    const supabase = await getLovableCloudClient();
     setTasks((prev) => prev.filter((x) => x.id !== t.id));
     await supabase.from("tasks").delete().eq("id", t.id);
   }
 
   async function moveTask(t: Task, col: ClerkCol) {
     if (col === t.col) return;
+    const supabase = await getLovableCloudClient();
     setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, col } : x)));
     await supabase.from("tasks").update({ col }).eq("id", t.id);
   }
