@@ -99,9 +99,9 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen landing-bg overflow-hidden relative">
+    <div className="min-h-screen landing-bg overflow-x-hidden relative">
       {/* progress dots */}
-      <div className="fixed top-8 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+      <div className="fixed top-6 sm:top-8 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
         {Array.from({ length: SCREENS }).map((_, i) => (
           <div
             key={i}
@@ -117,13 +117,14 @@ export default function Onboarding() {
       {step === 2 && (
         <button
           onClick={skipDemo}
-          className="fixed bottom-8 right-6 font-plex-mono text-[11px] font-light tracking-[0.04em] text-faint hover:text-muted-foreground z-10"
+          className="fixed bottom-5 right-5 sm:bottom-8 sm:right-6 font-plex-mono text-[11px] font-light tracking-[0.04em] text-faint hover:text-muted-foreground z-10"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           skip demo
         </button>
       )}
 
-      <div className="relative z-[1] min-h-screen flex flex-col items-center justify-center px-6">
+      <div className="relative z-[1] min-h-screen flex flex-col items-center justify-start sm:justify-center pt-20 sm:pt-0 pb-10 sm:pb-0 px-5 sm:px-6">
         {step === 0 && <NameStep name={name} setName={setName} character={character} onNext={next} />}
         {step === 1 && (
           <CharacterStep name={name} character={character} setCharacter={setCharacter} onNext={next} />
