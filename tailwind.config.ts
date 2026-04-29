@@ -17,6 +17,7 @@ export default {
         sans: ["Inter", "system-ui", "sans-serif"],
         plex: ["IBM Plex Sans", "sans-serif"],
         "plex-mono": ["IBM Plex Mono", "monospace"],
+        "jb-mono": ["JetBrains Mono", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",

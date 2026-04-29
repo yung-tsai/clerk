@@ -52,6 +52,7 @@ export type Database = {
           streak: number
           tasks_completed: number
           updated_at: string
+          view_mode: string
         }
         Insert: {
           character?: string
@@ -63,6 +64,7 @@ export type Database = {
           streak?: number
           tasks_completed?: number
           updated_at?: string
+          view_mode?: string
         }
         Update: {
           character?: string
@@ -74,6 +76,7 @@ export type Database = {
           streak?: number
           tasks_completed?: number
           updated_at?: string
+          view_mode?: string
         }
         Relationships: []
       }
