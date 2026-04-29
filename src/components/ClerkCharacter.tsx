@@ -63,7 +63,7 @@ export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>
         blinkStart = t;
       }
       if (blinking) {
-        const p = (t - blinkStart) / BLINK_MS;
+        const p = Math.min(Math.max((t - blinkStart) / BLINK_MS, 0), 1);
         // 0->1->0
         const h = (p < 0.5 ? p * 2 : (1 - p) * 2) * 22;
         lidLRef.current?.setAttribute("height", h.toString());
