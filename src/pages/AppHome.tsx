@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { classify, type ClerkCol } from "@/lib/clerk-classify";
 import { toast } from "sonner";
-import { Check, Trash2, Settings, LogOut, X } from "lucide-react";
+import { Trash2, Settings, LogOut } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -38,12 +38,6 @@ const COL_TITLES: Record<ClerkCol, string> = {
 };
 const COLS: ClerkCol[] = ["today", "tomorrow", "upcoming", "someday"];
 
-const TAG_COLORS = [
-  "bg-tag-blue",
-  "bg-tag-yellow",
-  "bg-tag-green",
-  "bg-tag-pink",
-] as const;
 
 const GREETINGS = [
   "Add your tasks. I'll figure out where they go.",
@@ -180,14 +174,7 @@ export default function App() {
         category: t.category,
         cat_color: t.cat_color,
       }),
-      supabase.rpc as any, // no-op placeholder
     ]);
-    // bump tasks_completed
-    await supabase.rpc("noop").then(() => null).catch(() => null);
-    await supabase
-      .from("profiles")
-      .update({})
-      .eq("id", user.id); // keeps updated_at fresh
     showBubble("Done. Next.");
   }
 
