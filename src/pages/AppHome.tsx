@@ -2,33 +2,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
-import { classify, type ClerkCol } from "@/lib/clerk-classify";
+import { TaskCard, type ClerkCol, type TaskCardData } from "@/components/TaskCard";
+import { AppBar } from "@/components/AppBar";
+import { CHARACTERS, CHARACTER_LABELS, type CharacterVariant } from "@/lib/characters";
+import { classify } from "@/lib/clerk-classify";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
-import { Trash2, Settings, LogOut } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
-type Task = {
-  id: string;
-  title: string;
-  col: ClerkCol;
-  task_time: string | null;
-  location: string | null;
-  category: string | null;
-  cat_color: number;
-  due_date: string | null;
-  reason: string | null;
-  note: string | null;
-  position: number;
-  created_at: string;
-};
+type Task = TaskCardData & { position: number; created_at: string };
 
-type Proposal = {
-  title: string;
-  col: ClerkCol;
-  reason: string;
-};
+type Proposal = { title: string; col: ClerkCol; reason: string };
+
+type ViewMode = "focus" | "planner";
 
 const COL_TITLES: Record<ClerkCol, string> = {
   today: "Today",
@@ -37,7 +25,12 @@ const COL_TITLES: Record<ClerkCol, string> = {
   someday: "Someday",
 };
 const COLS: ClerkCol[] = ["today", "tomorrow", "upcoming", "someday"];
-
+const COL_PILL_BG: Record<ClerkCol, string> = {
+  today: "#CEDAFF",
+  tomorrow: "#FFF7CE",
+  upcoming: "#CEFFE7",
+  someday: "#FFCEFB",
+};
 
 const GREETINGS = [
   "Add your tasks. I'll figure out where they go.",
@@ -46,18 +39,22 @@ const GREETINGS = [
   "Type. I'll sort.",
 ];
 
-export default function App() {
+export default function AppHome() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [profile, setProfile] = useState<{ display_name: string | null } | null>(null);
+  const [profile, setProfile] = useState<{
+    display_name: string | null;
+    character: CharacterVariant;
+    view_mode: ViewMode;
+  } | null>(null);
+  const [view, setView] = useState<ViewMode>("focus");
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const [proposals, setProposals] = useState<Proposal[] | null>(null);
-  const [bubble, setBubble] = useState<string>("");
+  const [bubble, setBubble] = useState("");
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const bubbleTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -76,18 +73,30 @@ export default function App() {
           .eq("user_id", user.id)
           .order("position", { ascending: true })
           .order("created_at", { ascending: false }),
-        supabase.from("profiles").select("display_name, onboarded").eq("id", user.id).single(),
+        supabase
+          .from("profiles")
+          .select("display_name, character, view_mode, onboarded")
+          .eq("id", user.id)
+          .single(),
       ]);
       setTasks((t as Task[]) ?? []);
-      setProfile(p);
-      if (p && !p.onboarded) navigate("/onboarding");
-      // Greeting
-      const g = p?.display_name
-        ? `Morning, ${p.display_name}. ${GREETINGS[Math.floor(Math.random() * GREETINGS.length)]}`
+      if (p) {
+        if (!p.onboarded) {
+          navigate("/onboarding");
+          return;
+        }
+        const char = (p.character as CharacterVariant) ?? "blue";
+        const vm = (p.view_mode as ViewMode) ?? "focus";
+        setProfile({ display_name: p.display_name, character: char, view_mode: vm });
+        setView(vm);
+      }
+      const greet = p?.display_name
+        ? `Morning, ${p.display_name}.`
         : GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-      showBubble(g, 4500);
+      showBubble(greet, 4500);
     })();
-  }, [user, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   function showBubble(text: string, ms = 3500) {
     setBubble(text);
@@ -101,6 +110,13 @@ export default function App() {
     for (const t of tasks) g[t.col].push(t);
     return g;
   }, [tasks]);
+
+  async function persistView(v: ViewMode) {
+    setView(v);
+    if (!user) return;
+    const supabase = await getLovableCloudClient();
+    await supabase.from("profiles").update({ view_mode: v }).eq("id", user.id);
+  }
 
   async function processInput(raw: string) {
     if (!user) return;
@@ -116,18 +132,11 @@ export default function App() {
         body: { titles: parts },
       });
       if (error) throw error;
-      if (data?.tasks?.length) {
-        sorted = data.tasks;
-      } else {
-        throw new Error("Empty AI response");
-      }
+      if (data?.tasks?.length) sorted = data.tasks;
+      else throw new Error("Empty AI response");
     } catch (err: any) {
-      // Surface known errors
-      if (err?.context?.status === 429 || /rate/i.test(err?.message ?? "")) {
-        toast.error("Rate limited. Using local sort.");
-      } else if (err?.context?.status === 402) {
-        toast.error("AI credits exhausted. Using local sort.");
-      }
+      if (err?.context?.status === 429) toast.error("Rate limited. Using local sort.");
+      else if (err?.context?.status === 402) toast.error("AI credits exhausted. Using local sort.");
       sorted = parts.map((title) => {
         const { col, reason } = classify(title);
         return { title, col, reason };
@@ -156,14 +165,11 @@ export default function App() {
     setTasks((prev) => [...((data as Task[]) ?? []), ...prev]);
     setProposals(null);
     setInput("");
-    inputRef.current?.focus();
     showBubble("Sorted.");
   }
 
   function updateProposalCol(idx: number, col: ClerkCol) {
-    setProposals((p) =>
-      p ? p.map((x, i) => (i === idx ? { ...x, col } : x)) : p
-    );
+    setProposals((p) => (p ? p.map((x, i) => (i === idx ? { ...x, col } : x)) : p));
   }
 
   async function completeTask(t: Task) {
@@ -195,115 +201,124 @@ export default function App() {
     await supabase.from("tasks").update({ col }).eq("id", t.id);
   }
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!input.trim() || thinking) return;
-    processInput(input);
+  async function setCharacter(c: CharacterVariant) {
+    if (!user || !profile) return;
+    setProfile({ ...profile, character: c });
+    const supabase = await getLovableCloudClient();
+    await supabase.from("profiles").update({ character: c }).eq("id", user.id);
   }
 
+  const variant = profile?.character ?? "blue";
+
   return (
-    <div className="min-h-screen app-bg flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-2">
-          <ClerkCharacter size={26} />
-          <span className="font-mono-plex text-[11px] font-semibold uppercase tracking-[0.1em]">
-            Clerk
-          </span>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* ── Fixed header ── */}
+      <header
+        className="fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider"
+        style={{ height: 64 }}
+      >
+        <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ClerkCharacter variant={variant} size={26} />
+            <span className="font-plex-mono text-[11px] font-medium uppercase tracking-[0.1em]">
+              Clerk
+            </span>
+          </div>
+
+          {/* Toggle Focus | Planner */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => persistView("focus")}
+              className={cn(
+                "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
+                view === "focus" ? "text-foreground" : "text-faint hover:text-muted-foreground"
+              )}
+            >
+              Focus
+            </button>
+            <span className="text-faint text-[12px]">|</span>
+            <button
+              onClick={() => persistView("planner")}
+              className={cn(
+                "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
+                view === "planner" ? "text-foreground" : "text-faint hover:text-muted-foreground"
+              )}
+            >
+              Planner
+            </button>
+          </div>
+
+          <button
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            className="font-plex-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+          >
+            ···
+          </button>
         </div>
-        <button
-          onClick={() => setSettingsOpen(true)}
-          className="rounded-full p-2 hover:bg-foreground/5 transition-colors"
-          aria-label="Settings"
-        >
-          <Settings className="h-4 w-4 text-muted-foreground" />
-        </button>
       </header>
 
-      {/* Date */}
-      <div className="text-center pb-2">
-        <div className="font-plex text-[26px] font-bold tracking-[-0.02em] leading-none">
-          {new Date().toLocaleDateString("en-US", { weekday: "long" })}
-        </div>
-        <div className="text-[12px] text-muted-foreground mt-1.5">
-          {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" })}
-        </div>
-      </div>
-
-      {/* Columns */}
-      <main className="flex-1 overflow-x-auto px-4 pb-[180px] pt-6">
-        <div className="grid grid-flow-col auto-cols-[min(420px,90vw)] gap-6 mx-auto max-w-[1280px]">
-          {COLS.map((col) => (
-            <Column
-              key={col}
-              col={col}
-              title={COL_TITLES[col]}
-              tasks={grouped[col]}
-              onComplete={completeTask}
-              onDelete={deleteTask}
-              onMove={moveTask}
-            />
-          ))}
-        </div>
+      {/* ── Views ── */}
+      <main
+        className="fixed inset-0 overflow-y-auto"
+        style={{ paddingTop: 64, paddingBottom: 120 }}
+      >
+        {view === "focus" ? (
+          <FocusView tasks={grouped.today} onComplete={completeTask} onDelete={deleteTask} onMove={moveTask} />
+        ) : (
+          <PlannerView grouped={grouped} onComplete={completeTask} onDelete={deleteTask} onMove={moveTask} />
+        )}
       </main>
 
-      {/* Bottom pill input + character */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[500px] px-4">
-        {/* Speech bubble */}
-        <div
-          className={`mx-auto mb-3 max-w-[340px] rounded-2xl bg-foreground px-4 py-2.5 text-center text-[12px] font-medium text-background shadow-lg transition-all duration-300 ${
-            bubbleVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
-          }`}
-        >
-          {bubble}
-        </div>
+      {/* ── Bottom bar ── */}
+      <AppBar
+        variant={variant}
+        thinking={thinking}
+        bubble={bubble}
+        bubbleVisible={bubbleVisible}
+        view={view}
+        inputValue={input}
+        onInputChange={setInput}
+        onSubmit={() => processInput(input)}
+        onSetView={persistView}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onSignOut={async () => {
+          await signOut();
+          navigate("/");
+        }}
+      />
 
-        <form
-          onSubmit={onSubmit}
-          className="flex items-center gap-2 rounded-full bg-white border border-border shadow-[0_4px_24px_rgba(0,0,0,0.08)] pr-2 pl-4 py-2"
-        >
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={thinking ? "Thinking..." : "What needs doing?"}
-            disabled={thinking}
-            className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-faint"
-          />
-          <ClerkCharacter
-            size={42}
-            thinking={thinking}
-            onClick={() => inputRef.current?.focus()}
-          />
-        </form>
-      </div>
-
-      {/* Proposal modal */}
+      {/* ── Proposal modal ── */}
       <Dialog open={!!proposals} onOpenChange={(o) => !o && setProposals(null)}>
         <DialogContent className="max-w-[440px] p-0 overflow-hidden bg-background">
           <div className="px-6 pt-6 pb-3 flex items-center gap-3">
-            <ClerkCharacter size={36} />
+            <ClerkCharacter variant={variant} size={36} />
             <div>
               <div className="font-plex text-[15px] font-medium">Here's where I'd put these.</div>
-              <div className="text-[12px] text-muted-foreground">Tap a column to change it.</div>
+              <div className="font-plex-mono text-[11px] text-muted-foreground">
+                Tap a column to change it.
+              </div>
             </div>
           </div>
           <div className="max-h-[60vh] overflow-y-auto px-6 pb-2 space-y-3">
             {proposals?.map((p, i) => (
-              <div key={i} className="clerk-card p-4">
+              <div key={i} className="rounded-[12px] border border-[#D7D7D7] bg-white/50 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="font-plex text-[16px] font-medium leading-snug">
+                    <div className="font-plex text-[16px] font-medium leading-snug text-[#2A2A2A]">
                       {p.title}
                     </div>
-                    <div className="font-mono-plex text-[11px] text-muted-foreground mt-1.5 italic">
-                      {p.reason}
-                    </div>
+                    {p.reason && (
+                      <div className="font-plex-mono text-[11px] text-muted-foreground italic mt-1.5">
+                        {p.reason}
+                      </div>
+                    )}
                   </div>
                   <select
                     value={p.col}
                     onChange={(e) => updateProposalCol(i, e.target.value as ClerkCol)}
-                    className="font-mono-plex text-[11px] uppercase tracking-wider bg-secondary px-2.5 py-1 rounded-md border border-border outline-none cursor-pointer"
+                    className="font-plex-mono text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md border border-border outline-none cursor-pointer"
+                    style={{ background: COL_PILL_BG[p.col] }}
                   >
                     {COLS.map((c) => (
                       <option key={c} value={c}>
@@ -332,7 +347,7 @@ export default function App() {
         </DialogContent>
       </Dialog>
 
-      {/* Settings sheet */}
+      {/* ── Settings sheet ── */}
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
         <SheetContent side="right" className="w-full sm:max-w-[400px]">
           <SheetHeader>
@@ -340,45 +355,62 @@ export default function App() {
           </SheetHeader>
           <div className="mt-6 space-y-6">
             <section>
-              <div className="font-mono-plex text-[10px] uppercase tracking-[0.1em] text-faint mb-2">
+              <div className="font-plex-mono text-[10px] uppercase tracking-[0.1em] text-faint mb-2">
                 Account
               </div>
-              <div className="clerk-card p-4 space-y-1">
+              <div className="rounded-[12px] border border-[#D7D7D7] bg-white/50 p-4 space-y-1">
                 <div className="text-[13px] font-medium">{profile?.display_name ?? "Anonymous"}</div>
-                <div className="font-mono-plex text-[11px] text-muted-foreground">
-                  {user?.email}
-                </div>
+                <div className="font-plex-mono text-[11px] text-muted-foreground">{user?.email}</div>
               </div>
             </section>
+
             <section>
-              <div className="font-mono-plex text-[10px] uppercase tracking-[0.1em] text-faint mb-2">
+              <div className="font-plex-mono text-[10px] uppercase tracking-[0.1em] text-faint mb-2">
+                Character
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {CHARACTERS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setCharacter(c)}
+                    className={cn(
+                      "flex flex-col items-center gap-2 px-2 pt-3 pb-2.5 rounded-[14px] border-2 bg-white/50 transition-all",
+                      variant === c ? "bg-white/90 border-foreground" : "border-transparent hover:bg-white/80"
+                    )}
+                  >
+                    <ClerkCharacter variant={c} size={36} animated={false} />
+                    <span className="font-plex-mono text-[10px] text-muted-foreground tracking-[0.04em]">
+                      {CHARACTER_LABELS[c]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <div className="font-plex-mono text-[10px] uppercase tracking-[0.1em] text-faint mb-2">
                 Stats
               </div>
-              <div className="clerk-card p-4 grid grid-cols-2 gap-3 text-center">
+              <div className="rounded-[12px] border border-[#D7D7D7] bg-white/50 p-4 grid grid-cols-2 gap-3 text-center">
                 <div>
                   <div className="font-plex text-[22px] font-light">{tasks.length}</div>
-                  <div className="font-mono-plex text-[10px] uppercase tracking-wider text-faint">
-                    Open
-                  </div>
+                  <div className="font-plex-mono text-[10px] uppercase tracking-wider text-faint">Open</div>
                 </div>
                 <div>
-                  <div className="font-plex text-[22px] font-light">
-                    {grouped.today.length}
-                  </div>
-                  <div className="font-mono-plex text-[10px] uppercase tracking-wider text-faint">
-                    Today
-                  </div>
+                  <div className="font-plex text-[22px] font-light">{grouped.today.length}</div>
+                  <div className="font-plex-mono text-[10px] uppercase tracking-wider text-faint">Today</div>
                 </div>
               </div>
             </section>
+
             <button
               onClick={async () => {
                 await signOut();
                 navigate("/");
               }}
-              className="w-full flex items-center justify-center gap-2 rounded-full border border-border py-2.5 text-[13px] font-medium hover:bg-secondary"
+              className="w-full rounded-full border border-border py-2.5 text-[13px] font-medium hover:bg-secondary"
             >
-              <LogOut className="h-3.5 w-3.5" /> Sign out
+              Sign out
             </button>
           </div>
         </SheetContent>
@@ -387,119 +419,121 @@ export default function App() {
   );
 }
 
-function Column({
-  col,
-  title,
+/* ───────── FOCUS VIEW ───────── */
+function FocusView({
   tasks,
   onComplete,
   onDelete,
   onMove,
 }: {
-  col: ClerkCol;
-  title: string;
   tasks: Task[];
   onComplete: (t: Task) => void;
   onDelete: (t: Task) => void;
   onMove: (t: Task, c: ClerkCol) => void;
 }) {
+  const today = new Date();
   return (
-    <section className="flex flex-col">
-      <header className="flex items-baseline justify-between border-b border-divider pb-3 mb-3 px-1">
-        <h2 className="font-plex text-[20px] font-normal tracking-[-0.02em] text-[#3F3F3F]">
-          {title}
-        </h2>
-        <span className="font-mono-plex text-[16px] font-light text-foreground">
-          {tasks.length}
-        </span>
-      </header>
-      <div className="flex flex-col gap-2 px-1">
-        {tasks.length === 0 ? (
-          <p className="text-[12px] text-faint py-6">Nothing here.</p>
-        ) : (
-          tasks.map((t) => (
-            <TaskCard
-              key={t.id}
-              task={t}
-              onComplete={() => onComplete(t)}
-              onDelete={() => onDelete(t)}
-              onMove={(c) => onMove(t, c)}
-            />
-          ))
-        )}
+    <div className="max-w-[1280px] mx-auto px-10 pt-7 pb-10">
+      <div className="w-full max-w-[420px] mx-auto flex flex-col">
+        {/* Today date header */}
+        <div className="text-center pb-6">
+          <div
+            className="font-plex font-bold text-foreground"
+            style={{ fontSize: 28, letterSpacing: "-0.02em", lineHeight: 1 }}
+          >
+            {today.toLocaleDateString("en-US", { weekday: "long" })}
+          </div>
+          <div className="font-sans text-[13px] text-muted-foreground mt-1.5">
+            {today.toLocaleDateString("en-US", { month: "long", day: "numeric" })}
+          </div>
+        </div>
+
+        {/* Card list */}
+        <div className="flex flex-col gap-2">
+          {tasks.length === 0 ? (
+            <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
+              Nothing yet. Add tasks below.
+            </p>
+          ) : (
+            tasks.map((t) => (
+              <TaskCard
+                key={t.id}
+                task={t}
+                onComplete={() => onComplete(t)}
+                onDelete={() => onDelete(t)}
+                onMove={(c) => onMove(t, c)}
+              />
+            ))
+          )}
+        </div>
       </div>
-    </section>
+    </div>
   );
 }
 
-function TaskCard({
-  task,
+/* ───────── PLANNER VIEW ───────── */
+function PlannerView({
+  grouped,
   onComplete,
   onDelete,
   onMove,
 }: {
-  task: Task;
-  onComplete: () => void;
-  onDelete: () => void;
-  onMove: (c: ClerkCol) => void;
+  grouped: Record<ClerkCol, Task[]>;
+  onComplete: (t: Task) => void;
+  onDelete: (t: Task) => void;
+  onMove: (t: Task, c: ClerkCol) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
   return (
-    <div
-      className={`clerk-card p-4 cursor-pointer transition-shadow ${
-        expanded ? "shadow-[0_4px_16px_rgba(0,0,0,0.08)]" : "hover:shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
-      }`}
-      onClick={() => setExpanded((v) => !v)}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="font-plex text-[18px] font-medium leading-[1.28] text-[#2A2A2A] break-words flex-1">
-          {task.title}
-        </h3>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onComplete();
-          }}
-          className="h-[22px] w-[22px] shrink-0 rounded-full border border-[#939393] bg-white hover:border-primary transition-colors"
-          aria-label="Complete"
-        />
-      </div>
-      {(task.task_time || task.location) && (
-        <div className="mt-2 flex items-center gap-2 font-mono-plex text-[12px] text-[#2A2A2A]">
-          {task.task_time && <span>{task.task_time}</span>}
-          {task.location && <span>· {task.location}</span>}
-        </div>
-      )}
-      {task.reason && (
-        <div className="mt-2 font-mono-plex text-[11px] italic text-muted-foreground">
-          {task.reason}
-        </div>
-      )}
-      {expanded && (
-        <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 flex-wrap">
-          {COLS.filter((c) => c !== task.col).map((c) => (
-            <button
-              key={c}
-              onClick={(e) => {
-                e.stopPropagation();
-                onMove(c);
-              }}
-              className="font-mono-plex text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+    <div className="max-w-[1280px] mx-auto px-10 pt-7 pb-10">
+      <div className="overflow-x-auto overflow-y-hidden no-scrollbar">
+        <div
+          className="grid"
+          style={{ gridTemplateColumns: "repeat(4, 280px)", minWidth: "100%" }}
+        >
+          {COLS.map((col, i) => (
+            <div
+              key={col}
+              className={cn(
+                "min-w-0",
+                i < COLS.length - 1 && "border-r border-divider pr-7",
+                i > 0 && "pl-7"
+              )}
             >
-              → {c}
-            </button>
+              <div className="flex items-baseline justify-between pb-3 mb-3">
+                <span
+                  className="font-plex"
+                  style={{ fontSize: 20, fontWeight: 400, color: "#3F3F3F", letterSpacing: "-0.02em", lineHeight: "26px" }}
+                >
+                  {COL_TITLES[col]}
+                </span>
+                <span
+                  className="font-plex-mono"
+                  style={{ fontSize: 16, fontWeight: 300, color: "#11181C", letterSpacing: "-0.02em", lineHeight: "21px" }}
+                >
+                  {String(grouped[col].length).padStart(2, "0")}
+                </span>
+              </div>
+              <div className="flex flex-col gap-2">
+                {grouped[col].length === 0 ? (
+                  <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
+                    Nothing yet.
+                  </p>
+                ) : (
+                  grouped[col].map((t) => (
+                    <TaskCard
+                      key={t.id}
+                      task={t}
+                      onComplete={() => onComplete(t)}
+                      onDelete={() => onDelete(t)}
+                      onMove={(c) => onMove(t, c)}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
           ))}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="ml-auto rounded-md border border-border p-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/40"
-            aria-label="Delete"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
