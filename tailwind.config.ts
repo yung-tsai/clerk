@@ -13,12 +13,26 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+        plex: ["IBM Plex Sans", "sans-serif"],
+        "plex-mono": ["IBM Plex Mono", "monospace"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        faint: "hsl(var(--faint))",
+        divider: "hsl(var(--divider))",
+        "logo-blue": "hsl(var(--logo-blue))",
+        tag: {
+          blue: "hsl(var(--tag-blue))",
+          yellow: "hsl(var(--tag-yellow))",
+          green: "hsl(var(--tag-green))",
+          pink: "hsl(var(--tag-pink))",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",

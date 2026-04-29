@@ -1,0 +1,4 @@
+project_id = "jnhziusozbixowfvhloy"
+
+[functions.sort-tasks]
+verify_jwt = false
