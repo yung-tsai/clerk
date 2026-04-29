@@ -47,6 +47,9 @@ export default function AppHome() {
     display_name: string | null;
     character: CharacterVariant;
     view_mode: ViewMode;
+    streak: number;
+    tasks_completed: number;
+    last_active_date: string | null;
   } | null>(null);
   const [view, setView] = useState<ViewMode>("focus");
   const [input, setInput] = useState("");
