@@ -1,44 +1,59 @@
-## What I understood
-1. Use the uploaded `Clerk.png` as the wordmark next to the mascot.
-2. Onboarding's "Let's go" should NOT silently insert tasks. It should:
-   - Save the profile (name, character, onboarded, view_mode = `planner`)
-   - Call `sort-tasks` with the brain dump
-   - Navigate to `/app` carrying the proposals in router state
-   - `/app` lands on **Planner** view and immediately opens the proposal modal pre-filled
-   - User reviews/adjusts → "Looks good" inserts via the same `acceptProposals` path
+## Issues & Fixes
 
-The blank screen you saw is from the silent error path in onboarding's current `finish()` — it inserts directly with `position: Date.now() + i`, which overflows Postgres `int` (the same `1777...` error from earlier). Routing through `acceptProposals` (with the position fix) resolves it cleanly.
+### 1. Proposal modal reappears every time you switch browser tabs
 
-## Changes
+**Cause** — In `src/pages/AppHome.tsx`, the load effect runs whenever `user` changes. When the tab regains focus, Supabase silently refreshes the session, which produces a new `user` object reference and re-runs the effect. The effect reads `location.state.pendingProposals` from React Router, and although we call `window.history.replaceState(...)`, React Router keeps its own in-memory copy of `location.state`, so the proposals get re-shown.
 
-### Logo wordmark
-- Save `Clerk.png` → `src/assets/clerk-logo.png` (already copied).
-- `src/pages/AppHome.tsx` header: replace the `<span>CLERK</span>` mono text with `<img src={clerkLogo} alt="Clerk" style={{ height: 22 }} />`. Mascot stays to its left.
-- `src/pages/Landing.tsx` header: same swap (mascot + logo image).
+**Fix** — Replace the `window.history.replaceState` line with a proper React Router replace:
+```
+navigate(location.pathname, { replace: true, state: null });
+```
+And only consume `pendingProposals` once by capturing it on first load (e.g. a `useRef` flag, or read it before any async work and immediately null it via navigate before the rest of the effect runs).
 
-### Position int overflow fix
-In `src/pages/AppHome.tsx` `acceptProposals`: replace `position: Date.now() + i` with `position: Math.floor(Date.now()/1000) + i` (fits int32 until 2038, preserves order).
+---
 
-### Onboarding → Planner + proposal modal
-**`src/pages/Onboarding.tsx` `finish()`** — rewrite:
-1. Update `profiles` with `display_name`, `character`, `onboarded: true`, `view_mode: "planner"`.
-2. Parse the brain dump into titles. If empty, navigate to `/app` and stop.
-3. Call `supabase.functions.invoke("sort-tasks", { body: { titles } })`. On error/empty, fall back to local `classify()` (already imported in AppHome — I'll import it here too).
-4. `navigate("/app", { state: { pendingProposals: sorted } })`.
-5. Show a toast on actual failure (not on AI fallback).
+### 2. Task cards should be draggable (reorder + move between columns)
 
-**`src/pages/AppHome.tsx`** — on mount:
-1. Read `useLocation().state?.pendingProposals`. If present:
-   - `setView("planner")` and persist `view_mode = "planner"`.
-   - `setProposals(pendingProposals)` so the existing Dialog opens automatically.
-   - Clear router state via `window.history.replaceState(null, "", location.pathname)` so a refresh doesn't re-open it.
+Match `clerk v27.html` behavior. Use `@dnd-kit/core` + `@dnd-kit/sortable` (lightweight, already common in this stack — will add as deps).
 
-This reuses the existing in-app proposal modal and `acceptProposals` insertion path — single source of truth, and the user gets the same character "Here's where I'd put these" review they expect.
+- **Planner view**: each column = a droppable; cards within a column = sortable list. Dragging a card to another column updates its `col`; dropping inside the same column reorders by updating `position`.
+- **Focus view**: only the Today column is shown — sortable within it.
+- Wire `onDragEnd` in `AppHome.tsx`:
+  - Optimistically update local `tasks` state.
+  - Persist: `update({ col, position })` for the moved card. For reorders, update `position` for the affected cards (use spaced integers — e.g. midpoint between neighbors — to avoid renumbering everything).
+- `TaskCard` becomes the draggable handle. Tap-to-open still works (use `dnd-kit`'s `activationConstraint: { distance: 5 }` so a click isn't interpreted as a drag). The complete-circle button keeps `stopPropagation`.
 
-## Files touched
-- `src/assets/clerk-logo.png` — new (copied)
-- `src/pages/AppHome.tsx` — logo swap, position fix, mount-time proposal seeding from router state, default to planner when arriving from onboarding
-- `src/pages/Landing.tsx` — logo swap
-- `src/pages/Onboarding.tsx` — `finish()` rewritten to sort + navigate with state instead of inserting
+---
 
-No DB changes.
+### 3. Bottom bar layout breaks at narrower widths
+
+**Cause** — The pill is `width: calc(100vw - 48px)` with `maxWidth: 500`. At in-between widths the character (`size={50}`) + hamburger + padding squeezes the input to almost zero, and the character can visually overlap the input edge / look detached (per the screenshot).
+
+**Fix** in `src/components/AppBar.tsx`:
+- Reduce character size to `size={40}` to match the proportions in `v27`.
+- Tighten pill padding (`px-2.5 py-1`) and add `gap-2` between input and character.
+- Set `minWidth` lower (e.g. `240`) and keep `maxWidth: 500`. Use `width: min(500px, calc(100vw - 32px))`.
+- Ensure character sits inside the rounded edge: wrap it with a small right margin (`mr-0.5`) and confirm it's not absolutely positioned.
+
+---
+
+### 4. Settings modal: bottom bar + header sit on top of it; size feels off
+
+**Cause** — `AppBar` uses `z-[200]` and the fixed header uses `z-[100]`. Radix Dialog defaults to `z-50`, so both float above the modal. Also the modal currently maxes at 480px which feels narrow on desktop.
+
+**Fix**:
+- In `src/pages/AppHome.tsx`, hide both `AppBar` and the fixed header when `settingsOpen` is true (same pattern already used for `proposals`). Render condition: `{!proposals && !settingsOpen && <AppBar … />}` and similarly skip the `<header>`.
+- In `src/components/SettingsModal.tsx`, bump width to `max-w-[640px]` for desktop while keeping the modal scrollable (`max-h-[88vh]`). Mobile remains full-width via the dialog's responsive defaults.
+
+---
+
+## Files to edit
+
+- `src/pages/AppHome.tsx` — fix proposal re-show; hide header/AppBar while settings open; wire drag-end handler.
+- `src/components/AppBar.tsx` — shrink character, tighten layout, fix narrow-width breakage.
+- `src/components/SettingsModal.tsx` — widen to 640px on desktop.
+- `src/components/TaskCard.tsx` — integrate dnd-kit sortable hooks; keep click-to-open + complete button working.
+- `src/components/PlannerColumns` (inline in `AppHome.tsx`) — wrap with `DndContext` + `SortableContext`; columns become drop targets.
+- `package.json` — add `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
+
+No DB schema changes required — `tasks` already has `position` and `col` columns.
