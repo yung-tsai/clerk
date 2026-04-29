@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { getLovableCloudClient } from "@/lib/lovable-cloud";
 
 const SCREENS = 3;
 
@@ -23,6 +23,7 @@ export default function Onboarding() {
   const finish = async () => {
     if (!user) return;
     setSaving(true);
+    const supabase = await getLovableCloudClient();
     const { error } = await supabase
       .from("profiles")
       .update({ display_name: name || null, onboarded: true })
