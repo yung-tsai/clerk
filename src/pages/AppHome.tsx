@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { classify, type ClerkCol } from "@/lib/clerk-classify";
+import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
 import { Trash2, Settings, LogOut } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -68,6 +68,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     (async () => {
+      const supabase = await getLovableCloudClient();
       const [{ data: t }, { data: p }] = await Promise.all([
         supabase
           .from("tasks")
