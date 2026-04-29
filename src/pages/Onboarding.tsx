@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { CHARACTERS, CHARACTER_LABELS, type CharacterVariant } from "@/lib/characters";
+import { classify } from "@/lib/clerk-classify";
 import { cn } from "@/lib/utils";
 
 const SCREENS = 4;
@@ -54,34 +55,41 @@ export default function Onboarding() {
           display_name: name || null,
           character,
           onboarded: true,
-          view_mode: "focus",
+          view_mode: "planner",
         })
         .eq("id", user.id);
       if (error) throw error;
 
       const seed = tasksDraft.trim();
-      if (seed) {
-        const parts = seed.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean);
-        if (parts.length) {
-          try {
-            const { data } = await supabase.functions.invoke("sort-tasks", { body: { titles: parts } });
-            type Col = "today" | "tomorrow" | "upcoming" | "someday";
-            const sorted = (data?.tasks ?? []) as { title: string; col: Col; reason: string }[];
-            const fallback = parts.map((p) => ({ title: p, col: "today" as Col, reason: "" }));
-            const rows = (sorted.length ? sorted : fallback).map((p, i) => ({
-              user_id: user.id,
-              title: p.title,
-              col: p.col,
-              reason: p.reason,
-              position: Date.now() + i,
-            }));
-            await supabase.from("tasks").insert(rows);
-          } catch {
-            /* swallow — onboarding still completes */
-          }
-        }
+      const parts = seed
+        ? seed.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean)
+        : [];
+
+      if (!parts.length) {
+        navigate("/app");
+        return;
       }
-      navigate("/app");
+
+      type Col = "today" | "tomorrow" | "upcoming" | "someday";
+      type Proposal = { title: string; col: Col; reason: string };
+
+      let sorted: Proposal[] = [];
+      try {
+        const { data, error: fnErr } = await supabase.functions.invoke("sort-tasks", {
+          body: { titles: parts },
+        });
+        if (fnErr) throw fnErr;
+        sorted = (data?.tasks ?? []) as Proposal[];
+        if (!sorted.length) throw new Error("empty");
+      } catch {
+        // Local fallback so we still hand off proposals
+        sorted = parts.map((title) => {
+          const { col, reason } = classify(title);
+          return { title, col, reason };
+        });
+      }
+
+      navigate("/app", { state: { pendingProposals: sorted } });
     } catch (e: any) {
       toast.error(e?.message ?? "Could not finish onboarding");
     } finally {
