@@ -1,4 +1,6 @@
 import { cn } from "@/lib/utils";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export type ClerkCol = "today" | "tomorrow" | "upcoming" | "someday";
 
@@ -19,19 +21,36 @@ interface Props {
   task: TaskCardData;
   onComplete: () => void;
   onOpen: () => void;
+  draggable?: boolean;
 }
 
 const CAT_BG = ["#CEDAFF", "#FFF7CE", "#CEFFE7", "#FFCEFB"];
 
-export function TaskCard({ task, onComplete, onOpen }: Props) {
+export function TaskCard({ task, onComplete, onOpen, draggable = true }: Props) {
+  const sortable = useSortable({ id: task.id, disabled: !draggable });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable;
+
+  const style = draggable
+    ? {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+      }
+    : undefined;
+
   return (
     <div
+      ref={draggable ? setNodeRef : undefined}
+      style={style}
+      {...(draggable ? attributes : {})}
+      {...(draggable ? listeners : {})}
       onClick={onOpen}
       className={cn(
-        "animate-card-in group cursor-pointer select-none",
+        "animate-card-in group cursor-pointer select-none touch-none",
         "w-full max-w-[380px] rounded-[12px] p-4 transition-shadow",
         "border border-[#D7D7D7] bg-white/50",
-        "hover:shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
+        "hover:shadow-[0_2px_12px_rgba(0,0,0,0.07)]",
+        isDragging && "shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
       )}
     >
       {/* Top row: time | tag */}
@@ -67,6 +86,7 @@ export function TaskCard({ task, onComplete, onOpen }: Props) {
         </span>
         <button
           type="button"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             onComplete();
