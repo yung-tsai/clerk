@@ -77,14 +77,24 @@ export default function AppHome() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const bubbleTimer = useRef<number | null>(null);
+  const loadedOnce = useRef(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
-  // Load tasks + profile
+  // Load tasks + profile (only once per mount; tab refocus shouldn't re-trigger)
   useEffect(() => {
     if (!user) return;
+    if (loadedOnce.current) return;
+    loadedOnce.current = true;
+
+    // Capture and immediately clear router state so a re-mount/refresh won't reopen the modal
+    const pending = (location.state as { pendingProposals?: Proposal[] } | null)?.pendingProposals;
+    if (pending && pending.length) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+
     (async () => {
       const supabase = await getLovableCloudClient();
       const [{ data: t }, { data: p }] = await Promise.all([
@@ -117,14 +127,10 @@ export default function AppHome() {
           last_active_date: p.last_active_date ?? null,
         });
 
-        // Coming from onboarding with pending proposals → land on Planner + open modal
-        const pending = (location.state as { pendingProposals?: Proposal[] } | null)?.pendingProposals;
         if (pending && pending.length) {
           setView("planner");
           setProposals(pending);
-          // Persist planner as default and clear router state so refresh doesn't reopen
           supabase.from("profiles").update({ view_mode: "planner" }).eq("id", user.id);
-          window.history.replaceState(null, "", location.pathname);
         } else {
           setView(vm);
           const greet = p.display_name
