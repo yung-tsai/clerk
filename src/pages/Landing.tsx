@@ -12,10 +12,7 @@ export default function Landing() {
     <div className="min-h-screen landing-bg">
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[540px] flex-col items-center px-6 pt-7 pb-20">
         <header className="mb-16 flex w-full items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ClerkCharacter size={28} />
-            <img src={clerkLogo} alt="Clerk" className="h-[24px] w-auto select-none" draggable={false} />
-          </div>
+          <img src={clerkLogo} alt="Clerk" className="h-[24px] w-auto select-none" draggable={false} />
           <nav className="flex items-center gap-6">
             <a
               href="#how"

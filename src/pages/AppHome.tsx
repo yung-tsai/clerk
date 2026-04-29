@@ -11,6 +11,7 @@ import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
+import { TaskDetailModal, type TaskPatch } from "@/components/TaskDetailModal";
 import { cn } from "@/lib/utils";
 
 type Task = TaskCardData & { position: number; created_at: string };
@@ -60,6 +61,7 @@ export default function AppHome() {
   const [bubble, setBubble] = useState("");
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const bubbleTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -111,12 +113,12 @@ export default function AppHome() {
           window.history.replaceState(null, "", location.pathname);
         } else {
           setView(vm);
+          const greet = p.display_name
+            ? `Morning, ${p.display_name}.`
+            : GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+          showBubble(greet, 4500);
         }
       }
-      const greet = p?.display_name
-        ? `Morning, ${p.display_name}.`
-        : GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-      showBubble(greet, 4500);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -278,10 +280,7 @@ export default function AppHome() {
         style={{ height: 64 }}
       >
         <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ClerkCharacter variant={variant} size={26} />
-            <img src={clerkLogo} alt="Clerk" className="h-[22px] w-auto select-none" draggable={false} />
-          </div>
+          <img src={clerkLogo} alt="Clerk" className="h-[22px] w-auto select-none" draggable={false} />
 
           {/* Toggle Focus | Planner */}
           <div className="flex items-center gap-1">
@@ -318,32 +317,39 @@ export default function AppHome() {
         style={{ paddingTop: 64, paddingBottom: 120 }}
       >
         {view === "focus" ? (
-          <FocusView tasks={grouped.today} onComplete={completeTask} onDelete={deleteTask} onMove={moveTask} />
+          <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} />
         ) : (
-          <PlannerView grouped={grouped} onComplete={completeTask} onDelete={deleteTask} onMove={moveTask} />
+          <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} />
         )}
       </main>
 
-      {/* ── Bottom bar ── */}
-      <AppBar
-        variant={variant}
-        thinking={thinking}
-        bubble={bubble}
-        bubbleVisible={bubbleVisible}
-        view={view}
-        inputValue={input}
-        onInputChange={setInput}
-        onSubmit={() => processInput(input)}
-        onSetView={persistView}
-        onOpenSettings={() => setSettingsOpen(true)}
-        onSignOut={async () => {
-          await signOut();
-          navigate("/");
-        }}
-      />
+      {/* ── Bottom bar (hidden while proposal modal is open) ── */}
+      {!proposals && (
+        <AppBar
+          variant={variant}
+          thinking={thinking}
+          bubble={bubble}
+          bubbleVisible={bubbleVisible}
+          view={view}
+          inputValue={input}
+          onInputChange={setInput}
+          onSubmit={() => processInput(input)}
+          onSetView={persistView}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onSignOut={async () => {
+            await signOut();
+            navigate("/");
+          }}
+        />
+      )}
 
       {/* ── Proposal modal ── */}
-      <Dialog open={!!proposals} onOpenChange={(o) => !o && setProposals(null)}>
+      <Dialog
+        open={!!proposals}
+        onOpenChange={(o) => {
+          if (!o && proposals) acceptProposals();
+        }}
+      >
         <DialogContent className="max-w-[440px] p-0 overflow-hidden bg-background">
           <div className="px-6 pt-6 pb-3 flex items-center gap-3">
             <ClerkCharacter variant={variant} size={36} />
@@ -386,12 +392,6 @@ export default function AppHome() {
           </div>
           <div className="flex gap-2 px-6 py-4 border-t border-divider">
             <button
-              onClick={() => setProposals(null)}
-              className="flex-1 rounded-full border border-border py-2.5 text-[13px] font-medium hover:bg-secondary"
-            >
-              Cancel
-            </button>
-            <button
               onClick={acceptProposals}
               className="flex-1 rounded-full bg-foreground py-2.5 text-[13px] font-medium text-background"
             >
@@ -400,6 +400,27 @@ export default function AppHome() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Task detail modal ── */}
+      <TaskDetailModal
+        task={selectedTask}
+        onOpenChange={(o) => !o && setSelectedTask(null)}
+        onPatch={(id, patch) => {
+          setTasks((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+          (async () => {
+            const supabase = await getLovableCloudClient();
+            await supabase.from("tasks").update(patch).eq("id", id);
+          })();
+        }}
+        onMove={(t, col) => {
+          moveTask(t as Task, col);
+          setSelectedTask(null);
+        }}
+        onDelete={(t) => {
+          deleteTask(t as Task);
+          setSelectedTask(null);
+        }}
+      />
 
       {/* ── Settings modal ── */}
       <SettingsModal
@@ -423,19 +444,16 @@ export default function AppHome() {
 function FocusView({
   tasks,
   onComplete,
-  onDelete,
-  onMove,
+  onOpen,
 }: {
   tasks: Task[];
   onComplete: (t: Task) => void;
-  onDelete: (t: Task) => void;
-  onMove: (t: Task, c: ClerkCol) => void;
+  onOpen: (t: Task) => void;
 }) {
   const today = new Date();
   return (
     <div className="max-w-[1280px] mx-auto px-10 pt-7 pb-10">
       <div className="w-full max-w-[420px] mx-auto flex flex-col">
-        {/* Today date header */}
         <div className="text-center pb-6">
           <div
             className="font-plex font-bold text-foreground"
@@ -448,7 +466,6 @@ function FocusView({
           </div>
         </div>
 
-        {/* Card list */}
         <div className="flex flex-col gap-2">
           {tasks.length === 0 ? (
             <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
@@ -460,8 +477,7 @@ function FocusView({
                 key={t.id}
                 task={t}
                 onComplete={() => onComplete(t)}
-                onDelete={() => onDelete(t)}
-                onMove={(c) => onMove(t, c)}
+                onOpen={() => onOpen(t)}
               />
             ))
           )}
@@ -475,13 +491,11 @@ function FocusView({
 function PlannerView({
   grouped,
   onComplete,
-  onDelete,
-  onMove,
+  onOpen,
 }: {
   grouped: Record<ClerkCol, Task[]>;
   onComplete: (t: Task) => void;
-  onDelete: (t: Task) => void;
-  onMove: (t: Task, c: ClerkCol) => void;
+  onOpen: (t: Task) => void;
 }) {
   return (
     <div className="max-w-[1280px] mx-auto px-10 pt-7 pb-10">
@@ -524,8 +538,7 @@ function PlannerView({
                       key={t.id}
                       task={t}
                       onComplete={() => onComplete(t)}
-                      onDelete={() => onDelete(t)}
-                      onMove={(c) => onMove(t, c)}
+                      onOpen={() => onOpen(t)}
                     />
                   ))
                 )}
