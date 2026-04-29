@@ -14,7 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      completed_tasks: {
+        Row: {
+          cat_color: number
+          category: string | null
+          completed_at: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          cat_color?: number
+          category?: string | null
+          completed_at?: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          cat_color?: number
+          category?: string | null
+          completed_at?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          character: string
+          created_at: string
+          display_name: string | null
+          id: string
+          last_active_date: string | null
+          onboarded: boolean
+          streak: number
+          tasks_completed: number
+          updated_at: string
+        }
+        Insert: {
+          character?: string
+          created_at?: string
+          display_name?: string | null
+          id: string
+          last_active_date?: string | null
+          onboarded?: boolean
+          streak?: number
+          tasks_completed?: number
+          updated_at?: string
+        }
+        Update: {
+          character?: string
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          last_active_date?: string | null
+          onboarded?: boolean
+          streak?: number
+          tasks_completed?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          cat_color: number
+          category: string | null
+          col: Database["public"]["Enums"]["task_col"]
+          created_at: string
+          due_date: string | null
+          id: string
+          location: string | null
+          note: string | null
+          position: number
+          reason: string | null
+          task_time: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cat_color?: number
+          category?: string | null
+          col?: Database["public"]["Enums"]["task_col"]
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          location?: string | null
+          note?: string | null
+          position?: number
+          reason?: string | null
+          task_time?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cat_color?: number
+          category?: string | null
+          col?: Database["public"]["Enums"]["task_col"]
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          location?: string | null
+          note?: string | null
+          position?: number
+          reason?: string | null
+          task_time?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +136,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      task_col: "today" | "tomorrow" | "upcoming" | "someday"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +263,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      task_col: ["today", "tomorrow", "upcoming", "someday"],
+    },
   },
 } as const
