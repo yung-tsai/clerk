@@ -301,24 +301,25 @@ function DemoStep({ character, onDone }: { character: CharacterVariant; onDone: 
   const speech =
     phase === "thinking" ? "Give me a moment..." : phase === "idle" || phase === "callout1" ? "Watch me work." : phase === "typing" ? "Watch me work." : "Here's what I'd do.";
 
+  const isMobile = useIsMobile();
   return (
-    <div className="animate-fade-up w-full max-w-[380px] flex flex-col items-center">
+    <div className="animate-fade-up w-full max-w-full sm:max-w-[380px] flex flex-col items-center">
       {/* Mascot + speech */}
-      <div className="flex items-end gap-3 mb-6">
-        <div className="rounded-[20px_20px_20px_4px] bg-white border border-black/[0.08] px-4 py-3 text-[14px] shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+      <div className="flex items-end gap-2 sm:gap-3 mb-6">
+        <ClerkCharacter variant={character} size={isMobile ? 52 : 58} thinking={phase === "thinking"} />
+        <div className="rounded-[4px_20px_20px_20px] bg-white border border-black/[0.08] px-4 py-3 text-[13px] sm:text-[14px] shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-w-[calc(100vw-120px)] sm:max-w-none">
           {speech}
         </div>
-        <ClerkCharacter variant={character} size={58} thinking={phase === "thinking"} />
       </div>
 
       {/* Fake pill */}
-      <div className="w-full bg-white border border-black/[0.08] rounded-full px-5 py-3 flex items-center gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.08)] mb-4">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <div className="w-full bg-white border border-black/[0.08] rounded-full px-4 sm:px-5 py-3 flex items-center gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.08)] mb-4">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
           <circle cx="8" cy="8" r="6" stroke="#C4C8CC" strokeWidth="1.5" />
           <path d="M8 5v3l2 2" stroke="#C4C8CC" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
         <span
-          className="font-sans text-[14px] flex-1 truncate"
+          className="font-sans text-[13px] sm:text-[14px] flex-1 truncate"
           style={{ color: typed ? "#1A1A1A" : "#C4C8CC" }}
         >
           {typed || "What needs doing?"}
@@ -328,7 +329,7 @@ function DemoStep({ character, onDone }: { character: CharacterVariant; onDone: 
       {/* Callout */}
       <div
         className={cn(
-          "rounded-xl bg-foreground text-background px-4 py-3 max-w-[300px] text-center text-[13px] mb-3 transition-all duration-300",
+          "rounded-xl bg-foreground text-background px-4 py-3 max-w-[calc(100vw-48px)] sm:max-w-[300px] text-center text-[12px] sm:text-[13px] mb-3 transition-all duration-300",
           callout ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none"
         )}
       >
@@ -338,22 +339,22 @@ function DemoStep({ character, onDone }: { character: CharacterVariant; onDone: 
       {/* Proposal */}
       <div
         className={cn(
-          "w-full bg-white rounded-[16px] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-300",
+          "w-full bg-white rounded-[16px] p-4 sm:p-5 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-300",
           phase === "proposal" || phase === "callout2"
             ? "opacity-100 translate-y-0"
             : "opacity-0 translate-y-3 pointer-events-none"
         )}
       >
-        <div className="font-plex text-[15px] font-semibold text-foreground mb-1">Sorted. Here's my reasoning.</div>
+        <div className="font-plex text-[14px] sm:text-[15px] font-semibold text-foreground mb-1">Sorted. Here's my reasoning.</div>
         <div className="font-plex-mono text-[11px] font-light text-muted-foreground mb-4">
           Tap a column to move anything.
         </div>
         <div className="flex flex-col gap-2.5 mb-4">
           {DEMO_TASKS.map((t, i) => (
-            <div key={i} className="flex justify-between items-center gap-2.5">
-              <span className="text-[13px] text-foreground flex-1 truncate">{t.text}</span>
+            <div key={i} className="flex justify-between items-start gap-2.5">
+              <span className="text-[12px] sm:text-[13px] text-foreground flex-1 leading-[1.4] line-clamp-2">{t.text}</span>
               <span
-                className="font-plex-mono text-[10px] font-normal px-2.5 py-0.5 rounded-full flex-shrink-0"
+                className="font-plex-mono text-[9.5px] sm:text-[10px] font-normal px-2.5 py-0.5 rounded-full flex-shrink-0 mt-0.5"
                 style={{ background: COL_BG[t.label] ?? "#EEE" }}
               >
                 {t.label}
@@ -363,7 +364,7 @@ function DemoStep({ character, onDone }: { character: CharacterVariant; onDone: 
         </div>
         <button
           onClick={onDone}
-          className="w-full rounded-[10px] bg-foreground text-background font-sans text-[14px] font-medium py-3 hover:bg-[#2A2A2A] transition-colors"
+          className="w-full rounded-[10px] bg-foreground text-background font-sans text-[14px] font-medium py-3 min-h-[48px] hover:bg-[#2A2A2A] transition-colors"
         >
           Looks good →
         </button>
