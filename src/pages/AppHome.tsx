@@ -294,13 +294,9 @@ export default function AppHome() {
             </button>
           </div>
 
-          <button
-            onClick={() => setSettingsOpen(true)}
-            aria-label="Settings"
-            className="font-plex-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
-          >
-            ···
-          </button>
+          {/* Spacer to balance header (settings is reachable from the bottom-bar menu) */}
+          <div className="w-[26px]" aria-hidden />
+
         </div>
       </header>
 
