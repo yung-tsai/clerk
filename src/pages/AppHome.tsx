@@ -544,22 +544,7 @@ function FocusView({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          {tasks.length === 0 ? (
-            <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
-              Nothing yet. Add tasks below.
-            </p>
-          ) : (
-            tasks.map((t) => (
-              <TaskCard
-                key={t.id}
-                task={t}
-                onComplete={() => onComplete(t)}
-                onOpen={() => onOpen(t)}
-              />
-            ))
-          )}
-        </div>
+        <DroppableColumn col="today" tasks={tasks} onComplete={onComplete} onOpen={onOpen} emptyText="Nothing yet. Add tasks below." />
       </div>
     </div>
   );
@@ -605,26 +590,54 @@ function PlannerView({
                   {String(grouped[col].length).padStart(2, "0")}
                 </span>
               </div>
-              <div className="flex flex-col gap-2">
-                {grouped[col].length === 0 ? (
-                  <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
-                    Nothing yet.
-                  </p>
-                ) : (
-                  grouped[col].map((t) => (
-                    <TaskCard
-                      key={t.id}
-                      task={t}
-                      onComplete={() => onComplete(t)}
-                      onOpen={() => onOpen(t)}
-                    />
-                  ))
-                )}
-              </div>
+              <DroppableColumn col={col} tasks={grouped[col]} onComplete={onComplete} onOpen={onOpen} emptyText="Nothing yet." />
             </div>
           ))}
         </div>
       </div>
     </div>
+  );
+}
+
+/* ───────── DROPPABLE COLUMN ───────── */
+function DroppableColumn({
+  col,
+  tasks,
+  onComplete,
+  onOpen,
+  emptyText,
+}: {
+  col: ClerkCol;
+  tasks: Task[];
+  onComplete: (t: Task) => void;
+  onOpen: (t: Task) => void;
+  emptyText: string;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `col:${col}` });
+  return (
+    <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "flex flex-col gap-2 min-h-[80px] rounded-md transition-colors",
+          isOver && "bg-black/[0.025]"
+        )}
+      >
+        {tasks.length === 0 ? (
+          <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
+            {emptyText}
+          </p>
+        ) : (
+          tasks.map((t) => (
+            <TaskCard
+              key={t.id}
+              task={t}
+              onComplete={() => onComplete(t)}
+              onOpen={() => onOpen(t)}
+            />
+          ))
+        )}
+      </div>
+    </SortableContext>
   );
 }
