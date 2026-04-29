@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { toast } from "sonner";
+import { getLovableCloudClient } from "@/lib/lovable-cloud";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -15,6 +15,7 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     try {
+      const supabase = await getLovableCloudClient();
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
