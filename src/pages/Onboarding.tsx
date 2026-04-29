@@ -157,15 +157,16 @@ function NameStep({
   character: CharacterVariant;
   onNext: () => void;
 }) {
+  const isMobile = useIsMobile();
   return (
-    <div className="animate-fade-up w-full max-w-[360px] flex flex-col items-start">
-      <div className="flex items-end gap-3 mb-10">
-        <div className="rounded-[20px_20px_20px_4px] bg-white border border-black/[0.08] px-4 py-3 text-[14px] leading-[1.55] shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+    <div className="animate-fade-up w-full max-w-full sm:max-w-[360px] flex flex-col items-start">
+      <div className="flex items-end gap-2 sm:gap-3 mb-8 sm:mb-10">
+        <ClerkCharacter variant={character} size={isMobile ? 52 : 58} />
+        <div className="rounded-[4px_20px_20px_20px] bg-white border border-black/[0.08] px-4 py-3 text-[13px] sm:text-[14px] leading-[1.55] shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-w-[calc(100vw-120px)] sm:max-w-none">
           Hi. I'm Clerk.
           <br />
           What should I call you?
         </div>
-        <ClerkCharacter variant={character} size={58} />
       </div>
       <input
         autoFocus
@@ -173,12 +174,12 @@ function NameStep({
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && name.trim() && onNext()}
         placeholder="Your name"
-        className="w-full font-plex text-[22px] text-foreground bg-white/70 border-[1.5px] border-black/10 rounded-[14px] px-5 py-4 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/15 mb-5 placeholder:text-[#C4C8CC]"
+        className="w-full font-plex text-[20px] sm:text-[22px] text-foreground bg-white/70 border-[1.5px] border-black/10 rounded-[14px] px-5 py-3.5 sm:py-4 outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/15 mb-5 placeholder:text-[#C4C8CC]"
       />
       <button
         disabled={!name.trim()}
         onClick={onNext}
-        className="w-full rounded-[14px] bg-foreground py-4 font-plex text-[15px] font-medium text-background disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-[#2A2A2A] transition-colors"
+        className="w-full rounded-[14px] bg-foreground py-4 min-h-[52px] font-plex text-[15px] font-medium text-background disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-[#2A2A2A] transition-colors"
       >
         Continue →
       </button>
