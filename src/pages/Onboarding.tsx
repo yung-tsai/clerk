@@ -65,16 +65,16 @@ export default function Onboarding() {
         if (parts.length) {
           try {
             const { data } = await supabase.functions.invoke("sort-tasks", { body: { titles: parts } });
-            const sorted = (data?.tasks ?? []) as { title: string; col: string; reason: string }[];
-            const rows = (sorted.length ? sorted : parts.map((p) => ({ title: p, col: "today", reason: "" }))).map(
-              (p, i) => ({
-                user_id: user.id,
-                title: p.title,
-                col: p.col,
-                reason: p.reason,
-                position: Date.now() + i,
-              })
-            );
+            type Col = "today" | "tomorrow" | "upcoming" | "someday";
+            const sorted = (data?.tasks ?? []) as { title: string; col: Col; reason: string }[];
+            const fallback = parts.map((p) => ({ title: p, col: "today" as Col, reason: "" }));
+            const rows = (sorted.length ? sorted : fallback).map((p, i) => ({
+              user_id: user.id,
+              title: p.title,
+              col: p.col,
+              reason: p.reason,
+              position: Date.now() + i,
+            }));
             await supabase.from("tasks").insert(rows);
           } catch {
             /* swallow — onboarding still completes */
