@@ -1,50 +1,44 @@
-## What's changing
+## What I understood
+1. Use the uploaded `Clerk.png` as the wordmark next to the mascot.
+2. Onboarding's "Let's go" should NOT silently insert tasks. It should:
+   - Save the profile (name, character, onboarded, view_mode = `planner`)
+   - Call `sort-tasks` with the brain dump
+   - Navigate to `/app` carrying the proposals in router state
+   - `/app` lands on **Planner** view and immediately opens the proposal modal pre-filled
+   - User reviews/adjusts → "Looks good" inserts via the same `acceptProposals` path
 
-### 1. Cursive Clerk wordmark
-- Add `src/assets/clerk-logo.svg` (you'll upload it after approval — drop the file in chat and I'll save it there).
-- Replace the uppercase `CLERK` mono text next to the mascot in `src/pages/AppHome.tsx` (header) with `<img src={clerkLogo} />` at ~22px tall. Mascot stays to its left.
-- Same swap in `src/pages/Landing.tsx` header for consistency.
+The blank screen you saw is from the silent error path in onboarding's current `finish()` — it inserts directly with `position: Date.now() + i`, which overflows Postgres `int` (the same `1777...` error from earlier). Routing through `acceptProposals` (with the position fix) resolves it cleanly.
 
-### 2. Remove top-bar settings entry
-- Delete the `···` button (and its `setSettingsOpen` handler call) from the AppHome header. The hamburger menu in the bottom AppBar remains the only path to Settings.
+## Changes
 
-### 3. Settings becomes a modal (matching uploaded HTML)
-Replace the current right-side `Sheet` with a centered `Dialog` modal styled to match `clerk_settings-2.html`. Max-width 480px, translucent white cards with backdrop blur, IBM Plex Sans/Mono.
+### Logo wordmark
+- Save `Clerk.png` → `src/assets/clerk-logo.png` (already copied).
+- `src/pages/AppHome.tsx` header: replace the `<span>CLERK</span>` mono text with `<img src={clerkLogo} alt="Clerk" style={{ height: 22 }} />`. Mascot stays to its left.
+- `src/pages/Landing.tsx` header: same swap (mascot + logo image).
 
-**New component**: `src/components/SettingsModal.tsx` containing:
+### Position int overflow fix
+In `src/pages/AppHome.tsx` `acceptProposals`: replace `position: Date.now() + i` with `position: Math.floor(Date.now()/1000) + i` (fits int32 until 2038, preserves order).
 
-- **Header row**: "Settings" title centered, `Save` button right (blue `#567CF8`, IBM Plex Sans 13px/500). Close (X) on left replaces "Back".
-- **Profile card**:
-  - Floating mascot (uses currently selected variant, ~52px) on the left
-  - "NAME" mono label + editable input on the right (live-bound to local draft state)
-  - Below: "YOUR CLERK" label + 4-column character grid (Blue, Coral, Soon, Soon — locked tiles show 🔒)
-- **Your Progress card**:
-  - Two stat cells side-by-side, divider between: `streak` value with "🔥 day streak" label, `tasks_completed` value with "✓ tasks done" label. Numbers in IBM Plex Mono 28px/300.
-  - Milestones list (6 rows, hardcoded): first task, 10 tasks, 50 tasks, 3-day streak, 7-day streak, 30-day streak. Each row: 36px rounded icon tile (blue tint if earned, gray if locked), name + description, ✓ on the right when earned. Locked rows show "Complete N tasks/N-day streak to unlock" as the description.
-- **Account card**:
-  - "Back up your tasks" title + subtitle "Saved on this device only. Create an account to sync everywhere." + dark `Back up` button → shows a "Coming soon" toast (placeholder, since auth already exists).
-- **Version**: centered "Clerk · Early Access" mono caption at bottom.
+### Onboarding → Planner + proposal modal
+**`src/pages/Onboarding.tsx` `finish()`** — rewrite:
+1. Update `profiles` with `display_name`, `character`, `onboarded: true`, `view_mode: "planner"`.
+2. Parse the brain dump into titles. If empty, navigate to `/app` and stop.
+3. Call `supabase.functions.invoke("sort-tasks", { body: { titles } })`. On error/empty, fall back to local `classify()` (already imported in AppHome — I'll import it here too).
+4. `navigate("/app", { state: { pendingProposals: sorted } })`.
+5. Show a toast on actual failure (not on AI fallback).
 
-**Save behavior**: clicking Save persists `display_name` and `character` to `profiles` and closes the modal. Live character changes can stay live-applied (so the mascot updates in the bar instantly) but Save is the explicit confirm for name.
+**`src/pages/AppHome.tsx`** — on mount:
+1. Read `useLocation().state?.pendingProposals`. If present:
+   - `setView("planner")` and persist `view_mode = "planner"`.
+   - `setProposals(pendingProposals)` so the existing Dialog opens automatically.
+   - Clear router state via `window.history.replaceState(null, "", location.pathname)` so a refresh doesn't re-open it.
 
-### 4. Streak tracking (so milestones aren't always 0)
-The DB already has `profiles.streak`, `profiles.tasks_completed`, and `profiles.last_active_date` but nothing writes to them. Wire it up in `completeTask` in `AppHome.tsx`:
-- On every completion, increment `tasks_completed`.
-- If `last_active_date` is today → no streak change.
-- If `last_active_date` is yesterday → `streak + 1`.
-- Otherwise → `streak = 1`.
-- Update `last_active_date` to today.
-
-This is a single RPC-free `update` after the existing completion writes. The settings modal reads these from `profiles` on open.
+This reuses the existing in-app proposal modal and `acceptProposals` insertion path — single source of truth, and the user gets the same character "Here's where I'd put these" review they expect.
 
 ## Files touched
+- `src/assets/clerk-logo.png` — new (copied)
+- `src/pages/AppHome.tsx` — logo swap, position fix, mount-time proposal seeding from router state, default to planner when arriving from onboarding
+- `src/pages/Landing.tsx` — logo swap
+- `src/pages/Onboarding.tsx` — `finish()` rewritten to sort + navigate with state instead of inserting
 
-- `src/assets/clerk-logo.svg` — **new** (you upload)
-- `src/components/SettingsModal.tsx` — **new**
-- `src/pages/AppHome.tsx` — swap wordmark, remove `···` button, replace inline Sheet with `<SettingsModal />`, add streak update in `completeTask`
-- `src/pages/Landing.tsx` — swap wordmark in header
-
-No DB migration needed (columns already exist).
-
-## Open item
-After you approve, please drop the cursive Clerk logo SVG/PNG into the next message so I can save it to `src/assets/clerk-logo.svg`. If you'd rather I proceed without it, I'll keep the mascot + "CLERK" mono text temporarily and swap once you upload.
+No DB changes.
