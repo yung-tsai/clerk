@@ -13,6 +13,19 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
 import { TaskDetailModal, type TaskPatch } from "@/components/TaskDetailModal";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+  useDroppable,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 type Task = TaskCardData & { position: number; created_at: string };
 
@@ -63,14 +76,24 @@ export default function AppHome() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const bubbleTimer = useRef<number | null>(null);
+  const loadedOnce = useRef(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
-  // Load tasks + profile
+  // Load tasks + profile (only once per mount; tab refocus shouldn't re-trigger)
   useEffect(() => {
     if (!user) return;
+    if (loadedOnce.current) return;
+    loadedOnce.current = true;
+
+    // Capture and immediately clear router state so a re-mount/refresh won't reopen the modal
+    const pending = (location.state as { pendingProposals?: Proposal[] } | null)?.pendingProposals;
+    if (pending && pending.length) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+
     (async () => {
       const supabase = await getLovableCloudClient();
       const [{ data: t }, { data: p }] = await Promise.all([
@@ -103,14 +126,10 @@ export default function AppHome() {
           last_active_date: p.last_active_date ?? null,
         });
 
-        // Coming from onboarding with pending proposals → land on Planner + open modal
-        const pending = (location.state as { pendingProposals?: Proposal[] } | null)?.pendingProposals;
         if (pending && pending.length) {
           setView("planner");
           setProposals(pending);
-          // Persist planner as default and clear router state so refresh doesn't reopen
           supabase.from("profiles").update({ view_mode: "planner" }).eq("id", user.id);
-          window.history.replaceState(null, "", location.pathname);
         } else {
           setView(vm);
           const greet = p.display_name
@@ -255,6 +274,62 @@ export default function AppHome() {
     await supabase.from("tasks").update({ col }).eq("id", t.id);
   }
 
+  // ─── Drag & drop ───
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || !user) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    if (activeId === overId) return;
+
+    const activeTask = tasks.find((x) => x.id === activeId);
+    if (!activeTask) return;
+
+    // Determine target column: `over` is either a column droppable (id startsWith "col:")
+    // or another task card.
+    let targetCol: ClerkCol;
+    let overTask: Task | undefined;
+    if (overId.startsWith("col:")) {
+      targetCol = overId.slice(4) as ClerkCol;
+    } else {
+      overTask = tasks.find((x) => x.id === overId);
+      if (!overTask) return;
+      targetCol = overTask.col;
+    }
+
+    // Compute new ordering within the target column
+    const colTasks = tasks.filter((x) => x.col === targetCol && x.id !== activeId);
+    let insertIdx = colTasks.length;
+    if (overTask) {
+      insertIdx = colTasks.findIndex((x) => x.id === overTask!.id);
+      if (insertIdx < 0) insertIdx = colTasks.length;
+    }
+    const before = colTasks[insertIdx - 1];
+    const after = colTasks[insertIdx];
+    const newPos = before && after
+      ? Math.floor((before.position + after.position) / 2)
+      : before
+        ? before.position + 1000
+        : after
+          ? after.position - 1000
+          : Math.floor(Date.now() / 1000);
+
+    // Optimistic update
+    setTasks((prev) =>
+      prev
+        .map((x) => (x.id === activeId ? { ...x, col: targetCol, position: newPos } : x))
+        .sort((a, b) => a.position - b.position)
+    );
+
+    const supabase = await getLovableCloudClient();
+    await supabase
+      .from("tasks")
+      .update({ col: targetCol, position: newPos })
+      .eq("id", activeId);
+  }
+
   function previewCharacter(c: CharacterVariant) {
     if (profile) setProfile({ ...profile, character: c });
   }
@@ -275,56 +350,58 @@ export default function AppHome() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Fixed header ── */}
-      <header
-        className="fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider"
-        style={{ height: 64 }}
-      >
-        <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
-          <img src={clerkLogo} alt="Clerk" className="h-[22px] w-auto select-none" draggable={false} />
+      {!proposals && !settingsOpen && (
+        <header
+          className="fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider"
+          style={{ height: 64 }}
+        >
+          <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
+            <img src={clerkLogo} alt="Clerk" className="h-[22px] w-auto select-none" draggable={false} />
 
-          {/* Toggle Focus | Planner */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => persistView("focus")}
-              className={cn(
-                "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
-                view === "focus" ? "text-foreground" : "text-faint hover:text-muted-foreground"
-              )}
-            >
-              Focus
-            </button>
-            <span className="text-faint text-[12px]">|</span>
-            <button
-              onClick={() => persistView("planner")}
-              className={cn(
-                "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
-                view === "planner" ? "text-foreground" : "text-faint hover:text-muted-foreground"
-              )}
-            >
-              Planner
-            </button>
+            {/* Toggle Focus | Planner */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => persistView("focus")}
+                className={cn(
+                  "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
+                  view === "focus" ? "text-foreground" : "text-faint hover:text-muted-foreground"
+                )}
+              >
+                Focus
+              </button>
+              <span className="text-faint text-[12px]">|</span>
+              <button
+                onClick={() => persistView("planner")}
+                className={cn(
+                  "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
+                  view === "planner" ? "text-foreground" : "text-faint hover:text-muted-foreground"
+                )}
+              >
+                Planner
+              </button>
+            </div>
+
+            <div className="w-[26px]" aria-hidden />
           </div>
-
-          {/* Spacer to balance header (settings is reachable from the bottom-bar menu) */}
-          <div className="w-[26px]" aria-hidden />
-
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* ── Views ── */}
       <main
         className="fixed inset-0 overflow-y-auto"
         style={{ paddingTop: 64, paddingBottom: 120 }}
       >
-        {view === "focus" ? (
-          <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} />
-        ) : (
-          <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} />
-        )}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          {view === "focus" ? (
+            <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} />
+          ) : (
+            <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} />
+          )}
+        </DndContext>
       </main>
 
-      {/* ── Bottom bar (hidden while proposal modal is open) ── */}
-      {!proposals && (
+      {/* ── Bottom bar (hidden while proposal/settings modal is open) ── */}
+      {!proposals && !settingsOpen && (
         <AppBar
           variant={variant}
           thinking={thinking}
@@ -466,22 +543,7 @@ function FocusView({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          {tasks.length === 0 ? (
-            <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
-              Nothing yet. Add tasks below.
-            </p>
-          ) : (
-            tasks.map((t) => (
-              <TaskCard
-                key={t.id}
-                task={t}
-                onComplete={() => onComplete(t)}
-                onOpen={() => onOpen(t)}
-              />
-            ))
-          )}
-        </div>
+        <DroppableColumn col="today" tasks={tasks} onComplete={onComplete} onOpen={onOpen} emptyText="Nothing yet. Add tasks below." />
       </div>
     </div>
   );
@@ -527,26 +589,54 @@ function PlannerView({
                   {String(grouped[col].length).padStart(2, "0")}
                 </span>
               </div>
-              <div className="flex flex-col gap-2">
-                {grouped[col].length === 0 ? (
-                  <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
-                    Nothing yet.
-                  </p>
-                ) : (
-                  grouped[col].map((t) => (
-                    <TaskCard
-                      key={t.id}
-                      task={t}
-                      onComplete={() => onComplete(t)}
-                      onOpen={() => onOpen(t)}
-                    />
-                  ))
-                )}
-              </div>
+              <DroppableColumn col={col} tasks={grouped[col]} onComplete={onComplete} onOpen={onOpen} emptyText="Nothing yet." />
             </div>
           ))}
         </div>
       </div>
     </div>
+  );
+}
+
+/* ───────── DROPPABLE COLUMN ───────── */
+function DroppableColumn({
+  col,
+  tasks,
+  onComplete,
+  onOpen,
+  emptyText,
+}: {
+  col: ClerkCol;
+  tasks: Task[];
+  onComplete: (t: Task) => void;
+  onOpen: (t: Task) => void;
+  emptyText: string;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `col:${col}` });
+  return (
+    <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "flex flex-col gap-2 min-h-[80px] rounded-md transition-colors",
+          isOver && "bg-black/[0.025]"
+        )}
+      >
+        {tasks.length === 0 ? (
+          <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
+            {emptyText}
+          </p>
+        ) : (
+          tasks.map((t) => (
+            <TaskCard
+              key={t.id}
+              task={t}
+              onComplete={() => onComplete(t)}
+              onOpen={() => onOpen(t)}
+            />
+          ))
+        )}
+      </div>
+    </SortableContext>
   );
 }

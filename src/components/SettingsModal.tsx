@@ -62,7 +62,7 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[480px] p-0 gap-0 border-none shadow-none bg-transparent [&>button]:hidden"
+        className="max-w-[640px] p-0 gap-0 border-none shadow-none bg-transparent [&>button]:hidden"
       >
         <div
           className="rounded-[20px] overflow-hidden max-h-[88vh] flex flex-col"

@@ -69,7 +69,7 @@ export function AppBar({
             "flex flex-col overflow-hidden bg-white border border-black/10 shadow-[0_4px_24px_rgba(0,0,0,0.08)] transition-[border-radius] duration-300",
             menuOpen ? "rounded-[20px]" : "rounded-[28px]"
           )}
-          style={{ minWidth: 280, maxWidth: 500, width: "calc(100vw - 48px)" }}
+          style={{ width: "min(500px, calc(100vw - 32px))" }}
         >
           {/* Upward menu panel */}
           <div
@@ -121,7 +121,7 @@ export function AppBar({
           </div>
 
           {/* Pill row */}
-          <div className="flex items-center w-full px-3 py-1.5 gap-0 overflow-hidden">
+          <div className="flex items-center w-full px-2.5 py-1 gap-2 overflow-hidden">
             {/* Hamburger */}
             <button
               type="button"
@@ -155,7 +155,7 @@ export function AppBar({
             <div className="flex-shrink-0">
               <ClerkCharacter
                 variant={variant}
-                size={50}
+                size={40}
                 thinking={thinking}
                 onClick={() => inputRef.current?.focus()}
               />
