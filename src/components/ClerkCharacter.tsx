@@ -92,6 +92,7 @@ export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>
 
   return (
     <button
+      ref={forwardedRef}
       type="button"
       onClick={handleClick}
       aria-label="Clerk"
@@ -174,4 +175,4 @@ export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>
       </svg>
     </button>
   );
-}
+});
