@@ -1,15 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-
-const backendEnvReady = Boolean(
-  import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-);
-
-async function getSupabaseClient() {
-  if (!backendEnvReady) throw new Error("Backend environment is not ready");
-  const { supabase } = await import("@/integrations/supabase/client");
-  return supabase;
-}
+import { getLovableCloudClient, hasLovableCloudEnv } from "@/lib/lovable-cloud";
 
 interface AuthCtx {
   user: User | null;
@@ -30,7 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!backendEnvReady) {
+    if (!hasLovableCloudEnv) {
       setLoading(false);
       return;
     }
@@ -38,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true;
     let unsubscribe: (() => void) | undefined;
 
-    getSupabaseClient()
+    getLovableCloudClient()
       .then((supabase) => {
         if (!active) return;
         const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
@@ -70,8 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         loading,
         signOut: async () => {
-          if (!backendEnvReady) return;
-          const supabase = await getSupabaseClient();
+          if (!hasLovableCloudEnv) return;
+          const supabase = await getLovableCloudClient();
           await supabase.auth.signOut();
         },
       }}
