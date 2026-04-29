@@ -1,130 +1,50 @@
-# Onboarding (4 screens) + Focus/Planner views matched to the reference HTML
+## What's changing
 
-Goal: pixel-match `clerk_v27.html` for Focus, Planner, cards, and the bottom bar; add the missing onboarding steps; keep all backend wiring (Lovable Cloud + sort-tasks) intact.
+### 1. Cursive Clerk wordmark
+- Add `src/assets/clerk-logo.svg` (you'll upload it after approval — drop the file in chat and I'll save it there).
+- Replace the uppercase `CLERK` mono text next to the mascot in `src/pages/AppHome.tsx` (header) with `<img src={clerkLogo} />` at ~22px tall. Mascot stays to its left.
+- Same swap in `src/pages/Landing.tsx` header for consistency.
 
----
+### 2. Remove top-bar settings entry
+- Delete the `···` button (and its `setSettingsOpen` handler call) from the AppHome header. The hamburger menu in the bottom AppBar remains the only path to Settings.
 
-## 1. Design tokens (apply globally first)
+### 3. Settings becomes a modal (matching uploaded HTML)
+Replace the current right-side `Sheet` with a centered `Dialog` modal styled to match `clerk_settings-2.html`. Max-width 480px, translucent white cards with backdrop blur, IBM Plex Sans/Mono.
 
-Add to `src/index.css` + `tailwind.config.ts` so every surface uses identical values:
+**New component**: `src/components/SettingsModal.tsx` containing:
 
-**CSS vars / colors**
-- `--bg #F5F5F3`, `--card-bg #FFFFFF`, `--card-border #EBEBEB`, `--card-border-strong #D7D7D7`
-- `--ink #11181C`, `--muted #6B7280`, `--faint #9CA3AF`, `--divider #F0F0EF`
-- `--max-w 1280px`, `--pad-x 40px`, `--bar-h 120px`, `--header-h 64px`, `--col-w 460px`
-- Title color `#2A2A2A`, checkbox border `#939393`, accent `#567CF8`
-- Category swatches `cat-0..3`: `#CEDAFF / #FFF7CE / #CEFFE7 / #FFCEFB`
+- **Header row**: "Settings" title centered, `Save` button right (blue `#567CF8`, IBM Plex Sans 13px/500). Close (X) on left replaces "Back".
+- **Profile card**:
+  - Floating mascot (uses currently selected variant, ~52px) on the left
+  - "NAME" mono label + editable input on the right (live-bound to local draft state)
+  - Below: "YOUR CLERK" label + 4-column character grid (Blue, Coral, Soon, Soon — locked tiles show 🔒)
+- **Your Progress card**:
+  - Two stat cells side-by-side, divider between: `streak` value with "🔥 day streak" label, `tasks_completed` value with "✓ tasks done" label. Numbers in IBM Plex Mono 28px/300.
+  - Milestones list (6 rows, hardcoded): first task, 10 tasks, 50 tasks, 3-day streak, 7-day streak, 30-day streak. Each row: 36px rounded icon tile (blue tint if earned, gray if locked), name + description, ✓ on the right when earned. Locked rows show "Complete N tasks/N-day streak to unlock" as the description.
+- **Account card**:
+  - "Back up your tasks" title + subtitle "Saved on this device only. Create an account to sync everywhere." + dark `Back up` button → shows a "Coming soon" toast (placeholder, since auth already exists).
+- **Version**: centered "Clerk · Early Access" mono caption at bottom.
 
-**Fonts** (load in `index.html`)
-- IBM Plex Sans 400/500/600, IBM Plex Mono 400/500, JetBrains Mono 400/500, Inter 300/400/500/600
-- Tailwind: `font-plex`, `font-mono-plex`, `font-jb-mono`, `font-inter`
-- Body default: Inter, color `--ink`, antialiased
+**Save behavior**: clicking Save persists `display_name` and `character` to `profiles` and closes the modal. Live character changes can stay live-applied (so the mascot updates in the bar instantly) but Save is the explicit confirm for name.
 
-## 2. Database
+### 4. Streak tracking (so milestones aren't always 0)
+The DB already has `profiles.streak`, `profiles.tasks_completed`, and `profiles.last_active_date` but nothing writes to them. Wire it up in `completeTask` in `AppHome.tsx`:
+- On every completion, increment `tasks_completed`.
+- If `last_active_date` is today → no streak change.
+- If `last_active_date` is yesterday → `streak + 1`.
+- Otherwise → `streak = 1`.
+- Update `last_active_date` to today.
 
-Migration adds to `profiles`:
-- `character text default 'blue'`
-- `view_mode text default 'focus'`
+This is a single RPC-free `update` after the existing completion writes. The settings modal reads these from `profiles` on open.
 
-## 3. Character system
+## Files touched
 
-- `src/lib/characters.ts` — registry for `'blue' | 'coral'` returning the exact SVG markup from the HTML (Blue star + Coral blob).
-- `ClerkCharacter.tsx` — accept `variant` prop, default `'blue'`. Keep float (`char-float`, 3.2s) + thinking pulse (`char-think`, 0.8s) + blink animations.
+- `src/assets/clerk-logo.svg` — **new** (you upload)
+- `src/components/SettingsModal.tsx` — **new**
+- `src/pages/AppHome.tsx` — swap wordmark, remove `···` button, replace inline Sheet with `<SettingsModal />`, add streak update in `completeTask`
+- `src/pages/Landing.tsx` — swap wordmark in header
 
-## 4. Onboarding rewrite — 4 screens (`src/pages/Onboarding.tsx`)
+No DB migration needed (columns already exist).
 
-Top progress dots, "skip demo" bottom-right only on screen 3.
-
-1. **Name** — mascot + speech "Hi. I'm Clerk. What should I call you?", IBM Plex Sans h1 (28px/600/-0.025em), IBM Plex Mono 12px subcopy, name input (rounded-14, focus ring `#567CF8`/12% blue), Continue (disabled until non-empty).
-2. **Pick your Clerk** — h2 "Pick your Clerk, {name}." + "Two are ready. More are on the way." 4-tile grid: Blue (selected, ring `--ink`), Coral, two locked tiles `🔒 Soon` (opacity 0.5). Labels: IBM Plex Mono 10px.
-3. **Animated demo**:
-   - Mascot says "Watch me work." → black callout "Type your tasks — all at once, however they come to mind."
-   - Auto-types `finish the case study, it's due Friday, pick up groceries, call dentist to book appointment, learn Spanish someday` into a fake pill input at 28ms/char
-   - Mascot switches to thinking pulse, says "Give me a moment..."
-   - White proposal card slides up: title "Sorted. Here's my reasoning." + 4 rows with colored col-pills (Today `#CEDAFF`, Today, Tomorrow `#FFF7CE`, Someday `#FFCEFB`) and IBM Plex Mono reasoning lines
-   - Second callout "I explain every decision. You can always move a task if you disagree."
-   - "Looks good →" advances. State machine: React state + `setTimeout` chain, refs to clear on unmount/skip.
-4. **Your turn** — h2 "What's on your mind?", textarea (16px Plex Sans, rounded-14, ≥90px tall), IBM Plex Mono hint, "Let's go →". On submit:
-   - Update profile: `display_name`, `character`, `onboarded=true`, `view_mode='focus'`
-   - If textarea has content, call `sort-tasks` edge function and insert returned tasks
-   - Navigate to `/app`
-
-## 5. Layout shell + view toggle (`src/pages/AppHome.tsx`)
-
-- `view: 'focus' | 'planner'` from profile, persisted on toggle.
-- Fixed header (h `--header-h`, border-bottom `--divider`, bg `--bg`):
-  - Left: Clerk logo group (mascot 26 + IBM Plex Mono "Clerk" 11px uppercase)
-  - Center: `Focus | Planner` toggle — Inter 12px/500, active `--ink`, inactive `--faint`, `|` separator faint
-  - Right: settings icon
-- View container: `position:fixed; inset:0; padding-top:--header-h; padding-bottom:--bar-h; overflow-y:auto`. Inner: `max-w 1280px`, padding `28px 40px 40px`.
-
-## 6. Focus view
-
-- `today-col`: max-width `420px`, centered.
-- Today date header: weekday 28px/700/-0.02em `--ink`; sub 13px/400 `--muted` (6px gap).
-- `card-list`: vertical stack of TaskCard (today only).
-- Empty: 12px `#D1D5DB` "Nothing yet. Add tasks below."
-
-## 7. Planner view
-
-- Horizontal scroll wrapper (`planner-scroll`, no scrollbar).
-- `planner-grid`: `grid-template-columns: repeat(4, 280px)`, dividers between via `border-right: 1px --divider` on each col except last (`padding-right:28px`, `padding-left:28px` on subsequent cols).
-- `col-header`: title IBM Plex Sans 20px/400/-0.02em `#3F3F3F`; count IBM Plex Mono 16px/300 `--ink`. Bottom padding 12px, margin-bottom 12px.
-- Empty per col: same faint placeholder.
-- Optional: prev/next nav buttons (32px circle, `--ink`, fixed, bottom `calc(--bar-h + 16px)`) and column dots indicator (5px, active scale 1.3 `--ink`) — mirror the reference.
-
-## 8. Shared TaskCard (`src/components/TaskCard.tsx`)
-
-Exact spec — used in Focus, Planner, and proposal preview:
-- `bg-white/50`, border `1px #D7D7D7`, radius 12, padding 16, max-w 380, fade-in 0.25s
-- Hover shadow `0 2px 12px rgba(0,0,0,0.07)`; expanded `0 4px 16px rgba(0,0,0,0.08)`
-- Title: IBM Plex Sans 18px/500/1.28, `#2A2A2A`, 2-line clamp collapsed, full when expanded
-- Checkbox: 22×22 circle, border `1px #939393`, hover border `#567CF8`, bottom-right
-- Meta tags: JetBrains Mono 9px uppercase, letter-spacing 0.06em, color `--muted`, border `--card-border`
-- Date tag: bg `#F9FAFB`, color `#2A2A2A`
-- Category tag (cat-0..3): IBM Plex Mono 12px, padded pill
-- Location/time: IBM Plex Mono 12px `#2A2A2A`; empty placeholder `#C4C8CC`
-- Expanded actions: Inter 11px/500 faint until hover; delete hover red `#DC2626 / #FCA5A5 / #FEF2F2`
-- Move-to buttons: same act-btn style, prefixed `→ tomorrow` etc.
-
-## 9. Bottom bar (`src/components/AppBar.tsx`) — exact match
-
-`app-bar`: `position:fixed; bottom:28px; left:50%; translateX(-50%); z-index:200`.
-
-`pill-container`: column, gap 10, items centered, position relative.
-
-**Speech bubble** (above pill, right-anchored):
-- Absolute `bottom: calc(100% + 8px); right: 0;`
-- Bg `#1A1A1A`, color white, Inter 12px/400/1.4, padding `8px 12px`, radius 10
-- max-w 280, text-center, `pointer-events:none`
-- Hidden by default (`opacity:0; translateY(6px)`), `.show` → opacity 1 / translateY 0, transition 0.2s
-
-**Glass pill**:
-- Bg white, border `1px rgba(0,0,0,0.08)`, radius 28 (→ 20 when menu open), shadow `0 4px 24px rgba(0,0,0,0.08)`, overflow hidden
-- min-w 280, max-w 500, width `calc(100vw - 48px)`
-- Row (`6px 12px` padding, items center):
-  - **Hamburger** left: button with three 18×2 lines `#444`, gap 4, opacity hover 0.6
-  - **Input** middle: Inter 14px `#2A2A2A`, transparent, placeholder `#B0B0B0`, flex:1, padding `4px 8px`
-  - **Character** right: 50×42, animated float, swaps to `thinking` pulse during AI call, click focuses input
-- **Upward menu panel** (when hamburger toggled): `max-height` 0 → 240, opacity 0 → 1, transition 0.35s. Items: Focus, Planner, Completed, Settings, Sign out — Inter 13px/500, padding `11px 16px`, divider rows, icons 15px opacity 0.45, active item color `#567CF8`, danger `#DC2626`.
-
-Functionality: typing + Enter → call `sort-tasks` → show proposal modal (existing) → insert tasks → reset input. Toast errors. Speech bubble shows transient mascot lines ("Thinking...", "Sorted.", greetings, etc.).
-
-## 10. Settings sheet
-
-Add Character row: Blue/Coral mini picker → updates profile + live re-renders mascot everywhere.
-
-## 11. Routing / flow
-
-`/auth → /onboarding (if !onboarded) → /app`. `/app` opens whichever view `view_mode` says (default Focus).
-
----
-
-## Files
-
-- migration: add `character`, `view_mode` to `profiles`
-- edit: `index.html` (font links), `src/index.css`, `tailwind.config.ts`
-- new: `src/lib/characters.ts`, `src/components/TaskCard.tsx`, `src/components/AppBar.tsx`
-- edit: `src/components/ClerkCharacter.tsx` (variant prop)
-- rewrite: `src/pages/Onboarding.tsx` (4 screens + scripted demo)
-- rewrite: `src/pages/AppHome.tsx` (header + Focus/Planner views, uses AppBar + TaskCard, settings character picker)
+## Open item
+After you approve, please drop the cursive Clerk logo SVG/PNG into the next message so I can save it to `src/assets/clerk-logo.svg`. If you'd rather I proceed without it, I'll keep the mascot + "CLERK" mono text temporarily and swap once you upload.
