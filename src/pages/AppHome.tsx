@@ -11,6 +11,7 @@ import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
+import { TaskDetailModal, type TaskPatch } from "@/components/TaskDetailModal";
 import { cn } from "@/lib/utils";
 
 type Task = TaskCardData & { position: number; created_at: string };
