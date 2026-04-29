@@ -8,8 +8,8 @@ import { CHARACTERS, CHARACTER_LABELS, type CharacterVariant } from "@/lib/chara
 import { classify } from "@/lib/clerk-classify";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { SettingsModal } from "@/components/SettingsModal";
 import { cn } from "@/lib/utils";
 
 type Task = TaskCardData & { position: number; created_at: string };
