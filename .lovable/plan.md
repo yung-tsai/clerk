@@ -1,47 +1,69 @@
-## What you'll get
+## What I'll ship
 
-1. **Wider task cards on the Planner** — bumped from 280px → **380px** per column, matching the Focus card width.
-2. **"Peek + scroll" layout** — Today / Tomorrow / Upcoming visible, with a sliver of **Someday** peeking on the right (just like your Figma).
-3. **Scroll arrow buttons** — circular chevron buttons at the right edge (and left edge once scrolled) to nudge horizontally one column at a time. Trackpad/drag scroll still works.
-4. **New SVG logo** — replaces the PNG wordmark in the planner header (and Landing page, for consistency).
+One infra feature from the original handoff that isn't built yet, plus saving the workflow rule to memory. **Nothing here touches Claude's territory** — the AI's prompt, what it sees, what it decides, and how it interprets input all stay exactly as they are.
 
 ---
 
-## How it works (the layout math)
+### 1. Auto carry-over (day-rollover)
 
-Current planner: `max-w-[1280px]` container, 4 columns × 280px in a horizontally-scrollable grid. Cards are capped at 380px but columns are only 280px, so cards render at 280px.
+When the user opens the app on a new day, tasks shift forward so the columns stay accurate. This is pure date math + a DB update — no AI involved.
 
-New planner:
-- Columns become **380px wide** (matches `TaskCard`'s `max-w-[380px]`).
-- 4 × 380 = 1520px of content, plus column gutters (~28px between).
-- The viewport container (`max-w-[1280px]` minus padding ≈ 1200px usable) only shows ~3 full columns + a peek of the 4th — exactly the Figma effect.
-- Existing `overflow-x-auto` already enables horizontal scroll; we just lean into it.
+**Rules:**
+- `tomorrow` → `today` when the calendar day changes
+- `upcoming` → `tomorrow` when its named day is now 1 day away
+- `upcoming` → `today` when its named day is today
+- `someday` never moves
+- `today` stays put (overdue handling stays as-is for now)
 
-Scroll buttons:
-- A small floating **chevron-right** circular button pinned to the right edge of the planner area when more content exists to the right.
-- A **chevron-left** appears once scrolled.
-- Each click scrolls by one column-width (~408px including gutter) using `scrollBy({ left, behavior: "smooth" })`.
-- Buttons hide when at the corresponding edge (tracked via scroll listener + `scrollLeft` / `scrollWidth`).
-- Hidden on mobile (`md:flex`) since touch scroll is already natural there.
+**How it works:**
+- On app load, compare today's date to `profiles.last_active_date`.
+- If different, walk through tasks once and update `col` for any that need to roll forward.
+- Single batched DB update. Update `last_active_date` to today.
+- The AI's original `reason` text stays untouched (Claude's wording — preserved).
+- Runs silently. No proposal modal, no mascot announcement.
 
----
-
-## Files I'll change
-
-- `src/pages/AppHome.tsx` — `PlannerView` component:
-  - `gridTemplateColumns: "repeat(4, 380px)"` instead of `280px`
-  - Add a ref to the scroll container + `scrollLeft` state
-  - Render two absolute-positioned chevron buttons (lucide `ChevronLeft` / `ChevronRight`) on `md+` screens
-  - Smooth scroll handler
-- `src/assets/clerk-logo.svg` — new file with the SVG you provided
-- `src/pages/AppHome.tsx` + `src/pages/Landing.tsx` — swap `import clerkLogo from "@/assets/clerk-logo.png"` → `.svg`. Keep current `h-[22px] w-auto` sizing so it visually matches the existing wordmark scale (your SVG is 80×41 ≈ 1.95:1, so at h-[22px] it'll be ~43px wide — close to the current logo footprint).
+**Where in code:** New helper `src/lib/carry-over.ts` + a small effect in `AppHome.tsx`'s initial load block (right after tasks are fetched, before render).
 
 ---
 
-## What I won't change
+### 2. Save workflow rule to memory
 
-- Mobile planner — already works fine since columns scroll naturally on touch; arrows would clutter it.
-- Card visual design — still the same translucent white card, just rendering at its full 380px max-width.
-- `Focus` view — already 380px there.
+Persist the rule we just confirmed so future sessions respect it automatically:
 
-Sound good? Approve and I'll ship it.
+- New: `mem://workflow/claude-handoff` — the full rule
+- Update `mem://index.md` Core with one line:
+  *"Claude's territory = anything touching the AI's intelligence: prompt, model, what gets sent to it, how it interprets input, reasoning style, what it decides. Don't touch — flag it. Everything else (infra, UI, plumbing, date logic) is mine."*
+
+---
+
+## What I'm NOT doing (Claude's territory — flagging for you)
+
+- Not changing the system prompt in `sort-tasks/index.ts`
+- Not changing the model
+- Not changing what gets sent to the AI (no smarter pre-parsing, no extra context, no history)
+- Not changing how the AI interprets brain-dump input
+- Not editing reason wording or tone rules
+- Not adding personalization/learning
+- Not changing column definitions
+
+## What I'm NOT doing (other chunks, save for later)
+
+- Account creation nudges
+- Calendar date picker
+- iOS drag/keyboard fixes
+- Voice input
+
+---
+
+## Files
+
+**New:**
+- `src/lib/carry-over.ts`
+
+**Edited:**
+- `src/pages/AppHome.tsx` — call carry-over on load
+- `mem://index.md` + `mem://workflow/claude-handoff` — persist the rule
+
+**No DB migration needed** — `last_active_date` already exists on `profiles`; `col` updates use existing RLS.
+
+Approve and I'll build it.
