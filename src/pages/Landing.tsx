@@ -137,8 +137,8 @@ export default function Landing() {
                 <path d="M2.5 7.5h10M9 4l3.5 3.5L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
-            <span className="font-mono-plex text-[11px] font-light tracking-[0.03em] text-faint">
-              No account needed to try
+            <span className="font-mono-plex text-[11px] font-light tracking-[0.03em] text-faint text-center max-w-[320px] leading-[1.5]">
+              Made for ADHD, anxiety, and anyone who overthinks their list. · No account needed to try.
             </span>
           </div>
         </section>
@@ -146,7 +146,7 @@ export default function Landing() {
         {/* Tension: Sound familiar? */}
         <section className="w-full mb-16 sm:mb-[72px] animate-fade-up">
           <p className="font-mono-plex text-[10px] font-light uppercase tracking-[0.1em] text-faint text-center mb-6">
-            Sound familiar?
+            Does this sound like you?
           </p>
           <div className="grid grid-cols-1 min-[440px]:grid-cols-2 gap-3">
             <div className="bg-white/45 backdrop-blur-md border border-white/70 rounded-[20px] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
