@@ -11,6 +11,7 @@ import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
+import { CompletedModal } from "@/components/CompletedModal";
 import { TaskDetailModal, type TaskPatch } from "@/components/TaskDetailModal";
 import { cn } from "@/lib/utils";
 import {
@@ -81,6 +82,7 @@ export default function AppHome() {
   const [bubble, setBubble] = useState("");
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [completedOpen, setCompletedOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const bubbleTimer = useRef<number | null>(null);
   const loadedOnce = useRef(false);
