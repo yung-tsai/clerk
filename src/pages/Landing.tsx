@@ -133,11 +133,6 @@ export default function Landing() {
             </p>
 
           </div>
-              <div className="-ml-1 mb-1 flex-shrink-0">
-                <ClerkCharacter size={charSize} onClick={rotate} />
-              </div>
-            </div>
-          </div>
 
           {/* RIGHT: Proposal Modal preview — the magic moment */}
           <div className="w-full max-w-[440px] mx-auto md:mx-0 animate-fade-up">
