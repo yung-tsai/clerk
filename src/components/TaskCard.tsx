@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useRef } from "react";
 
 export type ClerkCol = "today" | "tomorrow" | "upcoming" | "someday";
 
@@ -22,35 +23,60 @@ interface Props {
   onComplete: () => void;
   onOpen: () => void;
   draggable?: boolean;
+  /** When true, render as a static "lifted" card for DragOverlay */
+  overlay?: boolean;
 }
 
 const CAT_BG = ["#CEDAFF", "#FFF7CE", "#CEFFE7", "#FFCEFB"];
 
-export function TaskCard({ task, onComplete, onOpen, draggable = true }: Props) {
-  const sortable = useSortable({ id: task.id, disabled: !draggable });
+export function TaskCard({ task, onComplete, onOpen, draggable = true, overlay = false }: Props) {
+  const sortable = useSortable({ id: task.id, disabled: !draggable || overlay });
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable;
+  const downPos = useRef<{ x: number; y: number } | null>(null);
+  const movedRef = useRef(false);
 
-  const style = draggable
-    ? {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.4 : 1,
-      }
-    : undefined;
+  const style = overlay
+    ? undefined
+    : draggable
+      ? {
+          transform: CSS.Transform.toString(transform),
+          transition,
+          opacity: isDragging ? 0.4 : 1,
+        }
+      : undefined;
 
   return (
     <div
-      ref={draggable ? setNodeRef : undefined}
+      ref={overlay ? undefined : draggable ? setNodeRef : undefined}
       style={style}
-      {...(draggable ? attributes : {})}
-      {...(draggable ? listeners : {})}
-      onClick={onOpen}
+      {...(!overlay && draggable ? attributes : {})}
+      {...(!overlay && draggable ? listeners : {})}
+      onPointerDown={(e) => {
+        downPos.current = { x: e.clientX, y: e.clientY };
+        movedRef.current = false;
+      }}
+      onPointerMove={(e) => {
+        if (!downPos.current) return;
+        const dx = e.clientX - downPos.current.x;
+        const dy = e.clientY - downPos.current.y;
+        if (Math.hypot(dx, dy) > 4) movedRef.current = true;
+      }}
+      onClick={(e) => {
+        // Suppress click if a real drag happened
+        if (movedRef.current || isDragging) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        onOpen();
+      }}
       className={cn(
-        "animate-card-in group cursor-pointer select-none touch-none",
+        "animate-card-in group select-none",
         "w-full max-w-[380px] rounded-[12px] p-4 transition-shadow",
         "border border-[#D7D7D7] bg-white/50",
-        "hover:shadow-[0_2px_12px_rgba(0,0,0,0.07)]",
-        isDragging && "shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
+        !overlay && "cursor-grab active:cursor-grabbing hover:shadow-[0_2px_12px_rgba(0,0,0,0.07)]",
+        isDragging && !overlay && "shadow-[0_8px_24px_rgba(0,0,0,0.15)]",
+        overlay && "cursor-grabbing shadow-[0_18px_40px_rgba(0,0,0,0.22)] scale-[1.02] -rotate-1 bg-white"
       )}
     >
       {/* Top row: time | tag */}
