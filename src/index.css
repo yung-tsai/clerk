@@ -149,14 +149,36 @@
 /* ── Mascot float / thinking (matches reference HTML) ── */
 @keyframes char-float {
   0%, 100% { transform: translateY(0px) rotate(-0.6deg); }
-  50%      { transform: translateY(-4px) rotate(0.6deg); }
+  50%      { transform: translateY(-9px) rotate(0.6deg); }
 }
 @keyframes char-think {
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.08); }
 }
-.char-float    { animation: char-float 3.2s ease-in-out infinite; will-change: transform; }
+@keyframes char-squish {
+  0%   { transform: scale(1, 1); }
+  40%  { transform: scale(1.16, 0.87); }
+  70%  { transform: scale(0.93, 1.07); }
+  100% { transform: scale(1, 1); }
+}
+.char-float    { animation: char-float 3.4s ease-in-out infinite; will-change: transform; }
 .char-thinking { animation: char-think 0.8s ease-in-out infinite !important; }
+.char-squish   { animation: char-squish 0.28s ease forwards !important; }
+
+/* ── Speech bubble fade for rotating text ── */
+.bubble-text { transition: opacity 0.3s ease; }
+.bubble-text.fade-out { opacity: 0; }
+
+/* ── Preview card reveal ── */
+.preview-card-reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.preview-card-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 /* ── Card fade-in ── */
 @keyframes card-fade-in {
