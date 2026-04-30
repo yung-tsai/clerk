@@ -75,6 +75,7 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-[640px] p-0 gap-0 border-none shadow-none bg-transparent [&>button]:hidden"
@@ -250,6 +251,43 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
               </div>
             </Card>
 
+            {/* ── INSTALL ── */}
+            <SectionLabel className="mt-7">Install on your phone</SectionLabel>
+            <Card>
+              <div className="p-5">
+                <div className="text-[13px] text-[#1A1A1A] leading-[1.5] mb-2.5">
+                  Get Clerk on your home screen — no app store needed.
+                </div>
+                <ul className="font-mono-plex text-[11px] font-light text-[#6A7282] leading-[1.6] space-y-1">
+                  <li><span className="text-[#1A1A1A] font-medium">iPhone:</span> Open in Safari → Share → Add to Home Screen</li>
+                  <li><span className="text-[#1A1A1A] font-medium">Android:</span> Open in Chrome → ⋮ menu → Install app</li>
+                </ul>
+              </div>
+            </Card>
+
+            {/* ── DANGER ZONE ── */}
+            <SectionLabel className="mt-7">Danger zone</SectionLabel>
+            <Card>
+              <div className="flex items-center justify-between p-5 gap-4">
+                <div className="min-w-0">
+                  <div className="text-[14px] font-medium text-[#1A1A1A] mb-0.5 tracking-[-0.005em]">
+                    Clear all tasks
+                  </div>
+                  <div className="font-mono-plex text-[11px] font-light text-[#9CA3AF] leading-[1.4]">
+                    Deletes your {data.active_task_count} active task{data.active_task_count === 1 ? "" : "s"}. Streak and history stay.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={data.active_task_count === 0 || clearing}
+                  onClick={() => setConfirmClearTasks(true)}
+                  className="text-[13px] font-medium text-[#DC2626] border border-[#FCA5A5] rounded-[10px] px-4 py-2.5 hover:bg-[#FEF2F2] transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                >
+                  Clear
+                </button>
+              </div>
+            </Card>
+
             <p className="text-center font-mono-plex text-[10px] font-light text-[#9CA3AF] tracking-[0.04em] mt-8">
               Clerk · Early Access
             </p>
@@ -257,6 +295,37 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
         </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={confirmClearTasks} onOpenChange={setConfirmClearTasks}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Clear all tasks?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This permanently deletes all {data.active_task_count} active task{data.active_task_count === 1 ? "" : "s"}. Your streak, totals, and completed history are not affected. This can't be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={clearing}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={async (e) => {
+              e.preventDefault();
+              setClearing(true);
+              try {
+                await onClearAllTasks();
+              } finally {
+                setClearing(false);
+                setConfirmClearTasks(false);
+              }
+            }}
+            disabled={clearing}
+            className="bg-[#DC2626] hover:bg-[#B91C1C]"
+          >
+            {clearing ? "Clearing…" : "Clear all tasks"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
