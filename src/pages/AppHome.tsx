@@ -423,7 +423,7 @@ export default function AppHome() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Fixed header ── */}
-      {!proposals && !settingsOpen && (
+      {!proposals && !settingsOpen && !completedOpen && (
         <header
           className="fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider"
           style={{ height: 64 }}
@@ -454,7 +454,19 @@ export default function AppHome() {
               </button>
             </div>
 
-            <div className="w-[26px]" aria-hidden />
+            {/* Streak badge — only when ≥ 2 days */}
+            {(profile?.streak ?? 0) >= 2 ? (
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                title={`${profile?.streak}-day streak`}
+                className="font-plex-mono text-[12px] font-medium text-[#2A2A2A] bg-[#FFF7CE] hover:bg-[#FFEFA8] transition-colors rounded-full px-2.5 py-1 leading-none"
+              >
+                🔥 {profile?.streak}
+              </button>
+            ) : (
+              <div className="w-[26px]" aria-hidden />
+            )}
           </div>
         </header>
       )}
@@ -492,7 +504,7 @@ export default function AppHome() {
       </main>
 
       {/* ── Bottom bar (hidden while proposal/settings modal is open) ── */}
-      {!proposals && !settingsOpen && (
+      {!proposals && !settingsOpen && !completedOpen && (
         <AppBar
           variant={variant}
           thinking={thinking}
@@ -504,6 +516,7 @@ export default function AppHome() {
           onSubmit={() => processInput(input)}
           onSetView={persistView}
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenCompleted={() => setCompletedOpen(true)}
           onSignOut={async () => {
             await signOut();
             navigate("/");
