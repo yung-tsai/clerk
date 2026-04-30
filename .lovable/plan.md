@@ -1,94 +1,47 @@
-# MVP gap check + what's left
+## What you'll get
 
-Quick honest answers, then a tight plan for what's missing.
-
-## Your questions, answered
-
-**1. Backend — done?**
-Yes for MVP. You have `tasks`, `completed_tasks`, `profiles` with proper RLS (own-rows only), the `sort-tasks` edge function for AI sorting, auth, onboarding, and the `handle_new_user` trigger creating profiles automatically. Nothing missing for the MVP scope.
-
-**2. Is gamification actually working?**
-Half-working. The data is correct — `streak`, `tasks_completed`, and `last_active_date` update on every completion (`AppHome.tsx` lines 232–267), and `SettingsModal` already renders stats + a milestones list (3/7/30-day streaks, 10/50/100 tasks). But:
-- The user has to **open Settings** to see any of it. There's zero feedback in the main flow.
-- There's no celebration when you cross a milestone (no toast, no bubble line, nothing).
-- Streak doesn't show anywhere in the header or AppBar.
-So technically working, practically invisible. Worth a small fix below.
-
-**3. Completed page — yes, needed.**
-The "Completed" item already exists in the AppBar menu (`AppBar.tsx` line 100) but its `onClick` does nothing — it just closes the menu. Dead button. We have the `completed_tasks` table populated correctly, just no UI.
-
-**4. Clear all — yes, needed.** Especially during onboarding when people brain-dump and want to reset.
-
-**5. Download to phone — yes, easy win.**
-Cleanest path: **installable web app (manifest-only, no service worker)**. Users tap "Add to Home Screen" from their browser and Clerk lives on their home screen with its own icon, no browser chrome. Works on iOS + Android, no app store, no native build. Service workers cause more problems than they solve in Lovable previews, so we skip them.
+1. **Wider task cards on the Planner** — bumped from 280px → **380px** per column, matching the Focus card width.
+2. **"Peek + scroll" layout** — Today / Tomorrow / Upcoming visible, with a sliver of **Someday** peeking on the right (just like your Figma).
+3. **Scroll arrow buttons** — circular chevron buttons at the right edge (and left edge once scrolled) to nudge horizontally one column at a time. Trackpad/drag scroll still works.
+4. **New SVG logo** — replaces the PNG wordmark in the planner header (and Landing page, for consistency).
 
 ---
 
-## What we're shipping
+## How it works (the layout math)
 
-### 1. Completed page (modal-based, matches existing pattern)
+Current planner: `max-w-[1280px]` container, 4 columns × 280px in a horizontally-scrollable grid. Cards are capped at 380px but columns are only 280px, so cards render at 280px.
 
-New `CompletedModal.tsx` component, opened from the AppBar "Completed" menu item.
+New planner:
+- Columns become **380px wide** (matches `TaskCard`'s `max-w-[380px]`).
+- 4 × 380 = 1520px of content, plus column gutters (~28px between).
+- The viewport container (`max-w-[1280px]` minus padding ≈ 1200px usable) only shows ~3 full columns + a peek of the 4th — exactly the Figma effect.
+- Existing `overflow-x-auto` already enables horizontal scroll; we just lean into it.
 
-**Layout** (matches `SettingsModal` styling):
-- Title: "Completed" + small count (e.g. "47 tasks")
-- Grouped by relative date: **Today**, **Yesterday**, **This week**, **Earlier**
-- Each row: title, category pill (if any), small timestamp on right
-- Empty state: Clerk character + "Nothing yet. Go finish something."
-- Bottom-right: "Clear history" link (with confirm) — separate from Clear all tasks
-
-Loads from `completed_tasks` ordered by `completed_at desc`, limit 200 (more than enough for MVP, avoids the 1000-row default).
-
-Wire `onClick` on the AppBar "Completed" MenuItem to open this modal (currently a no-op).
-
-### 2. Clear all (with confirm)
-
-Added inside **SettingsModal**, in a new "Danger zone" section at the bottom:
-- **Clear all tasks** — wipes active `tasks` only (not history)
-- **Clear completed history** — wipes `completed_tasks` only
-
-Both use shadcn `AlertDialog` (already in repo) with copy like:
-> "Delete all 12 tasks? This can't be undone."
-
-Two buttons not one, because nuking history when you wanted to clear today's mess would suck.
-
-### 3. Make gamification visible
-
-Three small touches, no new screens:
-
-- **Streak badge in header** (next to the Focus|Planner toggle): `🔥 7` — only shows when streak ≥ 2. Tappable → opens Settings modal at the stats section.
-- **Milestone celebration**: when `completeTask` crosses a threshold (3, 7, 30 day streak; 10, 50, 100 tasks), show a longer bubble line via the existing `showBubble()`:
-  - "Three days. That's a streak." / "A full week. I noticed." / "100 tasks. We're a team now."
-- **Done counter in bubble** on every completion: instead of just "Done. Next." rotate in lines like "Done. 3 today." once we know today's completion count.
-
-No new tables, no new logic — just surfacing what already updates.
-
-### 4. Installable web app (manifest only)
-
-- Add `public/manifest.json` with name "Clerk", short_name "Clerk", `display: "standalone"`, theme/background colors matching the app, and icon entries.
-- Generate icons (192px, 512px, maskable 512px, Apple touch 180px) from the existing Clerk character/logo and drop in `public/`.
-- Add `<link rel="manifest">`, Apple-specific meta tags, and theme-color to `index.html`.
-- Add a small "Install Clerk on your phone" link in SettingsModal that explains the flow (Share → Add to Home Screen on iOS; install icon on Android).
-
-**No `vite-plugin-pwa`, no service worker.** Per Lovable guidance, manifest-only is the right call when offline support isn't required — and it isn't, since Clerk needs the network to call the AI sort function anyway.
+Scroll buttons:
+- A small floating **chevron-right** circular button pinned to the right edge of the planner area when more content exists to the right.
+- A **chevron-left** appears once scrolled.
+- Each click scrolls by one column-width (~408px including gutter) using `scrollBy({ left, behavior: "smooth" })`.
+- Buttons hide when at the corresponding edge (tracked via scroll listener + `scrollLeft` / `scrollWidth`).
+- Hidden on mobile (`md:flex`) since touch scroll is already natural there.
 
 ---
 
-## Files touched
+## Files I'll change
 
-- `src/pages/AppHome.tsx` — wire Completed modal open state, add streak badge to header, celebration lines in `completeTask`
-- `src/components/AppBar.tsx` — Completed menu item gets a real `onClick`
-- `src/components/CompletedModal.tsx` *(new)* — list grouped by date
-- `src/components/SettingsModal.tsx` — add "Danger zone" section with two confirm dialogs + "Install on phone" link
-- `index.html` — manifest link + apple/theme meta
-- `public/manifest.json` *(new)*
-- `public/icon-192.png`, `public/icon-512.png`, `public/icon-maskable-512.png`, `public/apple-touch-icon.png` *(new — generated from existing assets)*
+- `src/pages/AppHome.tsx` — `PlannerView` component:
+  - `gridTemplateColumns: "repeat(4, 380px)"` instead of `280px`
+  - Add a ref to the scroll container + `scrollLeft` state
+  - Render two absolute-positioned chevron buttons (lucide `ChevronLeft` / `ChevronRight`) on `md+` screens
+  - Smooth scroll handler
+- `src/assets/clerk-logo.svg` — new file with the SVG you provided
+- `src/pages/AppHome.tsx` + `src/pages/Landing.tsx` — swap `import clerkLogo from "@/assets/clerk-logo.png"` → `.svg`. Keep current `h-[22px] w-auto` sizing so it visually matches the existing wordmark scale (your SVG is 80×41 ≈ 1.95:1, so at h-[22px] it'll be ~43px wide — close to the current logo footprint).
 
-## Not in this pass
+---
 
-- No analytics dashboard view (overkill for MVP).
-- No undo on complete (nice-to-have, separate request).
-- No native Capacitor build — PWA install covers "on my phone" without app store overhead.
-- Memory unchanged — no new product rules, just shipping the existing scope.
+## What I won't change
 
-Approve and I'll build it in one pass. If you'd rather slice (e.g. *"just Completed page + Clear all this time, do PWA + gamification next"*), say the word.
+- Mobile planner — already works fine since columns scroll naturally on touch; arrows would clutter it.
+- Card visual design — still the same translucent white card, just rendering at its full 380px max-width.
+- `Focus` view — already 380px there.
+
+Sound good? Approve and I'll ship it.
