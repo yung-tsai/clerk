@@ -282,10 +282,60 @@ export default function AppHome() {
   }
 
   // ─── Drag & drop ───
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } })
+  );
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ col: ClerkCol; index: number } | null>(null);
+
+  const activeTaskOverlay = activeId ? tasks.find((t) => t.id === activeId) ?? null : null;
+
+  // pointerWithin → rectIntersection → closestCorners
+  const collisionDetection: CollisionDetection = (args) => {
+    const pw = pointerWithin(args);
+    if (pw.length) return pw;
+    const ri = rectIntersection(args);
+    if (ri.length) return ri;
+    return closestCorners(args);
+  };
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(String(event.active.id));
+  }
+
+  function computeDropTarget(activeId: string, overId: string | null): { col: ClerkCol; index: number } | null {
+    if (!overId) return null;
+    const activeTask = tasks.find((x) => x.id === activeId);
+    if (!activeTask) return null;
+    let targetCol: ClerkCol;
+    let overTask: Task | undefined;
+    if (overId.startsWith("col:")) {
+      targetCol = overId.slice(4) as ClerkCol;
+    } else {
+      overTask = tasks.find((x) => x.id === overId);
+      if (!overTask) return null;
+      targetCol = overTask.col;
+    }
+    const colTasks = tasks.filter((x) => x.col === targetCol && x.id !== activeId);
+    let insertIdx = colTasks.length;
+    if (overTask) {
+      insertIdx = colTasks.findIndex((x) => x.id === overTask!.id);
+      if (insertIdx < 0) insertIdx = colTasks.length;
+    }
+    return { col: targetCol, index: insertIdx };
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    const target = computeDropTarget(String(active.id), over ? String(over.id) : null);
+    setDropTarget(target);
+  }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+    setActiveId(null);
+    setDropTarget(null);
     if (!over || !user) return;
     const activeId = String(active.id);
     const overId = String(over.id);
@@ -294,25 +344,11 @@ export default function AppHome() {
     const activeTask = tasks.find((x) => x.id === activeId);
     if (!activeTask) return;
 
-    // Determine target column: `over` is either a column droppable (id startsWith "col:")
-    // or another task card.
-    let targetCol: ClerkCol;
-    let overTask: Task | undefined;
-    if (overId.startsWith("col:")) {
-      targetCol = overId.slice(4) as ClerkCol;
-    } else {
-      overTask = tasks.find((x) => x.id === overId);
-      if (!overTask) return;
-      targetCol = overTask.col;
-    }
+    const target = computeDropTarget(activeId, overId);
+    if (!target) return;
+    const { col: targetCol, index: insertIdx } = target;
 
-    // Compute new ordering within the target column
     const colTasks = tasks.filter((x) => x.col === targetCol && x.id !== activeId);
-    let insertIdx = colTasks.length;
-    if (overTask) {
-      insertIdx = colTasks.findIndex((x) => x.id === overTask!.id);
-      if (insertIdx < 0) insertIdx = colTasks.length;
-    }
     const before = colTasks[insertIdx - 1];
     const after = colTasks[insertIdx];
     const newPos = before && after
@@ -323,7 +359,6 @@ export default function AppHome() {
           ? after.position - 1000
           : Math.floor(Date.now() / 1000);
 
-    // Optimistic update
     setTasks((prev) =>
       prev
         .map((x) => (x.id === activeId ? { ...x, col: targetCol, position: newPos } : x))
@@ -336,6 +371,7 @@ export default function AppHome() {
       .update({ col: targetCol, position: newPos })
       .eq("id", activeId);
   }
+
 
   function previewCharacter(c: CharacterVariant) {
     if (profile) setProfile({ ...profile, character: c });
