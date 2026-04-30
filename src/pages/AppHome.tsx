@@ -613,10 +613,32 @@ export default function AppHome() {
           streak: profile?.streak ?? 0,
           tasks_completed: profile?.tasks_completed ?? 0,
           email: user?.email ?? null,
+          active_task_count: tasks.length,
         }}
         onSave={saveSettings}
         onCharacterPreview={previewCharacter}
+        onClearAllTasks={async () => {
+          if (!user) return;
+          const supabase = await getLovableCloudClient();
+          const { error } = await supabase.from("tasks").delete().eq("user_id", user.id);
+          if (error) {
+            toast.error(error.message);
+          } else {
+            setTasks([]);
+            toast.success("All tasks cleared.");
+          }
+        }}
       />
+
+      {/* ── Completed modal ── */}
+      {user && (
+        <CompletedModal
+          open={completedOpen}
+          onOpenChange={setCompletedOpen}
+          userId={user.id}
+          variant={variant}
+        />
+      )}
     </div>
   );
 }
