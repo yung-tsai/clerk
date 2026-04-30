@@ -132,18 +132,7 @@ export default function Landing() {
               Made for ADHD, anxiety, and anyone who overthinks their list.
             </p>
 
-            {/* Mascot + bubble — moved out of the eye-flow path */}
-            <div className="mt-9 flex items-end justify-center md:justify-start gap-0 max-w-full animate-fade-up">
-              <div className="relative mb-2">
-                <div
-                  className="bg-white border border-black/[0.08] rounded-[20px_20px_20px_4px] px-4 py-3 sm:px-4 sm:py-3 text-[13px] sm:text-[13.5px] font-normal text-foreground leading-[1.5] shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-left flex items-center min-h-[52px]"
-                  style={{ maxWidth: "min(280px, calc(100vw - 130px))" }}
-                >
-                  <span className={`bubble-text ${fading ? "fade-out" : ""}`}>
-                    {BUBBLE_LINES[lineIdx]}
-                  </span>
-                </div>
-              </div>
+          </div>
               <div className="-ml-1 mb-1 flex-shrink-0">
                 <ClerkCharacter size={charSize} onClick={rotate} />
               </div>
