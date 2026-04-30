@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { CHARACTERS, CHARACTER_LABELS, type CharacterVariant } from "@/lib/characters";
 import { cn } from "@/lib/utils";
@@ -11,6 +21,7 @@ export interface SettingsData {
   streak: number;
   tasks_completed: number;
   email: string | null;
+  active_task_count: number;
 }
 
 interface SettingsModalProps {
@@ -20,6 +31,8 @@ interface SettingsModalProps {
   onSave: (next: { display_name: string; character: CharacterVariant }) => Promise<void> | void;
   /** Live preview when the user picks a character — updates the AppBar mascot immediately */
   onCharacterPreview?: (c: CharacterVariant) => void;
+  /** Wipe all active tasks (does not touch completed history). */
+  onClearAllTasks: () => Promise<void> | void;
 }
 
 const MILESTONES = [
@@ -31,10 +44,12 @@ const MILESTONES = [
   { id: "streak_30", icon: "👑", name: "30-day streak", desc: "This is a lifestyle now.", threshold: 30, key: "streak" as const },
 ];
 
-export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPreview }: SettingsModalProps) {
+export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPreview, onClearAllTasks }: SettingsModalProps) {
   const [name, setName] = useState(data.display_name ?? "");
   const [character, setCharacter] = useState<CharacterVariant>(data.character);
   const [saving, setSaving] = useState(false);
+  const [confirmClearTasks, setConfirmClearTasks] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   // Re-sync when modal reopens with fresh data
   useEffect(() => {
