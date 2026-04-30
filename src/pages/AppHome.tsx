@@ -234,12 +234,14 @@ export default function AppHome() {
     // Compute new streak / counters
     const today = new Date().toISOString().slice(0, 10);
     const last = profile?.last_active_date ?? null;
-    let nextStreak = profile?.streak ?? 0;
+    const prevStreak = profile?.streak ?? 0;
+    let nextStreak = prevStreak;
     if (last !== today) {
       const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-      nextStreak = last === yesterday ? nextStreak + 1 : 1;
+      nextStreak = last === yesterday ? prevStreak + 1 : 1;
     }
-    const nextCompleted = (profile?.tasks_completed ?? 0) + 1;
+    const prevCompleted = profile?.tasks_completed ?? 0;
+    const nextCompleted = prevCompleted + 1;
 
     if (profile) {
       setProfile({
@@ -248,6 +250,33 @@ export default function AppHome() {
         tasks_completed: nextCompleted,
         last_active_date: today,
       });
+    }
+
+    // Milestone celebration — only when crossing the threshold
+    const STREAK_LINES: Record<number, string> = {
+      3: "Three days. That's a streak. 🔥",
+      7: "A full week. I noticed. 💫",
+      30: "Thirty days. This is a lifestyle now. 👑",
+    };
+    const TASK_LINES: Record<number, string> = {
+      1: "First one done. Welcome in. ⚡",
+      10: "Ten tasks. You're getting the hang of this. 🎯",
+      50: "Fifty done. Seriously impressive. 🏆",
+      100: "One hundred. We're a team now.",
+    };
+    let celebration: string | null = null;
+    if (nextStreak !== prevStreak && STREAK_LINES[nextStreak]) {
+      celebration = STREAK_LINES[nextStreak];
+    } else if (TASK_LINES[nextCompleted]) {
+      celebration = TASK_LINES[nextCompleted];
+    }
+
+    if (celebration) {
+      showBubble(celebration, 5000);
+    } else {
+      // Rotate Done lines for low-key feedback
+      const lines = ["Done. Next.", "Nice. Onward.", "Off the list.", "Cleared."];
+      showBubble(lines[Math.floor(Math.random() * lines.length)]);
     }
 
     await Promise.all([
@@ -267,7 +296,6 @@ export default function AppHome() {
         })
         .eq("id", user.id),
     ]);
-    showBubble("Done. Next.");
   }
 
   async function deleteTask(t: Task) {
