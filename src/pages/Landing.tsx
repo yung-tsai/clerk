@@ -230,7 +230,7 @@ export default function Landing() {
             className="font-plex font-light tracking-[-0.025em] leading-[1.15] text-foreground mb-7"
             style={{ fontSize: "clamp(24px, 6.5vw, 38px)" }}
           >
-            Your tasks won't sort themselves.<br /><strong className="font-semibold">But Clerk will.</strong>
+            Stop deciding.<br /><strong className="font-semibold">Start doing.</strong>
           </h2>
           <div className="flex flex-col items-center gap-3">
             <Link
@@ -242,8 +242,8 @@ export default function Landing() {
                 <path d="M2.5 7.5h10M9 4l3.5 3.5L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
-            <span className="font-mono-plex text-[11px] font-light tracking-[0.03em] text-faint">
-              No account needed to try
+            <span className="font-mono-plex text-[11px] font-light tracking-[0.03em] text-faint text-center max-w-[320px] leading-[1.5]">
+              Made for ADHD, anxiety, and anyone who overthinks their list. · No account needed to try.
             </span>
           </div>
         </section>
