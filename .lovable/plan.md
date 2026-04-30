@@ -1,69 +1,69 @@
 ## What I'll ship
 
-One infra feature from the original handoff that isn't built yet, plus saving the workflow rule to memory. **Nothing here touches Claude's territory** — the AI's prompt, what it sees, what it decides, and how it interprets input all stay exactly as they are.
+Google sign-in + password reset flow. Both are MVP-shaped, contained, and require no DB changes.
 
 ---
 
-### 1. Auto carry-over (day-rollover)
+### 1. Google sign-in
 
-When the user opens the app on a new day, tasks shift forward so the columns stay accurate. This is pure date math + a DB update — no AI involved.
+Add a "Continue with Google" button on the auth page (above email/password). Lovable Cloud manages Google OAuth credentials automatically — no API keys, no Google Console setup.
 
-**Rules:**
-- `tomorrow` → `today` when the calendar day changes
-- `upcoming` → `tomorrow` when its named day is now 1 day away
-- `upcoming` → `today` when its named day is today
-- `someday` never moves
-- `today` stays put (overdue handling stays as-is for now)
+- Calls `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: '/app' } })`
+- Browser redirects to Google → user signs in → redirects back to `/app`
+- The existing onboarding redirect logic in `AppHome` already handles "first-time user" routing (sends to `/onboarding` if `onboarded === false`), so first Google sign-in lands in onboarding correctly via the existing `handle_new_user` trigger that creates the profile.
+- Button shows on both signup and signin tabs; hidden on the new "forgot password" view.
 
-**How it works:**
-- On app load, compare today's date to `profiles.last_active_date`.
-- If different, walk through tasks once and update `col` for any that need to roll forward.
-- Single batched DB update. Update `last_active_date` to today.
-- The AI's original `reason` text stays untouched (Claude's wording — preserved).
-- Runs silently. No proposal modal, no mascot announcement.
+### 2. Password reset
 
-**Where in code:** New helper `src/lib/carry-over.ts` + a small effect in `AppHome.tsx`'s initial load block (right after tasks are fetched, before render).
+Two pieces:
 
----
+**a) "Forgot password?" link on the auth page (sign-in mode only)**
+- Switches the form to a "reset password" mode (just email field)
+- On submit: `supabase.auth.resetPasswordForEmail(email, { redirectTo: '/reset-password' })`
+- Toast confirms; switches back to sign-in
+- Lovable Cloud sends the default password reset email automatically (no domain/template setup needed for MVP)
 
-### 2. Save workflow rule to memory
-
-Persist the rule we just confirmed so future sessions respect it automatically:
-
-- New: `mem://workflow/claude-handoff` — the full rule
-- Update `mem://index.md` Core with one line:
-  *"Claude's territory = anything touching the AI's intelligence: prompt, model, what gets sent to it, how it interprets input, reasoning style, what it decides. Don't touch — flag it. Everything else (infra, UI, plumbing, date logic) is mine."*
+**b) New `/reset-password` page**
+- User lands here from the email link with a recovery session in the URL hash
+- Waits for Supabase to exchange the token (listens for `PASSWORD_RECOVERY` / `SIGNED_IN` event)
+- Shows two password fields (new + confirm)
+- On submit: `supabase.auth.updateUser({ password })`
+- On success: toast + redirect to `/app`
+- Validates: matching passwords, 8+ chars
 
 ---
 
-## What I'm NOT doing (Claude's territory — flagging for you)
-
-- Not changing the system prompt in `sort-tasks/index.ts`
-- Not changing the model
-- Not changing what gets sent to the AI (no smarter pre-parsing, no extra context, no history)
-- Not changing how the AI interprets brain-dump input
-- Not editing reason wording or tone rules
-- Not adding personalization/learning
-- Not changing column definitions
-
-## What I'm NOT doing (other chunks, save for later)
-
-- Account creation nudges
-- Calendar date picker
-- iOS drag/keyboard fixes
-- Voice input
-
----
-
-## Files
+### Files
 
 **New:**
-- `src/lib/carry-over.ts`
+- `src/pages/ResetPassword.tsx`
 
 **Edited:**
-- `src/pages/AppHome.tsx` — call carry-over on load
-- `mem://index.md` + `mem://workflow/claude-handoff` — persist the rule
+- `src/pages/Auth.tsx` — add Google button + Google icon, add "forgot" mode with email-only form, add "Forgot password?" link in signin mode
+- `src/App.tsx` — register `/reset-password` route
 
-**No DB migration needed** — `last_active_date` already exists on `profiles`; `col` updates use existing RLS.
+**No DB migration. No edge functions. No new dependencies.**
+
+---
+
+### Voice / copy
+
+Following the existing `Auth.tsx` tone (terse, plain-language H1s):
+- Forgot password H1: "Reset password" / sub: "We'll email you a reset link"
+- Reset page H1: "Set a new password" / sub: "Pick something you'll remember this time."
+- Success toast: "Check your email for a reset link."
+
+---
+
+### Out of scope (deliberately)
+
+- **Custom-branded auth emails** — defaults work for MVP; revisit when a custom domain is set up
+- **Magic link sign-in** — handoff mentioned it; can add later as a third option if you want zero-password
+- **"Currently signed in as X" indicator** — separate small chunk
+- **Apple sign-in, etc.** — Google covers the bulk for MVP
+
+### Claude's territory check
+
+None of this touches the AI. Pure auth plumbing.
 
 Approve and I'll build it.
