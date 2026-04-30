@@ -94,9 +94,22 @@ export default function Landing() {
             >
               The to-do app that <strong className="font-semibold">explains what to do first.</strong>
             </h1>
-            <p className="font-plex text-[16px] sm:text-[18px] font-light text-muted-foreground leading-[1.45] mb-7 max-w-[440px] animate-fade-up">
-              Clerk picks your next task and tells you why.
-            </p>
+            {/* Mascot + bubble — now the "voice" delivering the promise, in the eye-flow */}
+            <div className="mb-7 flex items-end justify-center md:justify-start gap-0 max-w-full animate-fade-up">
+              <div className="relative mb-2">
+                <div
+                  className="bg-white border border-black/[0.08] rounded-[20px_20px_20px_4px] px-4 py-3 text-[13px] sm:text-[13.5px] font-normal text-foreground leading-[1.5] shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-left flex items-center min-h-[52px]"
+                  style={{ maxWidth: "min(280px, calc(100vw - 130px))" }}
+                >
+                  <span className={`bubble-text ${fading ? "fade-out" : ""}`}>
+                    {BUBBLE_LINES[lineIdx]}
+                  </span>
+                </div>
+              </div>
+              <div className="-ml-1 mb-1 flex-shrink-0">
+                <ClerkCharacter size={charSize} onClick={rotate} />
+              </div>
+            </div>
 
             {/* CTA */}
             <Link
