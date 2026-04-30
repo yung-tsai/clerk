@@ -7,11 +7,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import clerkLogo from "@/assets/clerk-logo.png";
 
 const BUBBLE_LINES = [
-  "Add your tasks. I'll figure out where they go.",
-  "Everything in your head? Give it to me.",
-  "I don't judge. I just sort.",
-  "Your brain for thinking. Me for tracking.",
-  "Due Friday? Today. Someday? Someday.",
+  "Tell me what's on your mind. I'll tell you what to start with — and why.",
+  "Twelve things on your plate? I'll pick one.",
+  "I don't just sort. I explain.",
+  "Stuck on what's first? That's my job.",
+  "You decide enough. Let me decide this.",
 ];
 
 const PREVIEW_CARDS = [
@@ -21,20 +21,20 @@ const PREVIEW_CARDS = [
 ];
 
 const TENSION_BEFORE = [
-  ["😩", "Tasks scattered across apps, notes, your head"],
-  ["😤", "Everything feels urgent, nothing gets done"],
-  ["😶", "End the day not sure what you actually finished"],
+  ["🌀", "You don't know where to start"],
+  ["😤", "Everything feels equally important"],
+  ["😶", "You second-guess every decision"],
 ];
 const TENSION_AFTER = [
-  ["✨", "Dump everything. Clerk sorts by what matters now"],
-  ["🎯", "Today, Tomorrow, Upcoming, Someday — always clear"],
-  ["😌", "Actually know what to do when you sit down"],
+  ["🎯", "One clear next task"],
+  ["💡", "You know why it's first"],
+  ["😌", "No more second-guessing"],
 ];
 
 const HOW_STEPS = [
-  ["01", "Just type what's on your mind", "No forms. No categories. Type everything at once — work, home, errands, whatever. Clerk reads it all."],
-  ["02", "Clerk figures out the urgency", "\"Due Friday\" goes to Today. \"Learn guitar someday\" goes to Someday. Clerk explains every decision."],
-  ["03", "You stay in control", "Disagree with where something landed? Move it. You always have the final say."],
+  ["01", "Type what's on your mind", "No forms. No categories. Just dump everything — work, home, errands. Clerk reads it all."],
+  ["02", "Clerk picks what's first — and explains why", "Not just where it goes. Why it goes there. \"Due Friday — that's close.\" \"Tomorrow's problem.\" You see the reasoning."],
+  ["03", "You stop deciding, start doing", "Disagree with a pick? Move it. But mostly, you'll just trust it and start."],
 ];
 
 export default function Landing() {
@@ -100,11 +100,14 @@ export default function Landing() {
         {/* Hero */}
         <section className="flex w-full flex-col items-center text-center">
           <h1
-            className="font-plex font-light leading-[1.07] tracking-[-0.03em] text-foreground mb-5 px-2 sm:px-0 animate-fade-up"
-            style={{ fontSize: "clamp(30px, 8.5vw, 56px)" }}
+            className="font-plex font-light leading-[1.07] tracking-[-0.03em] text-foreground mb-4 px-2 sm:px-0 animate-fade-up"
+            style={{ fontSize: "clamp(28px, 7.5vw, 50px)" }}
           >
-            Your brain for thinking.<br /><strong className="font-semibold">Clerk for everything else.</strong>
+            The to-do app that <strong className="font-semibold">explains what to do first.</strong>
           </h1>
+          <p className="font-plex text-[16px] sm:text-[18px] font-light text-muted-foreground leading-[1.45] mb-5 max-w-[440px] mx-auto animate-fade-up">
+            Clerk picks your next task and tells you why.
+          </p>
 
           {/* Bubble (left) + Character (right) — matches v27 */}
           <div className="flex items-end justify-center gap-0 mb-10 sm:mb-11 max-w-full animate-fade-up">
@@ -134,8 +137,8 @@ export default function Landing() {
                 <path d="M2.5 7.5h10M9 4l3.5 3.5L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
-            <span className="font-mono-plex text-[11px] font-light tracking-[0.03em] text-faint">
-              No account needed to try
+            <span className="font-mono-plex text-[11px] font-light tracking-[0.03em] text-faint text-center max-w-[320px] leading-[1.5]">
+              Made for ADHD, anxiety, and anyone who overthinks their list. · No account needed to try.
             </span>
           </div>
         </section>
@@ -143,7 +146,7 @@ export default function Landing() {
         {/* Tension: Sound familiar? */}
         <section className="w-full mb-16 sm:mb-[72px] animate-fade-up">
           <p className="font-mono-plex text-[10px] font-light uppercase tracking-[0.1em] text-faint text-center mb-6">
-            Sound familiar?
+            Does this sound like you?
           </p>
           <div className="grid grid-cols-1 min-[440px]:grid-cols-2 gap-3">
             <div className="bg-white/45 backdrop-blur-md border border-white/70 rounded-[20px] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
@@ -227,7 +230,7 @@ export default function Landing() {
             className="font-plex font-light tracking-[-0.025em] leading-[1.15] text-foreground mb-7"
             style={{ fontSize: "clamp(24px, 6.5vw, 38px)" }}
           >
-            Your tasks won't sort themselves.<br /><strong className="font-semibold">But Clerk will.</strong>
+            Stop deciding.<br /><strong className="font-semibold">Start doing.</strong>
           </h2>
           <div className="flex flex-col items-center gap-3">
             <Link
@@ -239,8 +242,8 @@ export default function Landing() {
                 <path d="M2.5 7.5h10M9 4l3.5 3.5L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
-            <span className="font-mono-plex text-[11px] font-light tracking-[0.03em] text-faint">
-              No account needed to try
+            <span className="font-mono-plex text-[11px] font-light tracking-[0.03em] text-faint text-center max-w-[320px] leading-[1.5]">
+              Made for ADHD, anxiety, and anyone who overthinks their list. · No account needed to try.
             </span>
           </div>
         </section>

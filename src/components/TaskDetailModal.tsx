@@ -58,6 +58,16 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
               placeholder="Task name"
               className="font-plex font-medium text-[24px] leading-[1.2] text-[#2A2A2A] bg-transparent border-none outline-none resize-none w-full placeholder:text-[#D1D5DB]"
             />
+            {local.reason && (
+              <div className="rounded-[12px] bg-[#F7F7F5] border border-[#EBEBEB] px-4 py-3">
+                <div className="font-jb-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                  <span>✦</span> Clerk's reasoning
+                </div>
+                <p className="font-plex text-[14px] italic text-[#4A4A4A] leading-[1.5]">
+                  {local.reason}
+                </p>
+              </div>
+            )}
             <div>
               <div className="font-jb-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground mb-2.5">
                 Move to
