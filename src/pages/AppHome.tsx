@@ -583,10 +583,14 @@ function FocusView({
   tasks,
   onComplete,
   onOpen,
+  dropTarget,
+  activeId,
 }: {
   tasks: Task[];
   onComplete: (t: Task) => void;
   onOpen: (t: Task) => void;
+  dropTarget: { col: ClerkCol; index: number } | null;
+  activeId: string | null;
 }) {
   const today = new Date();
   return (
@@ -604,7 +608,15 @@ function FocusView({
           </div>
         </div>
 
-        <DroppableColumn col="today" tasks={tasks} onComplete={onComplete} onOpen={onOpen} emptyText="Nothing yet. Add tasks below." />
+        <DroppableColumn
+          col="today"
+          tasks={tasks}
+          onComplete={onComplete}
+          onOpen={onOpen}
+          emptyText="Nothing yet. Add tasks below."
+          dropTarget={dropTarget}
+          activeId={activeId}
+        />
       </div>
     </div>
   );
@@ -615,10 +627,14 @@ function PlannerView({
   grouped,
   onComplete,
   onOpen,
+  dropTarget,
+  activeId,
 }: {
   grouped: Record<ClerkCol, Task[]>;
   onComplete: (t: Task) => void;
   onOpen: (t: Task) => void;
+  dropTarget: { col: ClerkCol; index: number } | null;
+  activeId: string | null;
 }) {
   return (
     <div className="max-w-[1280px] mx-auto px-10 pt-7 pb-10">
@@ -650,12 +666,30 @@ function PlannerView({
                   {String(grouped[col].length).padStart(2, "0")}
                 </span>
               </div>
-              <DroppableColumn col={col} tasks={grouped[col]} onComplete={onComplete} onOpen={onOpen} emptyText="Nothing yet." />
+              <DroppableColumn
+                col={col}
+                tasks={grouped[col]}
+                onComplete={onComplete}
+                onOpen={onOpen}
+                emptyText="Nothing yet."
+                dropTarget={dropTarget}
+                activeId={activeId}
+              />
             </div>
           ))}
         </div>
       </div>
     </div>
+  );
+}
+
+/* ───────── DROP INDICATOR ───────── */
+function DropIndicator() {
+  return (
+    <div
+      aria-hidden
+      className="h-[3px] w-full rounded-full bg-primary shadow-[0_0_8px_rgba(86,124,248,0.5)] -my-1"
+    />
   );
 }
 
@@ -666,38 +700,58 @@ function DroppableColumn({
   onComplete,
   onOpen,
   emptyText,
+  dropTarget,
+  activeId,
 }: {
   col: ClerkCol;
   tasks: Task[];
   onComplete: (t: Task) => void;
   onOpen: (t: Task) => void;
   emptyText: string;
+  dropTarget: { col: ClerkCol; index: number } | null;
+  activeId: string | null;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${col}` });
+  // Visible tasks exclude the active dragging card (it's in the overlay)
+  const visible = tasks.filter((t) => t.id !== activeId);
+  const showIndicator = !!activeId && dropTarget?.col === col;
+  const indicatorIdx = showIndicator ? Math.min(Math.max(dropTarget!.index, 0), visible.length) : -1;
+
   return (
     <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
       <div
         ref={setNodeRef}
         className={cn(
-          "flex flex-col gap-2 min-h-[80px] rounded-md transition-colors",
-          isOver && "bg-black/[0.025]"
+          "flex flex-col gap-2 min-h-[120px] pb-6 rounded-md transition-colors",
+          isOver && "bg-black/[0.02]"
         )}
       >
-        {tasks.length === 0 ? (
-          <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
-            {emptyText}
-          </p>
+        {visible.length === 0 ? (
+          <>
+            {showIndicator && <DropIndicator />}
+            {!showIndicator && (
+              <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
+                {emptyText}
+              </p>
+            )}
+          </>
         ) : (
-          tasks.map((t) => (
-            <TaskCard
-              key={t.id}
-              task={t}
-              onComplete={() => onComplete(t)}
-              onOpen={() => onOpen(t)}
-            />
+          visible.map((t, idx) => (
+            <div key={t.id} className="flex flex-col gap-2">
+              {showIndicator && indicatorIdx === idx && <DropIndicator />}
+              <TaskCard
+                task={t}
+                onComplete={() => onComplete(t)}
+                onOpen={() => onOpen(t)}
+              />
+              {showIndicator && idx === visible.length - 1 && indicatorIdx === visible.length && (
+                <DropIndicator />
+              )}
+            </div>
           ))
         )}
       </div>
     </SortableContext>
   );
 }
+
