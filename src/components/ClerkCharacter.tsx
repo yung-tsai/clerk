@@ -85,7 +85,7 @@ export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>
 
   const handleClick = () => {
     setSquish(true);
-    setTimeout(() => setSquish(false), 220);
+    setTimeout(() => setSquish(false), 300);
     onClick?.();
   };
 
@@ -102,9 +102,9 @@ export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>
       aria-label="Clerk"
       className={cn(
         "inline-flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer",
-        animated && "char-float",
+        animated && !squish && "char-float",
         thinking && "char-thinking",
-        squish && "scale-90 transition-transform",
+        squish && "char-squish",
         className
       )}
     >
