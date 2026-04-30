@@ -434,12 +434,30 @@ export default function AppHome() {
         className="fixed inset-0 overflow-y-auto"
         style={{ paddingTop: 64, paddingBottom: 120 }}
       >
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={collisionDetection}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => { setActiveId(null); setDropTarget(null); }}
+        >
           {view === "focus" ? (
-            <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} />
+            <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} />
           ) : (
-            <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} />
+            <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} />
           )}
+          <DragOverlay dropAnimation={{ duration: 180, easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)" }}>
+            {activeTaskOverlay ? (
+              <TaskCard
+                task={activeTaskOverlay}
+                onComplete={() => {}}
+                onOpen={() => {}}
+                draggable={false}
+                overlay
+              />
+            ) : null}
+          </DragOverlay>
         </DndContext>
       </main>
 
