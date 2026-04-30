@@ -1,82 +1,48 @@
-## Goal
-Optimize Landing and Onboarding for mobile (≤ 480 px) so layout, type sizes, spacing, and tap targets feel native — no horizontal scroll, no clipped bubbles, comfortable thumb zones.
+## What you're describing (in dnd-kit terms)
 
-## 1. Landing — `src/pages/Landing.tsx`
+- **"Card follows my mouse like I picked it up"** = a `DragOverlay`. The card detaches from the column and floats under the cursor with a shadow + slight scale. The original slot stays at low opacity so the column doesn't collapse.
+- **"Stroke showing where it would drop"** = a drop indicator. A 2px line drawn between cards (or above the first / below the last) at the exact insertion point. As you move the mouse up/down a column, the line jumps between gaps so you always see where it'll land.
 
-Apply mobile-first tweaks (using Tailwind defaults; `sm:` = ≥640 px overrides for tablet/desktop).
+That's what I'll build.
 
-- **Outer wrapper**: change padding to `px-5 pt-6 pb-16 sm:px-6 sm:pt-7 sm:pb-20`. Keep `max-w-[540px]`.
-- **Header**: `mb-10 sm:mb-16`. Logo height `h-[22px] sm:h-[24px]`.
-- **Hero spacing**: `gap-y` reduced; hero block `mt-2 sm:mt-0`.
-- **Headline**: already `clamp(34px,9vw,56px)` — adjust min to `clamp(30px, 8.5vw, 56px)` and `leading-[1.08]` so two lines don't crowd. Add `px-2 sm:px-0` so it never touches viewport edges on 360 px screens.
-- **Char block** (character + bubble):
-  - Wrap in `flex items-end gap-1` and `max-w-full`.
-  - Bubble: `max-w-[min(268px,calc(100vw-120px))]` so it never overflows on narrow phones; `text-[14px] sm:text-[15px]`; `px-4 py-3 sm:px-5 sm:py-4`.
-  - ClerkCharacter: `size={62}` mobile, `size={70}` ≥sm (use a `useIsMobile` hook OR just inline-style via a class — simpler: render two sizes via `sm:hidden` / `hidden sm:block`, or pass size based on `window.matchMedia` in a `useEffect`-driven state). Pick the matchMedia approach to avoid SSR flicker.
-- **CTA pill**: `px-8 py-3.5 sm:px-9 sm:py-4`, `text-[14px] sm:text-[15px]`, full-tap target ≥ 44 px.
-- **Tension grid**: already collapses to 1 column under 440 px in v27 reference. Convert to Tailwind: `grid-cols-1 min-[440px]:grid-cols-2 gap-3`. Tighten card padding `p-5 sm:p-6`.
-- **Preview frame** (Focus view): `rounded-[20px] sm:rounded-[24px]`, `p-5 sm:p-8`. Date-main `text-[24px] sm:text-[28px]`. Cards: `p-3.5 sm:p-4`. Ensure `.pc-title` wraps (no `truncate`).
-- **How it works**: step gap `py-4 sm:py-5`. Number column shrinks to `w-5`. Title `text-[15px] sm:text-[16px]`.
-- **Final CTA headline**: `clamp(24px, 6.5vw, 38px)` so it scales down further on 320 px.
-- **Footer**: unchanged.
+## Fix list
 
-## 2. Onboarding — `src/pages/Onboarding.tsx`
+### 1. Floating card under cursor (`DragOverlay`)
+- Track `activeId` via `onDragStart`.
+- Render `<DragOverlay>` containing a `<TaskCard draggable={false}>` of the active task, with a stronger shadow + 1.02 scale + slight rotate(-1deg) so it visibly "lifts".
+- Source card stays at `opacity: 0.4` in place (current behavior, looks correct once a real overlay exists).
 
-Currently uses `flex items-center justify-center px-6` with `max-w-[360–380px]` per step. Issues on mobile:
-- `justify-center` vertically centers on small viewports → keyboard pushes content out of view.
-- Bubble + character row can wrap awkwardly on 320 px.
-- Character grid (`grid-cols-4`) makes each cell ~70 px on 320 px — too cramped with `🔒` placeholders.
-- Skip-demo button at `bottom-8 right-6` collides with mobile thumb home-bar area.
+### 2. Drop indicator line
+- Add an `overIndex` + `overCol` state computed during `onDragOver`.
+- In each column, render a 2px `bg-primary` line between cards at the insertion index (and above first / below last when relevant).
+- Line uses `rounded-full` and a soft glow shadow so it reads as an indicator, not a divider.
+- The line replaces the current near-invisible `bg-black/[0.025]` column highlight.
 
-Changes:
+### 3. Don't open the modal when I release a drag
+Track whether a real drag happened. In `onDragStart` set `draggedRef = true`; in `TaskCard.onClick`, if `draggedRef` was just set, skip `onOpen()` and clear the flag. Result: clean card, no visible handle, no accidental modal opens.
 
-- **Container**: change to `flex flex-col items-center justify-start sm:justify-center pt-20 pb-10 sm:pt-0 sm:pb-0 px-5 sm:px-6`. Top padding clears the progress dots.
-- **Progress dots**: keep position but `top-6 sm:top-8`.
-- **All four step containers**: bump `max-w-[360px]` → `max-w-full sm:max-w-[380px]` so they fill the viewport on mobile (but still capped on desktop).
-- **Speech-bubble + character rows** (NameStep / DemoStep / YourTurnStep / DemoStep callout):
-  - Use `flex items-end gap-2 sm:gap-3 mb-8 sm:mb-10`.
-  - Bubble: `max-w-[calc(100vw-120px)] sm:max-w-none`, `text-[13px] sm:text-[14px]`.
-  - Character size: 52 mobile, 58 desktop (matchMedia hook or two renders).
-- **NameStep input**: `text-[20px] sm:text-[22px]`, `py-3.5 sm:py-4`. Buttons full-width with `min-h-[52px]` touch target.
-- **CharacterStep grid**: change to `grid-cols-3 min-[400px]:grid-cols-4 gap-2 sm:gap-3`. With 2 unlocked + 2 placeholders, 3-col on 320 px gives ~95 px tiles which read better; 4-col kicks in at 400 px+.
-  - Tile padding `pt-3 pb-3`. Mascot size `40` mobile / `44` desktop.
-- **DemoStep**:
-  - Pill input: `text-[13px] sm:text-[14px]`, allow text wrap (`whitespace-normal break-words`) instead of `truncate` so the full demo text is readable on phones — OR keep truncate but expand pill to `max-w-full`. Pick truncate (matches the simulated feel).
-  - Callout bubble: `max-w-[calc(100vw-48px)] sm:max-w-[300px]`, `text-[12px] sm:text-[13px]`.
-  - Proposal card: `p-4 sm:p-5`, task row `text-[12px] sm:text-[13px]`, tag `text-[9.5px] sm:text-[10px]`. Allow task text to wrap to 2 lines instead of `truncate` (truncating loses meaning on small screens) — apply `line-clamp-2`.
-  - Skip-demo: move from `fixed bottom-8 right-6` to `fixed bottom-5 right-5 sm:bottom-8 sm:right-6` and add `safe-area-inset-bottom` via `pb-[env(safe-area-inset-bottom)]` wrapper so it clears iOS home indicator.
-- **YourTurnStep**:
-  - Heading `text-[22px] sm:text-[26px]`.
-  - Textarea `min-h-[110px] sm:min-h-[90px]` (more room to type on mobile), `text-[15px] sm:text-[16px]`.
-  - Submit button `min-h-[52px]`.
+### 4. Mobile = long-press, desktop = small distance
+Replace the single `PointerSensor` with:
+- `MouseSensor` — `activationConstraint: { distance: 5 }` (desktop precision).
+- `TouchSensor` — `activationConstraint: { delay: 220, tolerance: 8 }` (long-press; lets you scroll normally on mobile).
 
-## 3. Tail-direction fix (carry-over from prior plan)
+Remove `touch-none` from the card root so the page can scroll on touch.
 
-Still applies and is part of this pass since we're touching Onboarding and Landing anyway:
-- Render `<ClerkCharacter />` BEFORE the bubble in NameStep, DemoStep, YourTurnStep, and Landing hero.
-- Bubble corner: `rounded-[4px_20px_20px_20px]` (sharp BOTTOM-LEFT pointing at the character on its left).
+### 5. Reliable column targeting
+- Switch `collisionDetection` from `closestCenter` to: `pointerWithin` → fallback `rectIntersection` → fallback `closestCorners`. Standard pattern for sortable + multi-column.
+- Bump each `DroppableColumn` to `min-h-[120px]` and add `pb-6` so dropping into an empty or short column always hits.
 
-## 4. Shared mobile helper
+### 6. Pickup feel
+- Cursor `grab` on cards, `grabbing` while dragging.
+- 120ms scale-in on the overlay so the lift feels tactile.
+- Existing optimistic Supabase write stays unchanged.
 
-Add `src/hooks/useIsMobile.ts` (if it doesn't already exist — check during build) that returns `window.matchMedia('(max-width: 640px)').matches` reactively. Used by Landing and Onboarding to switch ClerkCharacter `size` without SSR flicker.
+## Files
 
-## 5. CSS / global
-
-- Add `html { overflow-x: hidden; }` scoped to landing/onboarding only via the existing `.landing-bg` wrapper to prevent the animated gradient from creating a horizontal scrollbar on iOS.
-- Add `@supports (padding: max(0px))` safe-area padding utility on the bottom-fixed skip-demo button.
-
-## 6. Files
-
-- **edit** `src/pages/Landing.tsx` — mobile spacing, sizes, bubble cap, tension grid breakpoint, preview/how/final scaling.
-- **edit** `src/pages/Onboarding.tsx` — container alignment, step max-widths, char/bubble row sizing, character grid breakpoints, demo proposal wrapping, skip-demo safe area.
-- **new** `src/hooks/useIsMobile.ts` (only if missing).
-- **edit** `src/index.css` — minor `.landing-bg { overflow-x: hidden }` rule.
+- `src/pages/AppHome.tsx` — sensors, custom collision detector, `onDragStart`/`onDragOver`/`onDragEnd`, `DragOverlay`, drop-indicator state, beefier `DroppableColumn` (renders the indicator line at the right index).
+- `src/components/TaskCard.tsx` — remove root `touch-none`, add drag-vs-click suppression, `cursor-grab/grabbing`.
 
 ## Out of scope
-The full Landing v27 rebuild (rotating bubble, tension/preview/how-it-works sections, animated gradient, squish-on-tap) — covered by the previously proposed plan. This pass only optimizes the CURRENT Landing and Onboarding for mobile. If you want both landed together say so and I'll merge.
-
-## Technical notes
-- Mobile breakpoint = Tailwind default `sm: 640px`. Smallest target = 320 px (iPhone SE) — every fixed-width element verified against that.
-- Bubble overflow guard formula: `min(268px, calc(100vw - 120px))` leaves 60 px for character + 60 px gutter.
-- `line-clamp-2` requires `@tailwindcss/line-clamp` — already included in Tailwind 3.3+ core, no install needed.
-- `useIsMobile` initializes from `matchMedia` synchronously (in `useState` initializer) so first paint is correct.
+- No DB, RLS, or schema changes.
+- No visible drag handle (you wanted a clean card).
+- Keyboard drag a11y — can add later.
