@@ -66,7 +66,7 @@ export default function Landing() {
   const charSize = isMobile ? 56 : 64;
 
   return (
-    <div className="min-h-screen landing-bg overflow-x-hidden">
+    <div className="min-h-screen app-bg overflow-x-hidden">
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1180px] flex-col px-6 pt-7 pb-20">
         {/* Header */}
         <header className="mb-10 sm:mb-12 flex w-full items-center justify-between">
@@ -94,9 +94,12 @@ export default function Landing() {
             >
               The to-do app that <strong className="font-semibold">explains what to do first.</strong>
             </h1>
-            {/* Mascot + bubble — now the "voice" delivering the promise, in the eye-flow */}
+            {/* Mascot + bubble — character on left, bubble tail points left toward him */}
             <div className="mb-7 flex items-end justify-center md:justify-start gap-0 max-w-full animate-fade-up">
-              <div className="relative mb-2">
+              <div className="mb-1 flex-shrink-0">
+                <ClerkCharacter size={charSize} onClick={rotate} />
+              </div>
+              <div className="relative mb-2 -ml-1">
                 <div
                   className="bg-white border border-black/[0.08] rounded-[20px_20px_20px_4px] px-4 py-3 text-[13px] sm:text-[13.5px] font-normal text-foreground leading-[1.5] shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-left flex items-center min-h-[52px]"
                   style={{ maxWidth: "min(280px, calc(100vw - 130px))" }}
@@ -105,9 +108,6 @@ export default function Landing() {
                     {BUBBLE_LINES[lineIdx]}
                   </span>
                 </div>
-              </div>
-              <div className="-ml-1 mb-1 flex-shrink-0">
-                <ClerkCharacter size={charSize} onClick={rotate} />
               </div>
             </div>
 
@@ -147,11 +147,11 @@ export default function Landing() {
           </p>
           <div className="flex flex-col">
             {HOW_STEPS.map(([num, title, desc], i) => (
-              <div key={num} className={`flex gap-5 items-start py-5 ${i < HOW_STEPS.length - 1 ? "border-b border-black/[0.06]" : ""}`}>
-                <span className="font-mono-plex text-[11px] font-light text-faint tracking-[0.05em] flex-shrink-0 mt-1 w-5">{num}</span>
+              <div key={num} className={`flex gap-5 items-start py-5 ${i < HOW_STEPS.length - 1 ? "border-b border-black/[0.08]" : ""}`}>
+                <span className="font-mono-plex text-[11px] font-normal text-muted-foreground tracking-[0.05em] flex-shrink-0 mt-1 w-5">{num}</span>
                 <div>
-                  <div className="font-plex text-[15px] sm:text-[16px] font-medium text-foreground tracking-[-0.015em] mb-1">{title}</div>
-                  <p className="font-mono-plex text-[12px] font-light text-muted-foreground leading-[1.6]">{desc}</p>
+                  <div className="font-plex text-[15px] sm:text-[16px] font-medium text-foreground tracking-[-0.015em] mb-1.5">{title}</div>
+                  <p className="font-plex text-[13.5px] font-normal text-foreground/75 leading-[1.55]">{desc}</p>
                 </div>
               </div>
             ))}
@@ -165,7 +165,7 @@ export default function Landing() {
           </p>
           <div className="grid grid-cols-1 min-[440px]:grid-cols-2 gap-3">
             {/* Without Clerk — visually heavier, mono font, red accent */}
-            <div className="bg-white/30 backdrop-blur-md border border-white/60 border-l-[3px] border-l-[#DC2626]/35 rounded-[20px] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.05)]">
+            <div className="bg-white/55 backdrop-blur-md border border-black/[0.06] border-l-[3px] border-l-[#DC2626]/40 rounded-[20px] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.05)]">
               <div className="font-mono-plex text-[10px] font-normal uppercase tracking-[0.08em] mb-4 flex items-center gap-1.5 text-[#DC2626]">
                 <span>✕</span> Without Clerk
               </div>
@@ -177,7 +177,7 @@ export default function Landing() {
               ))}
             </div>
             {/* With Clerk — lighter, plex font, green accent */}
-            <div className="bg-white/65 backdrop-blur-md border border-white/85 border-l-[3px] border-l-[#059669]/40 rounded-[20px] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+            <div className="bg-white/85 backdrop-blur-md border border-black/[0.06] border-l-[3px] border-l-[#059669]/45 rounded-[20px] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
               <div className="font-mono-plex text-[10px] font-normal uppercase tracking-[0.08em] mb-4 flex items-center gap-1.5 text-[#059669]">
                 <span>✓</span> With Clerk
               </div>
