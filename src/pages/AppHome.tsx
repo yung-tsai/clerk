@@ -11,6 +11,7 @@ import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
+import { CompletedModal } from "@/components/CompletedModal";
 import { TaskDetailModal, type TaskPatch } from "@/components/TaskDetailModal";
 import { cn } from "@/lib/utils";
 import {
@@ -81,6 +82,7 @@ export default function AppHome() {
   const [bubble, setBubble] = useState("");
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [completedOpen, setCompletedOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const bubbleTimer = useRef<number | null>(null);
   const loadedOnce = useRef(false);
@@ -232,12 +234,14 @@ export default function AppHome() {
     // Compute new streak / counters
     const today = new Date().toISOString().slice(0, 10);
     const last = profile?.last_active_date ?? null;
-    let nextStreak = profile?.streak ?? 0;
+    const prevStreak = profile?.streak ?? 0;
+    let nextStreak = prevStreak;
     if (last !== today) {
       const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-      nextStreak = last === yesterday ? nextStreak + 1 : 1;
+      nextStreak = last === yesterday ? prevStreak + 1 : 1;
     }
-    const nextCompleted = (profile?.tasks_completed ?? 0) + 1;
+    const prevCompleted = profile?.tasks_completed ?? 0;
+    const nextCompleted = prevCompleted + 1;
 
     if (profile) {
       setProfile({
@@ -246,6 +250,33 @@ export default function AppHome() {
         tasks_completed: nextCompleted,
         last_active_date: today,
       });
+    }
+
+    // Milestone celebration — only when crossing the threshold
+    const STREAK_LINES: Record<number, string> = {
+      3: "Three days. That's a streak. 🔥",
+      7: "A full week. I noticed. 💫",
+      30: "Thirty days. This is a lifestyle now. 👑",
+    };
+    const TASK_LINES: Record<number, string> = {
+      1: "First one done. Welcome in. ⚡",
+      10: "Ten tasks. You're getting the hang of this. 🎯",
+      50: "Fifty done. Seriously impressive. 🏆",
+      100: "One hundred. We're a team now.",
+    };
+    let celebration: string | null = null;
+    if (nextStreak !== prevStreak && STREAK_LINES[nextStreak]) {
+      celebration = STREAK_LINES[nextStreak];
+    } else if (TASK_LINES[nextCompleted]) {
+      celebration = TASK_LINES[nextCompleted];
+    }
+
+    if (celebration) {
+      showBubble(celebration, 5000);
+    } else {
+      // Rotate Done lines for low-key feedback
+      const lines = ["Done. Next.", "Nice. Onward.", "Off the list.", "Cleared."];
+      showBubble(lines[Math.floor(Math.random() * lines.length)]);
     }
 
     await Promise.all([
@@ -265,7 +296,6 @@ export default function AppHome() {
         })
         .eq("id", user.id),
     ]);
-    showBubble("Done. Next.");
   }
 
   async function deleteTask(t: Task) {
@@ -393,7 +423,7 @@ export default function AppHome() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Fixed header ── */}
-      {!proposals && !settingsOpen && (
+      {!proposals && !settingsOpen && !completedOpen && (
         <header
           className="fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider"
           style={{ height: 64 }}
@@ -424,7 +454,19 @@ export default function AppHome() {
               </button>
             </div>
 
-            <div className="w-[26px]" aria-hidden />
+            {/* Streak badge — only when ≥ 2 days */}
+            {(profile?.streak ?? 0) >= 2 ? (
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                title={`${profile?.streak}-day streak`}
+                className="font-plex-mono text-[12px] font-medium text-[#2A2A2A] bg-[#FFF7CE] hover:bg-[#FFEFA8] transition-colors rounded-full px-2.5 py-1 leading-none"
+              >
+                🔥 {profile?.streak}
+              </button>
+            ) : (
+              <div className="w-[26px]" aria-hidden />
+            )}
           </div>
         </header>
       )}
@@ -462,7 +504,7 @@ export default function AppHome() {
       </main>
 
       {/* ── Bottom bar (hidden while proposal/settings modal is open) ── */}
-      {!proposals && !settingsOpen && (
+      {!proposals && !settingsOpen && !completedOpen && (
         <AppBar
           variant={variant}
           thinking={thinking}
@@ -474,6 +516,7 @@ export default function AppHome() {
           onSubmit={() => processInput(input)}
           onSetView={persistView}
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenCompleted={() => setCompletedOpen(true)}
           onSignOut={async () => {
             await signOut();
             navigate("/");
@@ -570,10 +613,32 @@ export default function AppHome() {
           streak: profile?.streak ?? 0,
           tasks_completed: profile?.tasks_completed ?? 0,
           email: user?.email ?? null,
+          active_task_count: tasks.length,
         }}
         onSave={saveSettings}
         onCharacterPreview={previewCharacter}
+        onClearAllTasks={async () => {
+          if (!user) return;
+          const supabase = await getLovableCloudClient();
+          const { error } = await supabase.from("tasks").delete().eq("user_id", user.id);
+          if (error) {
+            toast.error(error.message);
+          } else {
+            setTasks([]);
+            toast.success("All tasks cleared.");
+          }
+        }}
       />
+
+      {/* ── Completed modal ── */}
+      {user && (
+        <CompletedModal
+          open={completedOpen}
+          onOpenChange={setCompletedOpen}
+          userId={user.id}
+          variant={variant}
+        />
+      )}
     </div>
   );
 }

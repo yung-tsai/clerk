@@ -1,103 +1,94 @@
+# MVP gap check + what's left
+
+Quick honest answers, then a tight plan for what's missing.
+
+## Your questions, answered
+
+**1. Backend — done?**
+Yes for MVP. You have `tasks`, `completed_tasks`, `profiles` with proper RLS (own-rows only), the `sort-tasks` edge function for AI sorting, auth, onboarding, and the `handle_new_user` trigger creating profiles automatically. Nothing missing for the MVP scope.
+
+**2. Is gamification actually working?**
+Half-working. The data is correct — `streak`, `tasks_completed`, and `last_active_date` update on every completion (`AppHome.tsx` lines 232–267), and `SettingsModal` already renders stats + a milestones list (3/7/30-day streaks, 10/50/100 tasks). But:
+- The user has to **open Settings** to see any of it. There's zero feedback in the main flow.
+- There's no celebration when you cross a milestone (no toast, no bubble line, nothing).
+- Streak doesn't show anywhere in the header or AppBar.
+So technically working, practically invisible. Worth a small fix below.
+
+**3. Completed page — yes, needed.**
+The "Completed" item already exists in the AppBar menu (`AppBar.tsx` line 100) but its `onClick` does nothing — it just closes the menu. Dead button. We have the `completed_tasks` table populated correctly, just no UI.
+
+**4. Clear all — yes, needed.** Especially during onboarding when people brain-dump and want to reset.
+
+**5. Download to phone — yes, easy win.**
+Cleanest path: **installable web app (manifest-only, no service worker)**. Users tap "Add to Home Screen" from their browser and Clerk lives on their home screen with its own icon, no browser chrome. Works on iOS + Android, no app store, no native build. Service workers cause more problems than they solve in Lovable previews, so we skip them.
+
+---
+
 ## What we're shipping
 
-Reorder the landing page for conversion + replace the "Focus view" preview with a static replica of the **Proposal Modal** (showing the magic moment: input → sorted tasks → reason next to each one). Ship items A, B, C, D, F from the critique, plus the proposal modal swap.
+### 1. Completed page (modal-based, matches existing pattern)
+
+New `CompletedModal.tsx` component, opened from the AppBar "Completed" menu item.
+
+**Layout** (matches `SettingsModal` styling):
+- Title: "Completed" + small count (e.g. "47 tasks")
+- Grouped by relative date: **Today**, **Yesterday**, **This week**, **Earlier**
+- Each row: title, category pill (if any), small timestamp on right
+- Empty state: Clerk character + "Nothing yet. Go finish something."
+- Bottom-right: "Clear history" link (with confirm) — separate from Clear all tasks
+
+Loads from `completed_tasks` ordered by `completed_at desc`, limit 200 (more than enough for MVP, avoids the 1000-row default).
+
+Wire `onClick` on the AppBar "Completed" MenuItem to open this modal (currently a no-op).
+
+### 2. Clear all (with confirm)
+
+Added inside **SettingsModal**, in a new "Danger zone" section at the bottom:
+- **Clear all tasks** — wipes active `tasks` only (not history)
+- **Clear completed history** — wipes `completed_tasks` only
+
+Both use shadcn `AlertDialog` (already in repo) with copy like:
+> "Delete all 12 tasks? This can't be undone."
+
+Two buttons not one, because nuking history when you wanted to clear today's mess would suck.
+
+### 3. Make gamification visible
+
+Three small touches, no new screens:
+
+- **Streak badge in header** (next to the Focus|Planner toggle): `🔥 7` — only shows when streak ≥ 2. Tappable → opens Settings modal at the stats section.
+- **Milestone celebration**: when `completeTask` crosses a threshold (3, 7, 30 day streak; 10, 50, 100 tasks), show a longer bubble line via the existing `showBubble()`:
+  - "Three days. That's a streak." / "A full week. I noticed." / "100 tasks. We're a team now."
+- **Done counter in bubble** on every completion: instead of just "Done. Next." rotate in lines like "Done. 3 today." once we know today's completion count.
+
+No new tables, no new logic — just surfacing what already updates.
+
+### 4. Installable web app (manifest only)
+
+- Add `public/manifest.json` with name "Clerk", short_name "Clerk", `display: "standalone"`, theme/background colors matching the app, and icon entries.
+- Generate icons (192px, 512px, maskable 512px, Apple touch 180px) from the existing Clerk character/logo and drop in `public/`.
+- Add `<link rel="manifest">`, Apple-specific meta tags, and theme-color to `index.html`.
+- Add a small "Install Clerk on your phone" link in SettingsModal that explains the flow (Share → Add to Home Screen on iOS; install icon on Android).
+
+**No `vite-plugin-pwa`, no service worker.** Per Lovable guidance, manifest-only is the right call when offline support isn't required — and it isn't, since Clerk needs the network to call the AI sort function anyway.
 
 ---
 
-## 1. Hero becomes two-column on desktop, with the proposal modal as the visual
+## Files touched
 
-**Desktop (≥768px)**:
-```text
-┌────────────────────────────────────┬──────────────────────┐
-│ H1: The to-do app that             │  ┌────────────────┐  │
-│     explains what to do first.     │  │ ◆ Clerk        │  │
-│ Subhead: Clerk picks your next     │  │ Here's where   │  │
-│   task and tells you why.          │  │ I'd put these. │  │
-│                                    │  │                │  │
-│ [ Get started free → ]             │  │ • Finish case  │  │
-│ No account needed to try           │  │   study  Today │  │
-│ Made for ADHD, anxiety,…           │  │   "Due Friday."│  │
-│                                    │  │ • Call dentist │  │
-│ (mascot floats bottom-left,        │  │   Tomorrow     │  │
-│  bubble small, low-key)            │  │   "Not urgent."│  │
-│                                    │  │ • Learn Spanish│  │
-│                                    │  │   Someday      │  │
-│                                    │  │   "Where dreams│  │
-│                                    │  │    live."      │  │
-│                                    │  └────────────────┘  │
-└────────────────────────────────────┴──────────────────────┘
-```
+- `src/pages/AppHome.tsx` — wire Completed modal open state, add streak badge to header, celebration lines in `completeTask`
+- `src/components/AppBar.tsx` — Completed menu item gets a real `onClick`
+- `src/components/CompletedModal.tsx` *(new)* — list grouped by date
+- `src/components/SettingsModal.tsx` — add "Danger zone" section with two confirm dialogs + "Install on phone" link
+- `index.html` — manifest link + apple/theme meta
+- `public/manifest.json` *(new)*
+- `public/icon-192.png`, `public/icon-512.png`, `public/icon-maskable-512.png`, `public/apple-touch-icon.png` *(new — generated from existing assets)*
 
-**Mobile (<768px)**:
-- H1 → Subhead → CTA → micro-lines → mascot+bubble → **proposal modal mockup directly below**
-- All stays single column. The proposal modal moves up (was 3 sections deep, now right under the hero CTA — visible with one short scroll).
+## Not in this pass
 
-**Why**: Currently desktop has ~600px of mostly-empty hero. Showing the product immediately = "this is real" = conversion. Proposal modal beats Focus view because it shows *Clerk doing its job* (reason text visible per task) — the entire pitch in one image.
+- No analytics dashboard view (overkill for MVP).
+- No undo on complete (nice-to-have, separate request).
+- No native Capacitor build — PWA install covers "on my phone" without app store overhead.
+- Memory unchanged — no new product rules, just shipping the existing scope.
 
-## 2. Build a static "ProposalPreview" component
-
-New section in `Landing.tsx` (kept inline, no new file). Faithful static replica of `AppHome.tsx` lines 484-540 — same layout, same fonts, same colors. Key elements:
-- Header row: Clerk character + "Here's where I'd put these." + "Tap a column to change it."
-- 3 task rows, each with: title, italic reason text, column pill (Today/Tomorrow/Someday with their tag colors)
-- "Looks good" button at bottom (purely visual, no click handler)
-
-The 3 demo tasks (reusing the Onboarding demo for consistency):
-1. **"Finish the case study"** → Today · *"Due Friday — that's close."*
-2. **"Call dentist to book appointment"** → Tomorrow · *"Not urgent today."*
-3. **"Learn Spanish someday"** → Someday · *"Where dreams live."*
-
-Subtle hover/float animation on the modal (gentle `hover:-translate-y-1`) so it feels alive.
-
-## 3. Separate the two micro-lines under the CTA (B)
-
-Replace the single combined line with:
-- **Line 1** (right under button, faint mono): `No account needed to try`
-- **Line 2** (italic plex, slightly more visible, max-width 320px): `Made for ADHD, anxiety, and anyone who overthinks their list.`
-
-Two distinct jobs: micro-promise (conversion) + positioning (audience). Apply to both hero CTA and final CTA.
-
-## 4. Reposition the bubble + character (C)
-
-**Desktop**: Move the mascot+bubble to **below the audience line in the left column** (or floating bottom-left of the hero) — out of the eye flow between subhead and CTA. Bubble becomes atmosphere, not a blocker.
-
-**Mobile**: Keep current placement (works fine on small screens) but **slow rotation from 3.8s → 6s** so people can actually finish reading.
-
-## 5. Make "Without Clerk" visually heavier than "With Clerk" (D)
-
-- **Without Clerk card**: slightly darker bg (`bg-white/35` instead of `/45`), red-tinted left border (`border-l-2 border-l-[#DC2626]/30`), keep mono font for symptoms — feels heavy/clinical
-- **With Clerk card**: lighter (`bg-white/65`), green-tinted left border, plex font for symptoms — feels clean/relief
-
-The visual asymmetry creates the emotional tension that makes the section land.
-
-## 6. Reorder sections below hero (F)
-
-**Current order**:
-Hero → Sound familiar? → Focus view → How it works → Final CTA
-
-**New order**:
-Hero (with Proposal preview built in) → How it works → Sound familiar? (now the closer) → Final CTA
-
-**Why**: After seeing the product in the hero, the visitor's question is *"how does this work?"* — answer immediately with How it works. Then hit them with the emotional tension (Sound familiar?) right before the final CTA. Tension → CTA is the strongest conversion sequence.
-
-The "Focus view" section is **deleted entirely** — its job is now done by the in-hero proposal modal.
-
----
-
-## What we're NOT doing
-
-- **No social proof slot** (E from critique) — you don't have testimonials yet, fake ones erode trust. Add when real ones exist.
-- **No CTA button copy change** (H) — defer until you can A/B test.
-- **No new images/assets** — proposal modal is built from existing components & demo data.
-- **No memory updates** — vision unchanged, only layout/conversion changes.
-
----
-
-## Files edited
-
-- `src/pages/Landing.tsx` — full restructure (hero becomes 2-col on desktop, proposal preview added inline, sections reordered, focus view removed, microcopy split, tension cards reweighted, bubble repositioned, rotation slowed)
-
-That's it. One file. Should be a clean ~30-line diff in spirit but more in practice because of the layout restructure.
-
----
-
-Building this now unless you want to slice differently — e.g. *"do everything except keep the section order as-is"* or *"just the proposal modal swap, leave layout alone."*
+Approve and I'll build it in one pass. If you'd rather slice (e.g. *"just Completed page + Clear all this time, do PWA + gamification next"*), say the word.
