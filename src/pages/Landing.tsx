@@ -7,11 +7,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import clerkLogo from "@/assets/clerk-logo.png";
 
 const BUBBLE_LINES = [
-  "Add your tasks. I'll figure out where they go.",
-  "Everything in your head? Give it to me.",
-  "I don't judge. I just sort.",
-  "Your brain for thinking. Me for tracking.",
-  "Due Friday? Today. Someday? Someday.",
+  "Tell me what's on your mind. I'll tell you what to start with — and why.",
+  "Twelve things on your plate? I'll pick one.",
+  "I don't just sort. I explain.",
+  "Stuck on what's first? That's my job.",
+  "You decide enough. Let me decide this.",
 ];
 
 const PREVIEW_CARDS = [
@@ -21,20 +21,20 @@ const PREVIEW_CARDS = [
 ];
 
 const TENSION_BEFORE = [
-  ["😩", "Tasks scattered across apps, notes, your head"],
-  ["😤", "Everything feels urgent, nothing gets done"],
-  ["😶", "End the day not sure what you actually finished"],
+  ["🌀", "You don't know where to start"],
+  ["😤", "Everything feels equally important"],
+  ["😶", "You second-guess every decision"],
 ];
 const TENSION_AFTER = [
-  ["✨", "Dump everything. Clerk sorts by what matters now"],
-  ["🎯", "Today, Tomorrow, Upcoming, Someday — always clear"],
-  ["😌", "Actually know what to do when you sit down"],
+  ["🎯", "One clear next task"],
+  ["💡", "You know why it's first"],
+  ["😌", "No more second-guessing"],
 ];
 
 const HOW_STEPS = [
-  ["01", "Just type what's on your mind", "No forms. No categories. Type everything at once — work, home, errands, whatever. Clerk reads it all."],
-  ["02", "Clerk figures out the urgency", "\"Due Friday\" goes to Today. \"Learn guitar someday\" goes to Someday. Clerk explains every decision."],
-  ["03", "You stay in control", "Disagree with where something landed? Move it. You always have the final say."],
+  ["01", "Type what's on your mind", "No forms. No categories. Just dump everything — work, home, errands. Clerk reads it all."],
+  ["02", "Clerk picks what's first — and explains why", "Not just where it goes. Why it goes there. \"Due Friday — that's close.\" \"Tomorrow's problem.\" You see the reasoning."],
+  ["03", "You stop deciding, start doing", "Disagree with a pick? Move it. But mostly, you'll just trust it and start."],
 ];
 
 export default function Landing() {
