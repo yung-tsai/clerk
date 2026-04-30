@@ -100,11 +100,14 @@ export default function Landing() {
         {/* Hero */}
         <section className="flex w-full flex-col items-center text-center">
           <h1
-            className="font-plex font-light leading-[1.07] tracking-[-0.03em] text-foreground mb-5 px-2 sm:px-0 animate-fade-up"
-            style={{ fontSize: "clamp(30px, 8.5vw, 56px)" }}
+            className="font-plex font-light leading-[1.07] tracking-[-0.03em] text-foreground mb-4 px-2 sm:px-0 animate-fade-up"
+            style={{ fontSize: "clamp(28px, 7.5vw, 50px)" }}
           >
-            Your brain for thinking.<br /><strong className="font-semibold">Clerk for everything else.</strong>
+            The to-do app that <strong className="font-semibold">explains what to do first.</strong>
           </h1>
+          <p className="font-plex text-[16px] sm:text-[18px] font-light text-muted-foreground leading-[1.45] mb-5 max-w-[440px] mx-auto animate-fade-up">
+            Clerk picks your next task and tells you why.
+          </p>
 
           {/* Bubble (left) + Character (right) — matches v27 */}
           <div className="flex items-end justify-center gap-0 mb-10 sm:mb-11 max-w-full animate-fade-up">
