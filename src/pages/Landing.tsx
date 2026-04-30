@@ -4,7 +4,7 @@ import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasLovableCloudEnv } from "@/lib/lovable-cloud";
 import { useIsMobile } from "@/hooks/use-mobile";
-import clerkLogo from "@/assets/clerk-logo.png";
+import clerkLogo from "@/assets/clerk-logo.svg";
 
 const BUBBLE_LINES = [
   "Tell me what's on your mind. I'll tell you what to start with — and why.",

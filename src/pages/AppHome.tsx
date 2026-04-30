@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import clerkLogo from "@/assets/clerk-logo.png";
+import clerkLogo from "@/assets/clerk-logo.svg";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { TaskCard, type ClerkCol, type TaskCardData } from "@/components/TaskCard";
@@ -701,12 +702,39 @@ function PlannerView({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
 }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const update = () => {
+      setCanLeft(el.scrollLeft > 4);
+      setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  const scrollByCol = (dir: 1 | -1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    // 380 column + 28px gutter (pl-7)
+    el.scrollBy({ left: dir * 408, behavior: "smooth" });
+  };
+
   return (
-    <div className="max-w-[1280px] mx-auto px-10 pt-7 pb-10">
-      <div className="overflow-x-auto overflow-y-hidden no-scrollbar">
+    <div className="max-w-[1280px] mx-auto px-10 pt-7 pb-10 relative">
+      <div ref={scrollerRef} className="overflow-x-auto overflow-y-hidden no-scrollbar">
         <div
           className="grid"
-          style={{ gridTemplateColumns: "repeat(4, 280px)", minWidth: "100%" }}
+          style={{ gridTemplateColumns: "repeat(4, 380px)", minWidth: "100%" }}
         >
           {COLS.map((col, i) => (
             <div
@@ -744,6 +772,28 @@ function PlannerView({
           ))}
         </div>
       </div>
+
+      {/* Scroll arrows — desktop only */}
+      {canLeft && (
+        <button
+          type="button"
+          onClick={() => scrollByCol(-1)}
+          aria-label="Scroll left"
+          className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white border border-border shadow-[0_2px_10px_rgba(0,0,0,0.08)] text-foreground hover:shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-shadow"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+      )}
+      {canRight && (
+        <button
+          type="button"
+          onClick={() => scrollByCol(1)}
+          aria-label="Scroll right"
+          className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white border border-border shadow-[0_2px_10px_rgba(0,0,0,0.08)] text-foreground hover:shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-shadow"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 }
