@@ -8,6 +8,7 @@ import { TaskCard, type ClerkCol, type TaskCardData } from "@/components/TaskCar
 import { AppBar } from "@/components/AppBar";
 import { type CharacterVariant } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
+import { isNewDay, planCarryOver } from "@/lib/carry-over";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -119,7 +120,37 @@ export default function AppHome() {
           .eq("id", user.id)
           .single(),
       ]);
-      setTasks((t as Task[]) ?? []);
+
+      // Day-rollover: shift tomorrow→today and upcoming→tomorrow/today on a new day.
+      // Pure date logic — does not touch the AI's reason text.
+      let loadedTasks = (t as Task[]) ?? [];
+      if (p && isNewDay(p.last_active_date ?? null)) {
+        const plan = planCarryOver(loadedTasks);
+        if (plan.length) {
+          // Apply locally first for instant render
+          const byId = new Map(plan.map((m) => [m.id, m.to]));
+          loadedTasks = loadedTasks.map((task) =>
+            byId.has(task.id) ? { ...task, col: byId.get(task.id)! } : task
+          );
+          // Persist in background, grouped by destination column
+          const byTo = new Map<ClerkCol, string[]>();
+          for (const m of plan) {
+            const arr = byTo.get(m.to) ?? [];
+            arr.push(m.id);
+            byTo.set(m.to, arr);
+          }
+          for (const [to, ids] of byTo) {
+            supabase.from("tasks").update({ col: to }).in("id", ids);
+          }
+        }
+      }
+      // Always stamp last_active_date on load so tomorrow's load knows a day passed.
+      const todayStr = new Date().toISOString().slice(0, 10);
+      if (p && p.last_active_date !== todayStr) {
+        supabase.from("profiles").update({ last_active_date: todayStr }).eq("id", user.id);
+      }
+
+      setTasks(loadedTasks);
       if (p) {
         if (!p.onboarded) {
           navigate("/onboarding");
