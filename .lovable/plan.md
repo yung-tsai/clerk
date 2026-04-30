@@ -1,87 +1,103 @@
 ## What we're shipping
 
-A full landing copy rewrite anchored on **"The to-do app that explains what to do first"** (Option C from chat), plus the small backend/UI work to make that promise honest, plus saving the product vision to memory so it persists across sessions.
-
-**No onboarding changes.** Energy/mood capture is premature for MVP — see "What we're NOT doing" below.
+Reorder the landing page for conversion + replace the "Focus view" preview with a static replica of the **Proposal Modal** (showing the magic moment: input → sorted tasks → reason next to each one). Ship items A, B, C, D, F from the critique, plus the proposal modal swap.
 
 ---
 
-## 1. Save vision to memory (so I never forget)
+## 1. Hero becomes two-column on desktop, with the proposal modal as the visual
 
-Three new memory files + index:
+**Desktop (≥768px)**:
+```text
+┌────────────────────────────────────┬──────────────────────┐
+│ H1: The to-do app that             │  ┌────────────────┐  │
+│     explains what to do first.     │  │ ◆ Clerk        │  │
+│ Subhead: Clerk picks your next     │  │ Here's where   │  │
+│   task and tells you why.          │  │ I'd put these. │  │
+│                                    │  │                │  │
+│ [ Get started free → ]             │  │ • Finish case  │  │
+│ No account needed to try           │  │   study  Today │  │
+│ Made for ADHD, anxiety,…           │  │   "Due Friday."│  │
+│                                    │  │ • Call dentist │  │
+│ (mascot floats bottom-left,        │  │   Tomorrow     │  │
+│  bubble small, low-key)            │  │   "Not urgent."│  │
+│                                    │  │ • Learn Spanish│  │
+│                                    │  │   Someday      │  │
+│                                    │  │   "Where dreams│  │
+│                                    │  │    live."      │  │
+│                                    │  └────────────────┘  │
+└────────────────────────────────────┴──────────────────────┘
+```
 
-- **`mem://index.md`** — Core rules applied every session (audience, voice, MVP scope, do-nots)
-- **`mem://product/vision`** — Full vision: audience (ADHD/anxiety/overthinkers + open door), differentiator (explains the *why*), MVP scope, future direction (energy/mood/motivation), brand voice
-- **`mem://design/landing-voice`** — Copy rules: plain H1s (Sunsama-style), "explains/why" through-line repeated 5+ times, no medicalizing, no jargon ("loud," "lie/truth," "fog" — all rejected), audience named under CTA not in H1
+**Mobile (<768px)**:
+- H1 → Subhead → CTA → micro-lines → mascot+bubble → **proposal modal mockup directly below**
+- All stays single column. The proposal modal moves up (was 3 sections deep, now right under the hero CTA — visible with one short scroll).
 
-This means future sessions auto-load the vision. You won't have to re-explain.
+**Why**: Currently desktop has ~600px of mostly-empty hero. Showing the product immediately = "this is real" = conversion. Proposal modal beats Focus view because it shows *Clerk doing its job* (reason text visible per task) — the entire pitch in one image.
 
-## 2. Landing copy rewrite (`src/pages/Landing.tsx`)
+## 2. Build a static "ProposalPreview" component
 
-| Section | New copy |
-|---|---|
-| **H1** | The to-do app that explains what to do first. |
-| **Subhead** (new line under H1) | Clerk picks your next task and tells you why. |
-| **Bubble rotation** (5 lines) | "Tell me what's on your mind. I'll tell you what to start with — and why." / "Twelve things on your plate? I'll pick one." / "I don't just sort. I explain." / "Stuck on what's first? That's my job." / "You decide enough. Let me decide this." |
-| **Under-CTA microcopy** (replaces current "No account needed to try") | Made for ADHD, anxiety, and anyone who overthinks their list. · No account needed to try. |
-| **"Sound familiar?" header** | Does this sound like you? |
-| **Without Clerk** bullets | • You don't know where to start • Everything feels equally important • You second-guess every decision |
-| **With Clerk** bullets | • One clear next task • You know *why* it's first • No more second-guessing |
-| **How it works 01** | Type what's on your mind |
-| **How it works 02** | Clerk picks what's first — and explains why |
-| **How it works 03** | You stop deciding, start doing |
-| **Final CTA H2** | Stop deciding. Start doing. |
+New section in `Landing.tsx` (kept inline, no new file). Faithful static replica of `AppHome.tsx` lines 484-540 — same layout, same fonts, same colors. Key elements:
+- Header row: Clerk character + "Here's where I'd put these." + "Tap a column to change it."
+- 3 task rows, each with: title, italic reason text, column pill (Today/Tomorrow/Someday with their tag colors)
+- "Looks good" button at bottom (purely visual, no click handler)
 
-The word **"explain" / "why"** appears in: subhead, bubble, "With Clerk" bullets, How it works 02, meta description (below). Five reinforcements of one promise.
+The 3 demo tasks (reusing the Onboarding demo for consistency):
+1. **"Finish the case study"** → Today · *"Due Friday — that's close."*
+2. **"Call dentist to book appointment"** → Tomorrow · *"Not urgent today."*
+3. **"Learn Spanish someday"** → Someday · *"Where dreams live."*
 
-## 3. SEO pass (`index.html`)
+Subtle hover/float animation on the modal (gentle `hover:-translate-y-1`) so it feels alive.
 
-Replace the meta tags:
-- `<title>` → `Clerk — The to-do app that explains what to do first`
-- `<meta description>` → `Clerk prioritizes your tasks and tells you why each one matters. Made for ADHD, anxiety, and anyone who overthinks their list.`
-- `og:title` and `og:description` → match above
-- Add `og:url`, `og:site_name`, `twitter:title`, `twitter:description` for proper link previews
+## 3. Separate the two micro-lines under the CTA (B)
 
-## 4. Make the "why" promise honest — surface `reason` in the app
+Replace the single combined line with:
+- **Line 1** (right under button, faint mono): `No account needed to try`
+- **Line 2** (italic plex, slightly more visible, max-width 320px): `Made for ADHD, anxiety, and anyone who overthinks their list.`
 
-The backend already generates a `reason` per task (good!) but the UI never shows it. If our H1 says Clerk *explains*, the app must visibly explain. Two changes:
+Two distinct jobs: micro-promise (conversion) + positioning (audience). Apply to both hero CTA and final CTA.
 
-### a. `src/components/TaskDetailModal.tsx`
-Add a new field at the top of the left column (above the "Move to" buttons) labeled **"Clerk's reasoning"** showing `local.reason`. Italic, muted color, small icon. If `reason` is null, hide the field entirely (don't show empty state — looks broken).
+## 4. Reposition the bubble + character (C)
 
-### b. `src/components/TaskCard.tsx` (subtle)
-Add a single-line, small, muted reason snippet below the title — only when `task.reason` exists, truncated to one line. Toggle-able later if it's too noisy, but worth shipping so the *promise is visible without clicking*.
+**Desktop**: Move the mascot+bubble to **below the audience line in the left column** (or floating bottom-left of the hero) — out of the eye flow between subhead and CTA. Bubble becomes atmosphere, not a blocker.
 
-Both changes are read-only (display existing data) — no schema changes, no migrations.
+**Mobile**: Keep current placement (works fine on small screens) but **slow rotation from 3.8s → 6s** so people can actually finish reading.
 
-## 5. What we're NOT doing (and why)
+## 5. Make "Without Clerk" visually heavier than "With Clerk" (D)
 
-- **No onboarding changes.** Adding energy/mood/overwhelm questions before those features exist = broken promise. When energy features ship, ask in-context then.
-- **No new database fields.** `reason` already exists on tasks. No migration needed.
-- **No "lie from the truth" or "loud list" copy.** Rejected — too clever, ambiguous, off-brand for an app helping anxious users feel calm.
-- **No medicalizing language.** No "treat," "diagnose," "cure," "therapy." Stay in experience language.
+- **Without Clerk card**: slightly darker bg (`bg-white/35` instead of `/45`), red-tinted left border (`border-l-2 border-l-[#DC2626]/30`), keep mono font for symptoms — feels heavy/clinical
+- **With Clerk card**: lighter (`bg-white/65`), green-tinted left border, plex font for symptoms — feels clean/relief
+
+The visual asymmetry creates the emotional tension that makes the section land.
+
+## 6. Reorder sections below hero (F)
+
+**Current order**:
+Hero → Sound familiar? → Focus view → How it works → Final CTA
+
+**New order**:
+Hero (with Proposal preview built in) → How it works → Sound familiar? (now the closer) → Final CTA
+
+**Why**: After seeing the product in the hero, the visitor's question is *"how does this work?"* — answer immediately with How it works. Then hit them with the emotional tension (Sound familiar?) right before the final CTA. Tension → CTA is the strongest conversion sequence.
+
+The "Focus view" section is **deleted entirely** — its job is now done by the in-hero proposal modal.
 
 ---
 
-## Technical notes
+## What we're NOT doing
 
-- **Files edited:** `src/pages/Landing.tsx`, `index.html`, `src/components/TaskDetailModal.tsx`, `src/components/TaskCard.tsx`
-- **Files created:** `mem://index.md`, `mem://product/vision`, `mem://design/landing-voice`
-- **No backend changes.** `sort-tasks` edge function already returns `reason`.
-- **No schema changes.** `tasks.reason` column already exists and is populated.
-- **Build/typecheck:** No new types, no new deps. Should pass cleanly.
+- **No social proof slot** (E from critique) — you don't have testimonials yet, fake ones erode trust. Add when real ones exist.
+- **No CTA button copy change** (H) — defer until you can A/B test.
+- **No new images/assets** — proposal modal is built from existing components & demo data.
+- **No memory updates** — vision unchanged, only layout/conversion changes.
 
 ---
 
-## Open question before I build
+## Files edited
 
-The audience line under the CTA currently reads:
-> *Made for ADHD, anxiety, and anyone who overthinks their list.*
+- `src/pages/Landing.tsx` — full restructure (hero becomes 2-col on desktop, proposal preview added inline, sections reordered, focus view removed, microcopy split, tension cards reweighted, bubble repositioned, rotation slowed)
 
-Are you comfortable naming **ADHD** and **anxiety** explicitly on the landing? It's a strong positioning move (the right people feel seen) but it's also a commitment. Three options:
+That's it. One file. Should be a clean ~30-line diff in spirit but more in practice because of the layout restructure.
 
-- **(a)** Ship as written — names them directly
-- **(b)** Softer: *"Made for busy brains and overthinkers."* — same vibe, no clinical words
-- **(c)** Even softer / SEO-only: keep the body copy generic, but include "ADHD" and "anxiety" only in the meta description (so Google indexes it but the page itself stays neutral)
+---
 
-Tell me **a, b, or c** and I'll build immediately. Default if you don't specify: **(a)**.
+Building this now unless you want to slice differently — e.g. *"do everything except keep the section order as-is"* or *"just the proposal modal swap, leave layout alone."*
