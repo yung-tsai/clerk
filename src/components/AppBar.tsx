@@ -15,6 +15,7 @@ interface AppBarProps {
   onSubmit: () => void;
   onSetView: (v: "focus" | "planner") => void;
   onOpenSettings: () => void;
+  onOpenCompleted: () => void;
   onSignOut: () => void;
 }
 
@@ -29,6 +30,7 @@ export function AppBar({
   onSubmit,
   onSetView,
   onOpenSettings,
+  onOpenCompleted,
   onSignOut,
 }: AppBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -99,7 +101,10 @@ export function AppBar({
             <MenuItem
               icon={<CheckCircle2 className="w-[15px] h-[15px] opacity-45" />}
               label="Completed"
-              onClick={() => setMenuOpen(false)}
+              onClick={() => {
+                onOpenCompleted();
+                setMenuOpen(false);
+              }}
             />
             <MenuItem
               icon={<Settings className="w-[15px] h-[15px] opacity-45" />}
