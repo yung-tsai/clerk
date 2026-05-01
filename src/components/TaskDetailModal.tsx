@@ -151,6 +151,7 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
             </div>
           </div>
         </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
