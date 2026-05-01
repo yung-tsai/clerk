@@ -542,7 +542,7 @@ export default function AppHome() {
       {/* ── Fixed header ── */}
       {!proposals && !settingsOpen && !completedOpen && (
         <header
-          className="fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider"
+          className="hidden md:flex fixed top-0 left-0 right-0 z-[100] items-center bg-background border-b border-divider"
           style={{ height: 64 }}
         >
           <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
@@ -590,8 +590,7 @@ export default function AppHome() {
 
       {/* ── Views ── */}
       <main
-        className="fixed inset-0 overflow-y-auto"
-        style={{ paddingTop: 64, paddingBottom: 120 }}
+        className="fixed inset-0 overflow-y-auto pt-0 md:pt-16 pb-[120px]"
       >
         <DndContext
           sensors={sensors}

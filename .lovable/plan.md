@@ -1,76 +1,52 @@
-## Three fixes
+## Mobile planner — match the reference
 
-### 1. Planner mobile — column header alignment
+Three changes, all `md:` so desktop is untouched.
 
-Confirming: yes, the mobile planner **is** horizontally swipeable. Each column scroll-snaps; tabs sync to the active column.
+### 1. Hide the AppHome header on mobile
 
-You want "Today" (the column header) to sit flush against the left edge of its column container, aligned with the cards' left edge below it (not indented further).
+`src/pages/AppHome.tsx` line 545 — change header className from
+`"fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider"`
+to
+`"hidden md:flex fixed top-0 left-0 right-0 z-[100] items-center bg-background border-b border-divider"`
 
-Currently the column header has `px-1` from the previous fix, which inset it. The fix: remove `px-1` so the header sits at the column's left edge — matching exactly where the card's left edge sits (cards are full-width within the column).
+### 2. Adjust `<main>` top padding so content starts at the right place
 
-Also bump the scroller's left padding slightly so the active column doesn't kiss the screen edge:
-- Tab bar `px-5` → keep
-- Scroller `px-5` → keep
-- Column header: remove `px-1` (back to flush left)
+Line 594 — replace `style={{ paddingTop: 64, paddingBottom: 120 }}` with a responsive className.
+Use `className="fixed inset-0 overflow-y-auto pt-0 md:pt-16 pb-[120px]"` (drop the inline style).
 
-**File:** `src/pages/AppHome.tsx`, `PlannerMobile` — change column header row from `px-1 pb-3 mb-4` back to `pb-3 mb-4`.
+This gives 0 top padding on mobile (PlannerMobile owns the top region with its fixed tab bar; FocusView already has its own `pt-5`).
 
-### 2. Bigger Clerk logo everywhere
+### 3. PlannerMobile: fixed tab bar at top + per-column left padding
 
-Currently `h-[22px]` on Landing and AppHome. You asked for ~60px wide. The SVG aspect ratio means width comes from height; I'll bump to `h-[36px]` which renders at roughly 60px wide given the wordmark's proportions. Same size on mobile and desktop (no responsive shrink — you said "bigger on all pages").
+In `PlannerMobile` (around line 889):
 
-**Files:**
-- `src/pages/Landing.tsx` line 73 — `h-[22px] sm:h-[24px]` → `h-[36px]`
-- `src/pages/AppHome.tsx` line 549 — `h-[22px]` → `h-[36px]`
+**Tab bar** — change from inline above the scroller to fixed at top of viewport:
+- Wrapper className: `fixed top-0 inset-x-0 z-[150] bg-background/95 backdrop-blur-md border-b border-divider`
+- Inner row: `flex items-center` (drop `gap-1`, drop `overflow-x-auto`)
+- Each tab button: replace `shrink-0 px-3 py-2.5 ...` with `flex-1 px-2 py-3 font-plex text-[12px] font-medium uppercase tracking-[0.04em]` so the four tabs split the width evenly. Active still gets `border-b-2 border-primary text-foreground`, inactive `border-b-2 border-transparent text-muted-foreground`.
+- Bottom border on the bar itself (✓ already added via `border-b border-divider` on wrapper) — that's the blue line baseline you wanted to bring back. The active tab's underline sits on top of it.
 
-If 36px renders too tall/short visually, easy to tweak after.
+**Outer container** — change `pt-4 pb-32` → `pt-[52px] pb-32` to clear the fixed tab bar (tab bar height ≈ 48px + a hair).
 
-### 3. Task detail modal — bottom sheet on mobile
+**Scroller mt** — change `mt-5` → `mt-4` (less since the wrapper now has `pt-[52px]`).
 
-The current `TaskDetailModal` uses `Dialog` which renders centered with `max-w-[720px]` and a 2-column grid (`md:grid-cols-[1fr_280px]`). On mobile it collapses to one column but is still a centered dialog, which is cramped and gets covered by the bottom AppBar.
+**Per-column left padding** — you specifically asked for ~20px on each column. In the column inner wrapper (the one with `width: 85vw`), add `pl-5` (=20px). Adjust the flex container `gap-3` to `gap-2` so the total horizontal rhythm stays balanced. Remove the leading `px-5` on the scroller's flex container since each column now owns its own left padding (keep `pr-5` so the last column has trailing room).
 
-**Approach:** branch on `useIsMobile()`. Desktop keeps the exact current `Dialog` (no changes — desktop is preserved). Mobile renders the same content inside a bottom `Sheet` (`side="bottom"`) using the existing `src/components/ui/sheet.tsx`.
+Concretely, the scroller flex container becomes:
+```
+<div className="flex gap-2 pr-5">
+```
+And each column wrapper:
+```
+<div ... className="shrink-0 pl-5" style={{ width: "85vw", maxWidth: 380, scrollSnapAlign: "start" }}>
+```
 
-Mobile sheet specifics:
-- Slides up from bottom
-- Height: `h-[88vh]`, rounded top corners `rounded-t-[20px]`
-- Internal scrolling (`overflow-y-auto`) so long content (reasoning + all fields + delete button) is reachable
-- Bottom padding `pb-32` to clear the floating AppBar input
-- Single-column layout (skip the `md:grid-cols-[1fr_280px]` split — fields stack under the title/reasoning/move-to section)
-- Close handle: small drag indicator at top + tap outside to close (Sheet handles both)
+### 4. Verification
 
-I'll extract the body content (title textarea + reasoning + move-to + fields + delete) into a small inner component used by both Dialog (desktop) and Sheet (mobile) so they stay in sync.
-
-**Files:**
-- `src/components/TaskDetailModal.tsx` — add `useIsMobile()` branch, import `Sheet`/`SheetContent` from `@/components/ui/sheet`, extract shared body.
-
-### 4. Other modals — same pattern check
-
-Quick audit:
-- `SettingsModal` (Dialog, max-w probably tall content) — likely also bad on mobile. I'll apply the same Sheet-on-mobile pattern.
-- `CompletedModal` — same treatment.
-- `Proposal modal` (inline in `AppHome.tsx`) — already has `max-w-[440px]` and `max-h-[60vh]` scrolling, works ok on mobile but I'll convert to Sheet on mobile for consistency.
-- `AlertDialog` confirmations (clear tasks, etc.) — leave as-is; they're tiny confirm prompts, work fine centered.
-
-So all four content-heavy modals get the mobile-Sheet treatment:
-1. `TaskDetailModal`
-2. `SettingsModal`
-3. `CompletedModal`
-4. Proposal modal (inline in `AppHome.tsx`)
-
-Desktop Dialog rendering is preserved exactly for all four.
-
-### Verification (after build)
-
-1. Mobile (390px): "Today" column header sits flush left, aligned with card edges below
-2. Logo on Landing and AppHome is visibly larger (~60px wide)
-3. Tap a task on mobile → sheet slides up from bottom, all fields scrollable, delete button reachable
-4. Open Settings / Completed / Proposal on mobile → all come up as bottom sheets
-5. Desktop (1024px+): all four modals look identical to before — centered Dialog, no Sheet
+- 390px width: no header. Four tabs span the screen, equal width, blue underline on the active tab, divider line under the bar. Today column starts ~20px from the left edge, with ~60px peek of Tomorrow on the right.
+- 1024px+: identical to current desktop — header back, four-column grid, no tabs.
+- Focus view at 390px: still works (its own `pt-5` is now visible since main no longer has 64px top padding on mobile).
 
 ### Out of scope
 
-- AppBar itself (you didn't ask)
-- AlertDialog confirmations
-- Onboarding screen
-- Any AI / backend code
+Drag handle/dot indicator under tabs, swipe-haptic, anything else.
