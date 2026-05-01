@@ -19,6 +19,7 @@ import { CompletedModal } from "@/components/CompletedModal";
 import { TaskDetailModal, type TaskPatch } from "@/components/TaskDetailModal";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useIdle } from "@/hooks/use-idle";
 import {
   DndContext,
   MouseSensor,
@@ -536,16 +537,27 @@ export default function AppHome() {
   }
 
   const variant = profile?.character ?? "blue";
+  const isMobile = useIsMobile();
+
+  // Idle fade — Focus view only; bubble visibility forces chrome back.
+  const anyModalOpen = !!proposals || settingsOpen || completedOpen || !!selectedTask;
+  const idleEnabled = view === "focus" && !anyModalOpen;
+  const idle = useIdle(4000, idleEnabled);
+  const focusIdleHidden = view === "focus" && idle && !bubbleVisible && !anyModalOpen;
+  const headerHiddenOnMobilePlanner = isMobile && view === "planner";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* ── Fixed header ── */}
-      {!proposals && !settingsOpen && !completedOpen && (
+      {/* ── Fixed header ── (hidden on mobile when in Planner; faded when Focus is idle) */}
+      {!anyModalOpen && !headerHiddenOnMobilePlanner && (
         <header
-          className="hidden md:flex fixed top-0 left-0 right-0 z-[100] items-center bg-background border-b border-divider"
+          className={cn(
+            "fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider transition-opacity duration-500",
+            focusIdleHidden && "opacity-0 pointer-events-none",
+          )}
           style={{ height: 64 }}
         >
-          <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
+          <div className="w-full max-w-[1280px] mx-auto px-4 md:px-10 flex items-center justify-between">
             <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none" draggable={false} />
 
             {/* Toggle Focus | Planner */}
@@ -590,8 +602,12 @@ export default function AppHome() {
 
       {/* ── Views ── */}
       <main
-        className="fixed inset-0 overflow-y-auto pt-0 md:pt-16 pb-[120px]"
+        className={cn(
+          "fixed inset-0 overflow-y-auto pb-[120px]",
+          headerHiddenOnMobilePlanner ? "pt-0" : "pt-16",
+        )}
       >
+
         <DndContext
           sensors={sensors}
           collisionDetection={collisionDetection}
@@ -619,26 +635,34 @@ export default function AppHome() {
         </DndContext>
       </main>
 
-      {/* ── Bottom bar (hidden while proposal/settings modal is open) ── */}
-      {!proposals && !settingsOpen && !completedOpen && (
-        <AppBar
-          variant={variant}
-          thinking={thinking}
-          bubble={bubble}
-          bubbleVisible={bubbleVisible}
-          view={view}
-          inputValue={input}
-          onInputChange={setInput}
-          onSubmit={() => processInput(input)}
-          onSetView={persistView}
-          onOpenSettings={() => setSettingsOpen(true)}
-          onOpenCompleted={() => setCompletedOpen(true)}
-          onSignOut={async () => {
-            await signOut();
-            navigate("/");
-          }}
-        />
+      {/* ── Bottom bar (hidden while any modal/sheet is open; faded when Focus is idle) ── */}
+      {!anyModalOpen && (
+        <div
+          className={cn(
+            "transition-opacity duration-500",
+            focusIdleHidden && "opacity-0 pointer-events-none",
+          )}
+        >
+          <AppBar
+            variant={variant}
+            thinking={thinking}
+            bubble={bubble}
+            bubbleVisible={bubbleVisible}
+            view={view}
+            inputValue={input}
+            onInputChange={setInput}
+            onSubmit={() => processInput(input)}
+            onSetView={persistView}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenCompleted={() => setCompletedOpen(true)}
+            onSignOut={async () => {
+              await signOut();
+              navigate("/");
+            }}
+          />
+        </div>
       )}
+
 
       {/* ── Proposal modal ── */}
       <Dialog

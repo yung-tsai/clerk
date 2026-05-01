@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -47,31 +47,40 @@ const MILESTONES = [
 export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPreview, onClearAllTasks }: SettingsModalProps) {
   const [name, setName] = useState(data.display_name ?? "");
   const [character, setCharacter] = useState<CharacterVariant>(data.character);
-  const [saving, setSaving] = useState(false);
   const [confirmClearTasks, setConfirmClearTasks] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const nameDebounce = useRef<number | null>(null);
+  const lastSavedName = useRef<string>(data.display_name ?? "");
 
   // Re-sync when modal reopens with fresh data
   useEffect(() => {
     if (open) {
       setName(data.display_name ?? "");
       setCharacter(data.character);
+      lastSavedName.current = data.display_name ?? "";
     }
   }, [open, data.display_name, data.character]);
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await onSave({ display_name: name.trim(), character });
-      onOpenChange(false);
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Auto-save name (debounced) — fires only when value actually changed.
+  useEffect(() => {
+    if (!open) return;
+    const trimmed = name.trim();
+    if (trimmed === lastSavedName.current.trim()) return;
+    if (nameDebounce.current) window.clearTimeout(nameDebounce.current);
+    nameDebounce.current = window.setTimeout(() => {
+      lastSavedName.current = trimmed;
+      void onSave({ display_name: trimmed, character });
+    }, 600);
+    return () => {
+      if (nameDebounce.current) window.clearTimeout(nameDebounce.current);
+    };
+  }, [name, character, open, onSave]);
 
   const pickChar = (c: CharacterVariant) => {
     setCharacter(c);
     onCharacterPreview?.(c);
+    // Save immediately on character pick.
+    void onSave({ display_name: name.trim(), character: c });
   };
 
   return (
@@ -103,14 +112,8 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
               Close
             </button>
             <span className="text-[15px] font-semibold tracking-[-0.01em] text-[#1A1A1A]">Settings</span>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="text-[13px] font-medium text-[#567CF8] hover:opacity-70 transition-opacity disabled:opacity-40"
-            >
-              {saving ? "..." : "Save"}
-            </button>
+            <span className="w-[44px]" aria-hidden />
+
           </div>
 
           <div className="overflow-y-auto px-5 pt-5 pb-28 md:pb-7">
