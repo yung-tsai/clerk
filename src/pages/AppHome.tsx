@@ -537,17 +537,19 @@ export default function AppHome() {
   }
 
   const variant = profile?.character ?? "blue";
+  const isMobile = useIsMobile();
 
   // Idle fade — Focus view only; bubble visibility forces chrome back.
   const anyModalOpen = !!proposals || settingsOpen || completedOpen || !!selectedTask;
   const idleEnabled = view === "focus" && !anyModalOpen;
   const idle = useIdle(4000, idleEnabled);
   const focusIdleHidden = view === "focus" && idle && !bubbleVisible && !anyModalOpen;
+  const headerHiddenOnMobilePlanner = isMobile && view === "planner";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Fixed header ── (hidden on mobile when in Planner; faded when Focus is idle) */}
-      {!anyModalOpen && !(useIsMobileSafe() && view === "planner") && (
+      {!anyModalOpen && !headerHiddenOnMobilePlanner && (
         <header
           className={cn(
             "fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider transition-opacity duration-500",
