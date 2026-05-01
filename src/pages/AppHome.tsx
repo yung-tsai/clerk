@@ -310,31 +310,41 @@ export default function AppHome() {
       });
     }
 
-    // Milestone celebration — only when crossing the threshold
-    const STREAK_LINES: Record<number, string> = {
-      3: "Three days. That's a streak. 🔥",
-      7: "A full week. I noticed. 💫",
-      30: "Thirty days. This is a lifestyle now. 👑",
+    // Pick a quip. Priority:
+    //   1. Milestone (streak or task count) — most notable
+    //   2. Cleared the today column — bigger moment
+    //   3. Normal "done" line
+    type MilestoneKey =
+      | "milestone.streak.3" | "milestone.streak.7" | "milestone.streak.30"
+      | "milestone.tasks.5" | "milestone.tasks.10" | "milestone.tasks.50";
+    const STREAK_KEYS: Record<number, MilestoneKey> = {
+      3: "milestone.streak.3",
+      7: "milestone.streak.7",
+      30: "milestone.streak.30",
     };
-    const TASK_LINES: Record<number, string> = {
-      1: "First one done. Welcome in. ⚡",
-      10: "Ten tasks. You're getting the hang of this. 🎯",
-      50: "Fifty done. Seriously impressive. 🏆",
-      100: "One hundred. We're a team now.",
+    const TASK_KEYS: Record<number, MilestoneKey> = {
+      5: "milestone.tasks.5",
+      10: "milestone.tasks.10",
+      50: "milestone.tasks.50",
     };
-    let celebration: string | null = null;
-    if (nextStreak !== prevStreak && STREAK_LINES[nextStreak]) {
-      celebration = STREAK_LINES[nextStreak];
-    } else if (TASK_LINES[nextCompleted]) {
-      celebration = TASK_LINES[nextCompleted];
+    const name = profile?.display_name ?? null;
+    let milestoneKey: MilestoneKey | null = null;
+    if (nextStreak !== prevStreak && STREAK_KEYS[nextStreak]) {
+      milestoneKey = STREAK_KEYS[nextStreak];
+    } else if (TASK_KEYS[nextCompleted]) {
+      milestoneKey = TASK_KEYS[nextCompleted];
     }
 
-    if (celebration) {
-      showBubble(celebration, 5000);
+    const clearedToday =
+      t.col === "today" &&
+      tasks.filter((x) => x.col === "today" && x.id !== t.id).length === 0;
+
+    if (milestoneKey) {
+      showBubble(quip(milestoneKey, { name }), 5000);
+    } else if (clearedToday) {
+      showBubble(quip("complete.allToday", { name }), 5000);
     } else {
-      // Rotate Done lines for low-key feedback
-      const lines = ["Done. Next.", "Nice. Onward.", "Off the list.", "Cleared."];
-      showBubble(lines[Math.floor(Math.random() * lines.length)]);
+      showBubble(quip("complete.normal"));
     }
 
     await Promise.all([
@@ -364,9 +374,25 @@ export default function AppHome() {
 
   async function moveTask(t: Task, col: ClerkCol) {
     if (col === t.col) return;
+    const prevCol = t.col;
     const supabase = await getLovableCloudClient();
     setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, col } : x)));
+    fireMoveQuip(prevCol, col);
     await supabase.from("tasks").update({ col }).eq("id", t.id);
+  }
+
+  // Shared between drag-end and the modal "Move to" buttons.
+  function fireMoveQuip(prevCol: ClerkCol, nextCol: ClerkCol) {
+    const within =
+      lastSortAcceptedAt.current !== null &&
+      Date.now() - lastSortAcceptedAt.current < DISAGREE_WINDOW_MS;
+    if (within) lastSortAcceptedAt.current = null; // one-shot per sort
+    showBubble(
+      quipForMove(prevCol, nextCol, {
+        withinDisagreeWindow: within,
+        name: profile?.display_name ?? null,
+      })
+    );
   }
 
   // ─── Drag & drop ───
