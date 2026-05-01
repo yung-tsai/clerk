@@ -1,66 +1,57 @@
-# Plan: wire new AI sort fields into tasks
+## What I found
 
-The `sort-tasks` edge function now returns `dueDate`, `taskTime`, `location`, and `category` per task — but these are dropped on the client. Currently only `title`, `col`, and `reason` make it into the proposal modal and the DB insert. The DB columns already exist (`due_date`, `task_time`, `location`, `category`, `cat_color`), so this is purely a client-side mapping fix.
+`TaskCard.tsx` is correct — it already reads `task_time`, `due_date`, `location`, `category`, and `cat_color`, and renders them in exactly the slots you described. The "Add time" / "Add location" / "Add tag" placeholders only appear when those fields are `null`.
+
+The data isn't reaching the card because it's `null` in the database. Confirmed via a direct DB query — every task created today has:
+
+```
+task_time: null, due_date: null, location: null, category: null, cat_color: 0
+```
+
+…even for unambiguous inputs like `"meeting at 3"` (should give `3:00 PM` + `Work`) and `"pick up kids at Lincoln Elementary Friday"` (should give `Friday` + `Lincoln Elementary` + `Family`).
+
+The mapping in `acceptProposals` (AppHome.tsx lines 267–304) is correct — it forwards `dueDate`, `taskTime`, `location`, `category` from the proposal into the insert. So the fields are being dropped earlier, in the edge function response itself.
+
+### Root cause
+
+`supabase/functions/sort-tasks/index.ts` line 155 uses:
+
+```ts
+model: "google/gemini-2.5-flash-preview"
+```
+
+That model id isn't on Lovable AI's supported list. The supported Gemini Flash models are `google/gemini-2.5-flash`, `google/gemini-2.5-flash-lite`, and `google/gemini-3-flash-preview`. The gateway is likely returning a tool call where `dueDate`/`taskTime`/`location`/`category` come back as empty strings (which then get normalized to `null` on insert). No 4xx is logged, which fits a "model rerouted / returns minimal output" failure mode rather than a hard error.
 
 ## Changes
 
-### 1. `src/pages/AppHome.tsx`
+### 1. `supabase/functions/sort-tasks/index.ts`
 
-**Extend the `Proposal` type** (line 44) to carry the new fields:
-```ts
-type Proposal = {
-  title: string; col: ClerkCol; reason: string;
-  dueDate?: string; taskTime?: string;
-  location?: string; category?: string;
-};
-```
+- Change `model` from `"google/gemini-2.5-flash-preview"` to `"google/gemini-2.5-flash"` (the supported, current Flash model — best fit for structured tool calling at low latency).
+- Add a one-line `console.log` of the parsed tool-call output (titles + the four extracted fields only, not the full payload) so future regressions show up in edge function logs immediately.
 
-**Update `acceptProposals` (lines 259–281)** so the insert rows include the new fields. Empty strings from the AI become `null` so the DB stores nothing rather than `""`. Category gets a stable color via a small hash:
+### 2. `src/pages/AppHome.tsx` — temporary diagnostic log
+
+In `processInput` right after `if (data?.tasks?.length) sorted = data.tasks;`, add:
 
 ```ts
-const norm = (s?: string) => (s && s.trim() ? s.trim() : null);
-const colorFor = (cat: string | null) => {
-  if (!cat) return 0;
-  let h = 0;
-  for (let i = 0; i < cat.length; i++) h = (h * 31 + cat.charCodeAt(i)) | 0;
-  return Math.abs(h) % 4;
-};
-
-const rows = proposals.map((p, i) => {
-  const category = norm(p.category);
-  return {
-    user_id: user.id,
-    title: p.title,
-    col: p.col,
-    reason: p.reason,
-    position: baseSec + i,
-    due_date: norm(p.dueDate),
-    task_time: norm(p.taskTime),
-    location: norm(p.location),
-    category,
-    cat_color: colorFor(category),
-  };
-});
+console.log("[sort-tasks] proposals from AI:", sorted);
 ```
 
-**Local-fallback path in `processInput` (lines 249–252)**: keep as-is — `classify` only knows column + reason, so the new fields stay undefined and fall through cleanly.
+This is what you asked for — lets you see in the browser console exactly what the AI returned per task (title + col + reason + the four new fields). Keep it for now; we can remove it once we confirm fields are flowing.
 
-**Proposal modal (lines 635–662)**: optional small enhancement — show extracted time / location / category as faint metadata under the title so the user sees what Clerk extracted before accepting. Suggested compact line under the reason:
-```
-{p.taskTime || p.dueDate || p.location || p.category ? (
-  <div className="font-plex-mono text-[11px] text-muted-foreground mt-1">
-    {[p.taskTime, p.dueDate, p.location && `@${p.location}`, p.category]
-      .filter(Boolean).join(" · ")}
-  </div>
-) : null}
-```
+### 3. No changes to `TaskCard.tsx`
 
-### 2. `src/pages/Onboarding.tsx`
+It already renders all four fields correctly. Once the edge function returns populated fields, cards will display them automatically.
 
-**Update the local `Proposal` type (line 75)** to match — same extra optional fields. The `pendingProposals` payload handed to `/app` then carries the AI-extracted fields through to `acceptProposals`, where the mapping above persists them.
+## How to verify after the fix
+
+1. Sort a task like `"call dentist tomorrow at 9 at the office"`.
+2. Browser console should log a proposal with `taskTime: "9:00 AM"`, `dueDate: "Friday"` (or whatever tomorrow is), `location: "Office"`, `category: "Health"`.
+3. After accepting, the card should show `9:00 AM | Friday` top-left, `@Office` bottom-left, and a colored `HEALTH` tag top-right.
+4. Old tasks (the ones already in the DB with null fields) will still show placeholders — that's expected; the fix is forward-only unless we backfill, which I'd skip for now.
 
 ## Out of scope
 
-- No DB migration needed — columns already exist.
-- No edge-function changes — it already returns the fields.
-- `TaskCard` and `TaskDetailModal` already render `task_time`, `due_date`, `location`, and `category` + `cat_color`, so once persisted the data shows up automatically.
+- No DB backfill for existing tasks.
+- No changes to the prompt itself — it's already specific and well-formed; the issue is purely the model id.
+- No fallback model logic. If the supported model fails, the existing local-classify fallback in `processInput` already handles it (just without the four extracted fields, which is acceptable degradation).
