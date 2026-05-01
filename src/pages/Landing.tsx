@@ -1,18 +1,7 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasLovableCloudEnv } from "@/lib/lovable-cloud";
-import { useIsMobile } from "@/hooks/use-mobile";
 import clerkLogo from "@/assets/clerk-logo.svg";
-
-const BUBBLE_LINES = [
-  "Dump it on me. I'll prioritize what's first — and tell you why.",
-  "Twelve things on your plate? I'll pick one.",
-  "I don't just sort. I explain.",
-  "Stuck on what's first? That's my job.",
-  "You decide enough. Let me handle this one.",
-];
 
 
 
