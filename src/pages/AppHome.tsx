@@ -640,7 +640,7 @@ export default function AppHome() {
           onDragCancel={() => { setActiveId(null); setDropTarget(null); }}
         >
           {view === "focus" ? (
-            <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} />
+            <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} onAddTask={handleAddToColumn} />
           ) : (
             <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} onAddTask={handleAddToColumn} />
           )}
