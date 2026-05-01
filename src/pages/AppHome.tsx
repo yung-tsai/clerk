@@ -546,7 +546,7 @@ export default function AppHome() {
           style={{ height: 64 }}
         >
           <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
-            <img src={clerkLogo} alt="Clerk" className="h-[22px] w-auto select-none" draggable={false} />
+            <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none" draggable={false} />
 
             {/* Toggle Focus | Planner */}
             <div className="flex items-center gap-1">

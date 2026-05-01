@@ -70,7 +70,7 @@ export default function Landing() {
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1180px] flex-col px-6 pt-7 pb-20">
         {/* Header */}
         <header className="mb-10 sm:mb-12 flex w-full items-center justify-between">
-          <img src={clerkLogo} alt="Clerk" className="h-[22px] sm:h-[24px] w-auto select-none" draggable={false} />
+          <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none" draggable={false} />
           <nav className="flex items-center gap-6">
             {user ? (
               <Link to="/app" className="font-mono-plex text-[11px] font-light uppercase tracking-[0.05em] text-muted-foreground hover:text-foreground transition-colors">
