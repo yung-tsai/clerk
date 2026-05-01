@@ -897,7 +897,7 @@ function FocusView({
           tasks={tasks}
           onComplete={onComplete}
           onOpen={onOpen}
-          emptyText="Nothing yet. Add tasks below."
+          
           dropTarget={dropTarget}
           activeId={activeId}
           onAddTask={onAddTask}
