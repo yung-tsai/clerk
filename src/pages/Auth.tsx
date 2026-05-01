@@ -57,7 +57,7 @@ export default function Auth() {
     setGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/app`,
       });
       if (result.error) {
         toast.error(result.error.message || "Could not sign in with Google");
@@ -84,7 +84,7 @@ export default function Auth() {
   const t = titles[mode];
 
   return (
-    <div className="min-h-screen landing-bg flex items-center justify-center px-6">
+    <div className="min-h-screen bg-background flex items-center justify-center px-6">
       <div className="relative z-10 w-full max-w-[380px] flex flex-col items-center">
         <Link to="/" className="mb-6">
           <ClerkCharacter size={64} />
