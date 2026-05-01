@@ -72,7 +72,15 @@ export default function Onboarding() {
       }
 
       type Col = "today" | "tomorrow" | "upcoming" | "someday";
-      type Proposal = { title: string; col: Col; reason: string };
+      type Proposal = {
+        title: string;
+        col: Col;
+        reason: string;
+        dueDate?: string;
+        taskTime?: string;
+        location?: string;
+        category?: string;
+      };
 
       let sorted: Proposal[] = [];
       try {

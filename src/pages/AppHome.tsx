@@ -41,7 +41,15 @@ import {
 
 type Task = TaskCardData & { position: number; created_at: string };
 
-type Proposal = { title: string; col: ClerkCol; reason: string };
+type Proposal = {
+  title: string;
+  col: ClerkCol;
+  reason: string;
+  dueDate?: string;
+  taskTime?: string;
+  location?: string;
+  category?: string;
+};
 
 type ViewMode = "focus" | "planner";
 
@@ -260,13 +268,28 @@ export default function AppHome() {
     if (!proposals || !user) return;
     const supabase = await getLovableCloudClient();
     const baseSec = Math.floor(Date.now() / 1000);
-    const rows = proposals.map((p, i) => ({
-      user_id: user.id,
-      title: p.title,
-      col: p.col,
-      reason: p.reason,
-      position: baseSec + i,
-    }));
+    const norm = (s?: string) => (s && s.trim() ? s.trim() : null);
+    const colorFor = (cat: string | null) => {
+      if (!cat) return 0;
+      let h = 0;
+      for (let i = 0; i < cat.length; i++) h = (h * 31 + cat.charCodeAt(i)) | 0;
+      return Math.abs(h) % 4;
+    };
+    const rows = proposals.map((p, i) => {
+      const category = norm(p.category);
+      return {
+        user_id: user.id,
+        title: p.title,
+        col: p.col,
+        reason: p.reason,
+        position: baseSec + i,
+        due_date: norm(p.dueDate),
+        task_time: norm(p.taskTime),
+        location: norm(p.location),
+        category,
+        cat_color: colorFor(category),
+      };
+    });
     const { data, error } = await supabase.from("tasks").insert(rows).select();
     if (error) {
       toast.error(error.message);
@@ -642,6 +665,13 @@ export default function AppHome() {
                     {p.reason && (
                       <div className="font-plex-mono text-[11px] text-muted-foreground italic mt-1.5">
                         {p.reason}
+                      </div>
+                    )}
+                    {(p.taskTime || p.dueDate || p.location || p.category) && (
+                      <div className="font-plex-mono text-[11px] text-muted-foreground mt-1">
+                        {[p.taskTime, p.dueDate, p.location && `@${p.location}`, p.category]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </div>
                     )}
                   </div>
