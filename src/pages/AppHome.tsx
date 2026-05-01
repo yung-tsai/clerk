@@ -1109,6 +1109,7 @@ function DroppableColumn({
   emptyText,
   dropTarget,
   activeId,
+  onAddTask,
 }: {
   col: ClerkCol;
   tasks: Task[];
@@ -1117,6 +1118,7 @@ function DroppableColumn({
   emptyText: string;
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
+  onAddTask?: (col: ClerkCol) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${col}` });
   // Visible tasks exclude the active dragging card (it's in the overlay)
@@ -1156,6 +1158,9 @@ function DroppableColumn({
               )}
             </div>
           ))
+        )}
+        {onAddTask && (
+          <AddTaskCard onAdd={() => onAddTask(col)} className="mt-1" />
         )}
       </div>
     </SortableContext>
