@@ -14,17 +14,7 @@ const BUBBLE_LINES = [
   "You decide enough. Let me decide this.",
 ];
 
-type ProposalCol = "Today" | "Tomorrow" | "Someday";
-const PROPOSAL_TASKS: { title: string; col: ProposalCol; reason: string }[] = [
-  { title: "Finish the case study", col: "Today", reason: "Due Friday — that's close." },
-  { title: "Call dentist to book appointment", col: "Tomorrow", reason: "Not urgent today." },
-  { title: "Learn Spanish someday", col: "Someday", reason: "Where dreams live." },
-];
-const COL_PILL_BG: Record<ProposalCol, string> = {
-  Today: "hsl(var(--tag-blue))",
-  Tomorrow: "hsl(var(--tag-yellow))",
-  Someday: "hsl(var(--tag-pink))",
-};
+
 
 const TENSION_BEFORE = [
   ["🌀", "You don't know where to start"],
@@ -134,9 +124,20 @@ export default function Landing() {
 
           </div>
 
-          {/* RIGHT: Proposal Modal preview — the magic moment */}
+          {/* RIGHT: Hero video */}
           <div className="w-full max-w-[440px] mx-auto md:mx-0 animate-fade-up">
-            <ProposalPreview />
+            <div className="rounded-[20px] overflow-hidden border border-black/[0.08] shadow-[0_24px_60px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.9)_inset] bg-white transition-transform hover:-translate-y-1 duration-300">
+              <video
+                src="/landing-hero.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                aria-hidden="true"
+                className="block w-full h-auto aspect-square object-cover"
+              />
+            </div>
           </div>
         </section>
 
@@ -226,49 +227,3 @@ export default function Landing() {
   );
 }
 
-/* ─────────── Static replica of the in-app Proposal Modal ─────────── */
-function ProposalPreview() {
-  return (
-    <div className="rounded-[20px] bg-background border border-black/[0.08] shadow-[0_24px_60px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.9)_inset] overflow-hidden transition-transform hover:-translate-y-1 duration-300">
-      {/* Header */}
-      <div className="px-6 pt-6 pb-3 flex items-center gap-3">
-        <ClerkCharacter size={36} />
-        <div>
-          <div className="font-plex text-[15px] font-medium text-foreground">Here's where I'd put these.</div>
-          <div className="font-mono-plex text-[11px] text-muted-foreground">Tap a column to change it.</div>
-        </div>
-      </div>
-
-      {/* Tasks */}
-      <div className="px-6 pb-2 space-y-3">
-        {PROPOSAL_TASKS.map((p, i) => (
-          <div key={i} className="rounded-[12px] border border-[#D7D7D7] bg-white/55 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="font-plex text-[15px] font-medium leading-snug text-[#2A2A2A]">
-                  {p.title}
-                </div>
-                <div className="font-mono-plex text-[11px] text-muted-foreground italic mt-1.5 leading-[1.45]">
-                  {p.reason}
-                </div>
-              </div>
-              <span
-                className="font-mono-plex text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md text-[#2A2A2A] flex-shrink-0"
-                style={{ background: COL_PILL_BG[p.col] }}
-              >
-                {p.col}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Footer button (visual only) */}
-      <div className="px-6 py-4 mt-2 border-t border-divider">
-        <div className="w-full rounded-full bg-foreground py-2.5 text-center text-[13px] font-medium text-background">
-          Looks good
-        </div>
-      </div>
-    </div>
-  );
-}
