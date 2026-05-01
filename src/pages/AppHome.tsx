@@ -542,7 +542,7 @@ export default function AppHome() {
       {/* ── Fixed header ── */}
       {!proposals && !settingsOpen && !completedOpen && (
         <header
-          className="fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider"
+          className="hidden md:flex fixed top-0 left-0 right-0 z-[100] items-center bg-background border-b border-divider"
           style={{ height: 64 }}
         >
           <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
@@ -590,8 +590,7 @@ export default function AppHome() {
 
       {/* ── Views ── */}
       <main
-        className="fixed inset-0 overflow-y-auto"
-        style={{ paddingTop: 64, paddingBottom: 120 }}
+        className="fixed inset-0 overflow-y-auto pt-0 md:pt-16 pb-[120px]"
       >
         <DndContext
           sensors={sensors}
@@ -887,10 +886,10 @@ function PlannerMobile({
   };
 
   return (
-    <div className="w-full pt-4 pb-32">
-      {/* Tab bar */}
-      <div className="px-5 border-b border-divider">
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar -mb-px">
+    <div className="w-full pt-[52px] pb-32">
+      {/* Tab bar — fixed to top of viewport on mobile */}
+      <div className="fixed top-0 inset-x-0 z-[150] bg-background/95 backdrop-blur-md border-b border-divider">
+        <div className="flex items-end h-[48px] px-1">
           {COLS.map((col, i) => {
             const active = i === activeIdx;
             return (
@@ -899,7 +898,7 @@ function PlannerMobile({
                 type="button"
                 onClick={() => goTo(i)}
                 className={cn(
-                  "shrink-0 px-3 py-2.5 font-plex text-[14px] transition-colors border-b-2 -mb-px",
+                  "flex-1 px-2 pb-2.5 pt-3 font-sans text-[12px] font-medium transition-colors border-b-2 -mb-px text-center",
                   active
                     ? "text-foreground border-primary"
                     : "text-muted-foreground border-transparent"
@@ -915,15 +914,15 @@ function PlannerMobile({
       {/* Horizontal snap scroller */}
       <div
         ref={scrollerRef}
-        className="overflow-x-auto overflow-y-hidden no-scrollbar mt-5"
+        className="overflow-x-auto overflow-y-hidden no-scrollbar mt-4"
         style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
       >
-        <div className="flex gap-3 px-5">
+        <div className="flex gap-2 pr-5">
           {COLS.map((col, i) => (
             <div
               key={col}
               ref={(el) => (colRefs.current[i] = el)}
-              className="shrink-0"
+              className="shrink-0 pl-5"
               style={{ width: "85vw", maxWidth: 380, scrollSnapAlign: "start" }}
             >
               <div className="flex items-baseline justify-between pb-3 mb-4">
