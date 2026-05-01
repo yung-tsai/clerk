@@ -13,7 +13,6 @@ import {
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { CHARACTERS, CHARACTER_LABELS, type CharacterVariant } from "@/lib/characters";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import { clerkSay } from "@/lib/clerk-say";
 
 export interface SettingsData {
