@@ -105,13 +105,6 @@ export function TaskCard({ task, onComplete, onOpen, draggable = true, overlay =
         {task.title}
       </h3>
 
-      {/* Clerk's reasoning — the "why" */}
-      {task.reason && (
-        <p className="mt-1.5 font-plex text-[12px] italic text-muted-foreground leading-[1.4] line-clamp-1">
-          {task.reason}
-        </p>
-      )}
-
       {/* Bottom row: location | check */}
       <div className="mt-2 flex items-center justify-between gap-3 min-h-[22px]">
         <span className="font-plex-mono text-[12px] text-[#2A2A2A] truncate">
