@@ -1,23 +1,66 @@
-## Fix Google OAuth redirect + simplify landing/auth backgrounds
+# Plan: wire new AI sort fields into tasks
 
-### 1. Send users straight to the app after Google sign-in
+The `sort-tasks` edge function now returns `dueDate`, `taskTime`, `location`, and `category` per task — but these are dropped on the client. Currently only `title`, `col`, and `reason` make it into the proposal modal and the DB insert. The DB columns already exist (`due_date`, `task_time`, `location`, `category`, `cat_color`), so this is purely a client-side mapping fix.
 
-**Problem:** `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })` returns the user to `/` (Landing). Since they're now signed in, Landing just shows an "Open" link instead of routing to the app.
+## Changes
 
-**Fix:** In `src/pages/Auth.tsx`, change `redirect_uri` from `window.location.origin` to `${window.location.origin}/app`.
+### 1. `src/pages/AppHome.tsx`
 
-`AppHome` already handles the new-user case — if the profile's `onboarded` flag is false, it auto-redirects to `/onboarding`. So `/app` is the correct single destination for both new and returning Google users.
+**Extend the `Proposal` type** (line 44) to carry the new fields:
+```ts
+type Proposal = {
+  title: string; col: ClerkCol; reason: string;
+  dueDate?: string; taskTime?: string;
+  location?: string; category?: string;
+};
+```
 
-### 2. Plain gray background on Landing + Auth
+**Update `acceptProposals` (lines 259–281)** so the insert rows include the new fields. Empty strings from the AI become `null` so the DB stores nothing rather than `""`. Category gets a stable color via a small hash:
 
-**Current:**
-- `src/pages/Landing.tsx` uses `app-bg` (warm orange + blue radial gradients).
-- `src/pages/Auth.tsx` uses `landing-bg` (heavier multi-color gradients).
+```ts
+const norm = (s?: string) => (s && s.trim() ? s.trim() : null);
+const colorFor = (cat: string | null) => {
+  if (!cat) return 0;
+  let h = 0;
+  for (let i = 0; i < cat.length; i++) h = (h * 31 + cat.charCodeAt(i)) | 0;
+  return Math.abs(h) % 4;
+};
 
-**Fix:** Replace both with plain `bg-background` (the `#F5F5F3` warm gray defined as `--background` in the design tokens). No new colors introduced — just dropping the gradient layers.
+const rows = proposals.map((p, i) => {
+  const category = norm(p.category);
+  return {
+    user_id: user.id,
+    title: p.title,
+    col: p.col,
+    reason: p.reason,
+    position: baseSec + i,
+    due_date: norm(p.dueDate),
+    task_time: norm(p.taskTime),
+    location: norm(p.location),
+    category,
+    cat_color: colorFor(category),
+  };
+});
+```
 
-The gradient utility classes (`landing-bg`, `app-bg`) stay defined in `index.css` in case they're used elsewhere, but Landing and Auth will no longer apply them.
+**Local-fallback path in `processInput` (lines 249–252)**: keep as-is — `classify` only knows column + reason, so the new fields stay undefined and fall through cleanly.
 
-### Files touched
-- `src/pages/Auth.tsx` — update `redirect_uri`; swap `landing-bg` → `bg-background`.
-- `src/pages/Landing.tsx` — swap `app-bg` → `bg-background`.
+**Proposal modal (lines 635–662)**: optional small enhancement — show extracted time / location / category as faint metadata under the title so the user sees what Clerk extracted before accepting. Suggested compact line under the reason:
+```
+{p.taskTime || p.dueDate || p.location || p.category ? (
+  <div className="font-plex-mono text-[11px] text-muted-foreground mt-1">
+    {[p.taskTime, p.dueDate, p.location && `@${p.location}`, p.category]
+      .filter(Boolean).join(" · ")}
+  </div>
+) : null}
+```
+
+### 2. `src/pages/Onboarding.tsx`
+
+**Update the local `Proposal` type (line 75)** to match — same extra optional fields. The `pendingProposals` payload handed to `/app` then carries the AI-extracted fields through to `acceptProposals`, where the mapping above persists them.
+
+## Out of scope
+
+- No DB migration needed — columns already exist.
+- No edge-function changes — it already returns the fields.
+- `TaskCard` and `TaskDetailModal` already render `task_time`, `due_date`, `location`, and `category` + `cat_color`, so once persisted the data shows up automatically.

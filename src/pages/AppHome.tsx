@@ -41,7 +41,15 @@ import {
 
 type Task = TaskCardData & { position: number; created_at: string };
 
-type Proposal = { title: string; col: ClerkCol; reason: string };
+type Proposal = {
+  title: string;
+  col: ClerkCol;
+  reason: string;
+  dueDate?: string;
+  taskTime?: string;
+  location?: string;
+  category?: string;
+};
 
 type ViewMode = "focus" | "planner";
 
