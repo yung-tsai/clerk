@@ -479,6 +479,12 @@ export default function AppHome() {
         .sort((a, b) => a.position - b.position)
     );
 
+    // Only fire a quip when the column actually changed — pure reordering
+    // within a column shouldn't trigger Clerk.
+    if (activeTask.col !== targetCol) {
+      fireMoveQuip(activeTask.col, targetCol);
+    }
+
     const supabase = await getLovableCloudClient();
     await supabase
       .from("tasks")
