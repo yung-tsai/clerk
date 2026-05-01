@@ -1,32 +1,40 @@
-## Fix: true-center the Focus/Planner toggle
+## Two small fixes to the add-task flow
 
-The current 3-col grid centers the toggle within its *cell*, not the viewport. Since the logo cell and streak cell have different intrinsic widths, the middle cell is offset — the toggle drifts.
+### 1. Don't create empty tasks
 
-### Change
+**Problem:** Clicking the `+` AddTaskCard immediately inserts a row in `tasks` with `title: ""` and opens the modal. If the user closes the modal without typing, a titleless task is left in the DB and renders as a near-empty card.
 
-In `src/pages/AppHome.tsx`, the header inner container:
+**Fix:** Switch to a draft-first flow. The modal opens with a local-only draft task; the row is only inserted into Supabase once the user types a title.
 
-- Switch from `grid grid-cols-3` back to a simple `flex justify-between items-center` for logo + streak.
-- Render the toggle as a **sibling absolutely positioned** to the header: `absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2`. This pins it to the true viewport center, exactly like `AppBar` already does.
-- Parent header gets `relative` so the absolute child anchors correctly.
+**Changes in `src/pages/AppHome.tsx`:**
 
-### Shape
+- `handleAddToColumn(col)` — no longer hits Supabase. Builds an in-memory draft task object with a temp id (e.g. `draft-${Date.now()}`), no `user_id` write, and sets it as `selectedTask`. Does NOT push into the `tasks` array (so it doesn't render in the column yet).
+- A new flag (e.g. tracking `selectedTask.id.startsWith("draft-")`) marks the draft state.
+- The modal's first patch handler is intercepted: if the task is a draft and the patch contains a non-empty `title`, insert the row into Supabase, swap the temp id for the real one in `selectedTask`, and add it to `tasks`. Subsequent patches behave normally.
+- Modal close: if still a draft (never got a title), discard — no DB write, no toast.
 
-```text
-<header class="relative ...">
-  <div class="max-w-[1280px] mx-auto px-4 md:px-10 flex justify-between items-center">
-    <img logo />
-    <div streak />
-  </div>
-  <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-    Focus | Planner toggle
-  </div>
-</header>
-```
+**Changes in `src/components/TaskDetailModal.tsx`:**
 
-### Why this works
+- No structural change. The autofocus-on-empty-title behavior already works for drafts.
+- Optionally: disable the "Move to" buttons while in draft state (can't move a non-existent row). Low priority.
 
-Absolute positioning takes the toggle out of normal flow, so its center is anchored to the viewport (via the full-width `relative` header), not to leftover grid space. Logo and streak can grow/shrink freely without nudging it.
+### 2. Remove "Nothing yet" empty state
+
+The dashed `+` AddTaskCard is always rendered at the bottom of every column, so the empty-state text is redundant.
+
+**Changes in `src/pages/AppHome.tsx`:**
+
+- In `DroppableColumn` (around line 1123–1131): remove the `<p>{emptyText}</p>` block. Keep the `DropIndicator` rendering for the empty-with-active-drag case.
+- Remove the now-unused `emptyText` prop from `DroppableColumn`'s signature.
+- Remove the `emptyText="Nothing yet..."` props passed at lines 850, 997, 1065.
+
+Empty columns will then show only the dashed `+` card, which is enough affordance.
 
 ### Files
-- `src/pages/AppHome.tsx` — header markup only. No logic, no other components.
+- `src/pages/AppHome.tsx` — both changes
+- `src/components/TaskDetailModal.tsx` — minor (only if we disable Move-to in draft state)
+
+### Out of scope
+- No schema/migration changes.
+- No changes to the existing inline task card, drag-and-drop, or AI sort flow.
+- No change to AddTaskCard component itself.

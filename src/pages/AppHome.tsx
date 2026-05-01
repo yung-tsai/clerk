@@ -409,26 +409,27 @@ export default function AppHome() {
     await supabase.from("tasks").update({ col }).eq("id", t.id);
   }
 
-  async function handleAddToColumn(col: ClerkCol) {
+  function handleAddToColumn(col: ClerkCol) {
     if (!user) return;
-    const supabase = await getLovableCloudClient();
-    const { data, error } = await supabase
-      .from("tasks")
-      .insert({
-        user_id: user.id,
-        title: "",
-        col,
-        position: Math.floor(Date.now() / 1000),
-      })
-      .select()
-      .single();
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    const newTask = data as Task;
-    setTasks((prev) => [newTask, ...prev]);
-    setSelectedTask(newTask);
+    // Draft-first: don't insert yet. The row is only persisted when the user
+    // types a non-empty title in the modal (see TaskDetailModal onPatch handler).
+    const draft: Task = {
+      id: `draft-${Date.now()}`,
+      user_id: user.id,
+      title: "",
+      col,
+      position: Math.floor(Date.now() / 1000),
+      task_time: null,
+      location: null,
+      category: null,
+      cat_color: 0,
+      due_date: null,
+      reason: null,
+      note: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as Task;
+    setSelectedTask(draft);
   }
   function fireMoveQuip(prevCol: ClerkCol, nextCol: ClerkCol) {
     const within =
@@ -752,8 +753,52 @@ export default function AppHome() {
       {/* ── Task detail modal ── */}
       <TaskDetailModal
         task={selectedTask}
-        onOpenChange={(o) => !o && setSelectedTask(null)}
+        onOpenChange={(o) => {
+          if (!o) {
+            // Discard empty drafts on close — never persisted
+            setSelectedTask(null);
+          }
+        }}
         onPatch={(id, patch) => {
+          const isDraft = id.startsWith("draft-");
+          if (isDraft) {
+            // Only persist once the user types a non-empty title
+            const nextTitle = patch.title !== undefined ? patch.title : selectedTask?.title;
+            if (!nextTitle || !nextTitle.trim()) {
+              // Update local draft state (for tag/time/etc typed before title)
+              setSelectedTask((prev) => (prev ? { ...prev, ...patch } : prev));
+              return;
+            }
+            // Promote draft → real task
+            const draft = selectedTask;
+            if (!draft || !user) return;
+            (async () => {
+              const supabase = await getLovableCloudClient();
+              const { data, error } = await supabase
+                .from("tasks")
+                .insert({
+                  user_id: user.id,
+                  title: nextTitle.trim(),
+                  col: draft.col,
+                  position: draft.position,
+                  task_time: patch.task_time ?? draft.task_time,
+                  location: patch.location ?? draft.location,
+                  category: patch.category ?? draft.category,
+                  cat_color: patch.cat_color ?? draft.cat_color,
+                  due_date: patch.due_date ?? draft.due_date,
+                })
+                .select()
+                .single();
+              if (error) {
+                toast.error(error.message);
+                return;
+              }
+              const newTask = data as Task;
+              setTasks((prev) => [newTask, ...prev]);
+              setSelectedTask(newTask);
+            })();
+            return;
+          }
           setTasks((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
           (async () => {
             const supabase = await getLovableCloudClient();
@@ -761,10 +806,15 @@ export default function AppHome() {
           })();
         }}
         onMove={(t, col) => {
+          if (t.id.startsWith("draft-")) return; // can't move an unsaved draft
           moveTask(t as Task, col);
           setSelectedTask(null);
         }}
         onDelete={(t) => {
+          if (t.id.startsWith("draft-")) {
+            setSelectedTask(null);
+            return;
+          }
           deleteTask(t as Task);
           setSelectedTask(null);
         }}
@@ -847,7 +897,7 @@ function FocusView({
           tasks={tasks}
           onComplete={onComplete}
           onOpen={onOpen}
-          emptyText="Nothing yet. Add tasks below."
+          
           dropTarget={dropTarget}
           activeId={activeId}
           onAddTask={onAddTask}
@@ -994,7 +1044,6 @@ function PlannerMobile({
                 tasks={grouped[col]}
                 onComplete={onComplete}
                 onOpen={onOpen}
-                emptyText="Nothing yet."
                 dropTarget={dropTarget}
                 activeId={activeId}
                 onAddTask={onAddTask}
@@ -1062,7 +1111,6 @@ function PlannerDesktop({
                 tasks={grouped[col]}
                 onComplete={onComplete}
                 onOpen={onOpen}
-                emptyText="Nothing yet."
                 dropTarget={dropTarget}
                 activeId={activeId}
                 onAddTask={onAddTask}
@@ -1091,7 +1139,6 @@ function DroppableColumn({
   tasks,
   onComplete,
   onOpen,
-  emptyText,
   dropTarget,
   activeId,
   onAddTask,
@@ -1100,7 +1147,6 @@ function DroppableColumn({
   tasks: Task[];
   onComplete: (t: Task) => void;
   onOpen: (t: Task) => void;
-  emptyText: string;
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask?: (col: ClerkCol) => void;
@@ -1121,14 +1167,7 @@ function DroppableColumn({
         )}
       >
         {visible.length === 0 ? (
-          <>
-            {showIndicator && <DropIndicator />}
-            {!showIndicator && (
-              <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
-                {emptyText}
-              </p>
-            )}
-          </>
+          showIndicator && <DropIndicator />
         ) : (
           visible.map((t, idx) => (
             <div key={t.id} className="flex flex-col gap-2">
