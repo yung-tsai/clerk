@@ -82,7 +82,7 @@ export default function Landing() {
               className="font-plex font-light leading-[1.05] tracking-[-0.03em] text-foreground mb-4 animate-fade-up"
               style={{ fontSize: "clamp(30px, 5.6vw, 52px)" }}
             >
-              The to-do app that <strong className="font-semibold">explains what to do first.</strong>
+              The to-do app that <strong className="font-semibold">prioritizes and explains what to do first.</strong>
             </h1>
             {/* Mascot + bubble — character on left, bubble tail points left toward him */}
             <div className="mb-7 flex items-end justify-center md:justify-start gap-0 max-w-full animate-fade-up">
