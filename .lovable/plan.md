@@ -1,57 +1,63 @@
-## What I found
+## Mobile optimization for AppHome
 
-`TaskCard.tsx` is correct — it already reads `task_time`, `due_date`, `location`, `category`, and `cat_color`, and renders them in exactly the slots you described. The "Add time" / "Add location" / "Add tag" placeholders only appear when those fields are `null`.
+Goal: under 768px, the Planner becomes a single-column, tab-driven, swipeable view that matches your screenshot. Desktop (≥768px) stays exactly as it is.
 
-The data isn't reaching the card because it's `null` in the database. Confirmed via a direct DB query — every task created today has:
+### 1. Planner — mobile layout (under 768px)
 
-```
-task_time: null, due_date: null, location: null, category: null, cat_color: 0
-```
+**Tab bar at top** (just under the AppBar header area, above the column content):
+- Four tabs: `Today | Tomorrow | Upcoming | Someday`
+- Active tab gets a 2px underline in the primary color (matches screenshot)
+- Inactive tabs are muted grey, same `font-plex` family
+- Tapping a tab snaps the column scroller to that column
+- Horizontally scrollable if the four labels don't fit (they should at 360px+)
 
-…even for unambiguous inputs like `"meeting at 3"` (should give `3:00 PM` + `Work`) and `"pick up kids at Lincoln Elementary Friday"` (should give `Friday` + `Lincoln Elementary` + `Family`).
+**Column scroller**:
+- Replace the current desktop grid with a horizontal scroll-snap container
+- Each column is `~85vw` wide so the next column peeks `~10–12%` on the right edge (matches screenshot)
+- `scroll-snap-type: x mandatory` + `scroll-snap-align: start` on each column so swipe lands cleanly on one column
+- Column gutter: ~16px between columns (small gap, no vertical divider line on mobile — the divider is a desktop affordance)
+- Sync state both ways: tab tap → programmatic scroll; user swipe → updates active tab via scroll position observer (IntersectionObserver on each column, or scroll listener computing nearest snap index)
 
-The mapping in `acceptProposals` (AppHome.tsx lines 267–304) is correct — it forwards `dueDate`, `taskTime`, `location`, `category` from the proposal into the insert. So the fields are being dropped earlier, in the edge function response itself.
+**Inside each column** (mobile):
+- Keep the existing column header row (`Today` + count `06`) but pull padding in
+- Cards stay full-width within the column (`max-w-[380px]` already on `TaskCard` — fine, will fit inside ~85vw on phones)
+- Reduce outer page padding: `px-4` instead of `px-10`, `pt-4` instead of `pt-7`
 
-### Root cause
+**Drag-and-drop on mobile**:
+- Keep working within a column (vertical reorder) — `TouchSensor` with delay is already configured
+- Cross-column drag is awkward on a swipe-paged layout; the existing TaskDetailModal "Move to" buttons cover that case, so cross-column drag stays desktop-only behavior in practice (no code change needed — it'll still work technically, just rarely used on mobile)
+- Hide the desktop scroll arrows on mobile (already `hidden md:flex`, no change)
 
-`supabase/functions/sort-tasks/index.ts` line 155 uses:
+### 2. Focus view — tighten for mobile
 
-```ts
-model: "google/gemini-2.5-flash-preview"
-```
+- Reduce wrapper padding: `px-4 pt-5 pb-8` on mobile (currently `px-10 pt-7 pb-10`)
+- Day header (`Friday` + date) stays centered, slightly smaller on mobile: `text-[24px]` instead of `28px`
+- Card column already constrained to `max-w-[420px] mx-auto` — keep
 
-That model id isn't on Lovable AI's supported list. The supported Gemini Flash models are `google/gemini-2.5-flash`, `google/gemini-2.5-flash-lite`, and `google/gemini-3-flash-preview`. The gateway is likely returning a tool call where `dueDate`/`taskTime`/`location`/`category` come back as empty strings (which then get normalized to `null` on insert). No 4xx is logged, which fits a "model rerouted / returns minimal output" failure mode rather than a hard error.
+### 3. Breakpoint strategy
 
-## Changes
+- Use Tailwind's `md:` prefix (≥768px) for desktop overrides
+- Mobile is the new default; current desktop layout becomes the `md:` variant
+- `useIsMobile()` hook (already exists) is used inside `PlannerView` for the JS logic that needs to know which mode it's in (tab/scroll sync, conditional rendering of the tab bar vs. desktop's 4-col grid)
 
-### 1. `supabase/functions/sort-tasks/index.ts`
+### 4. Files to change
 
-- Change `model` from `"google/gemini-2.5-flash-preview"` to `"google/gemini-2.5-flash"` (the supported, current Flash model — best fit for structured tool calling at low latency).
-- Add a one-line `console.log` of the parsed tool-call output (titles + the four extracted fields only, not the full payload) so future regressions show up in edge function logs immediately.
+- `src/pages/AppHome.tsx`
+  - `PlannerView`: split into `PlannerMobile` and `PlannerDesktop` (or branch on `useIsMobile()` inside the same component). Mobile path renders the tab bar + horizontal snap scroller. Desktop path keeps the current 4-column grid + arrows.
+  - `FocusView`: responsive padding/typography classes
+- No changes to `TaskCard`, `AppBar`, `TaskDetailModal`, drag sensors, or any backend/AI code
 
-### 2. `src/pages/AppHome.tsx` — temporary diagnostic log
+### 5. Out of scope
 
-In `processInput` right after `if (data?.tasks?.length) sorted = data.tasks;`, add:
+- Proposal modal, Settings modal, Completed modal — keeping current responsive behavior
+- Onboarding screen — separate pass if you want
+- Landing/Auth pages — already adjusted in earlier work
+- Cross-column swipe-while-dragging — not adding; "Move to" buttons in detail modal handle it
 
-```ts
-console.log("[sort-tasks] proposals from AI:", sorted);
-```
+### 6. Verification (after build)
 
-This is what you asked for — lets you see in the browser console exactly what the AI returned per task (title + col + reason + the four new fields). Keep it for now; we can remove it once we confirm fields are flowing.
-
-### 3. No changes to `TaskCard.tsx`
-
-It already renders all four fields correctly. Once the edge function returns populated fields, cards will display them automatically.
-
-## How to verify after the fix
-
-1. Sort a task like `"call dentist tomorrow at 9 at the office"`.
-2. Browser console should log a proposal with `taskTime: "9:00 AM"`, `dueDate: "Friday"` (or whatever tomorrow is), `location: "Office"`, `category: "Health"`.
-3. After accepting, the card should show `9:00 AM | Friday` top-left, `@Office` bottom-left, and a colored `HEALTH` tag top-right.
-4. Old tasks (the ones already in the DB with null fields) will still show placeholders — that's expected; the fix is forward-only unless we backfill, which I'd skip for now.
-
-## Out of scope
-
-- No DB backfill for existing tasks.
-- No changes to the prompt itself — it's already specific and well-formed; the issue is purely the model id.
-- No fallback model logic. If the supported model fails, the existing local-classify fallback in `processInput` already handles it (just without the four extracted fields, which is acceptable degradation).
+1. Resize preview to 390px: tabs visible, Today column shown, Tomorrow column peeks on right
+2. Swipe left → snaps to Tomorrow, underline moves to Tomorrow tab
+3. Tap "Someday" tab → snaps to Someday column
+4. Resize to 1024px: original 4-column desktop grid returns, no tabs
+5. Focus view at 390px: less padding, day header sized for phone

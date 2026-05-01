@@ -782,12 +782,12 @@ function FocusView({
 }) {
   const today = new Date();
   return (
-    <div className="max-w-[1280px] mx-auto px-10 pt-7 pb-10">
+    <div className="max-w-[1280px] mx-auto px-4 pt-5 pb-8 md:px-10 md:pt-7 md:pb-10">
       <div className="w-full max-w-[420px] mx-auto flex flex-col">
-        <div className="text-center pb-6">
+        <div className="text-center pb-5 md:pb-6">
           <div
-            className="font-plex font-bold text-foreground"
-            style={{ fontSize: 28, letterSpacing: "-0.02em", lineHeight: 1 }}
+            className="font-plex font-bold text-foreground text-[24px] md:text-[28px]"
+            style={{ letterSpacing: "-0.02em", lineHeight: 1 }}
           >
             {today.toLocaleDateString("en-US", { weekday: "long" })}
           </div>
