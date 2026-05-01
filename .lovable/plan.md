@@ -1,63 +1,76 @@
-## Mobile optimization for AppHome
+## Three fixes
 
-Goal: under 768px, the Planner becomes a single-column, tab-driven, swipeable view that matches your screenshot. Desktop (≥768px) stays exactly as it is.
+### 1. Planner mobile — column header alignment
 
-### 1. Planner — mobile layout (under 768px)
+Confirming: yes, the mobile planner **is** horizontally swipeable. Each column scroll-snaps; tabs sync to the active column.
 
-**Tab bar at top** (just under the AppBar header area, above the column content):
-- Four tabs: `Today | Tomorrow | Upcoming | Someday`
-- Active tab gets a 2px underline in the primary color (matches screenshot)
-- Inactive tabs are muted grey, same `font-plex` family
-- Tapping a tab snaps the column scroller to that column
-- Horizontally scrollable if the four labels don't fit (they should at 360px+)
+You want "Today" (the column header) to sit flush against the left edge of its column container, aligned with the cards' left edge below it (not indented further).
 
-**Column scroller**:
-- Replace the current desktop grid with a horizontal scroll-snap container
-- Each column is `~85vw` wide so the next column peeks `~10–12%` on the right edge (matches screenshot)
-- `scroll-snap-type: x mandatory` + `scroll-snap-align: start` on each column so swipe lands cleanly on one column
-- Column gutter: ~16px between columns (small gap, no vertical divider line on mobile — the divider is a desktop affordance)
-- Sync state both ways: tab tap → programmatic scroll; user swipe → updates active tab via scroll position observer (IntersectionObserver on each column, or scroll listener computing nearest snap index)
+Currently the column header has `px-1` from the previous fix, which inset it. The fix: remove `px-1` so the header sits at the column's left edge — matching exactly where the card's left edge sits (cards are full-width within the column).
 
-**Inside each column** (mobile):
-- Keep the existing column header row (`Today` + count `06`) but pull padding in
-- Cards stay full-width within the column (`max-w-[380px]` already on `TaskCard` — fine, will fit inside ~85vw on phones)
-- Reduce outer page padding: `px-4` instead of `px-10`, `pt-4` instead of `pt-7`
+Also bump the scroller's left padding slightly so the active column doesn't kiss the screen edge:
+- Tab bar `px-5` → keep
+- Scroller `px-5` → keep
+- Column header: remove `px-1` (back to flush left)
 
-**Drag-and-drop on mobile**:
-- Keep working within a column (vertical reorder) — `TouchSensor` with delay is already configured
-- Cross-column drag is awkward on a swipe-paged layout; the existing TaskDetailModal "Move to" buttons cover that case, so cross-column drag stays desktop-only behavior in practice (no code change needed — it'll still work technically, just rarely used on mobile)
-- Hide the desktop scroll arrows on mobile (already `hidden md:flex`, no change)
+**File:** `src/pages/AppHome.tsx`, `PlannerMobile` — change column header row from `px-1 pb-3 mb-4` back to `pb-3 mb-4`.
 
-### 2. Focus view — tighten for mobile
+### 2. Bigger Clerk logo everywhere
 
-- Reduce wrapper padding: `px-4 pt-5 pb-8` on mobile (currently `px-10 pt-7 pb-10`)
-- Day header (`Friday` + date) stays centered, slightly smaller on mobile: `text-[24px]` instead of `28px`
-- Card column already constrained to `max-w-[420px] mx-auto` — keep
+Currently `h-[22px]` on Landing and AppHome. You asked for ~60px wide. The SVG aspect ratio means width comes from height; I'll bump to `h-[36px]` which renders at roughly 60px wide given the wordmark's proportions. Same size on mobile and desktop (no responsive shrink — you said "bigger on all pages").
 
-### 3. Breakpoint strategy
+**Files:**
+- `src/pages/Landing.tsx` line 73 — `h-[22px] sm:h-[24px]` → `h-[36px]`
+- `src/pages/AppHome.tsx` line 549 — `h-[22px]` → `h-[36px]`
 
-- Use Tailwind's `md:` prefix (≥768px) for desktop overrides
-- Mobile is the new default; current desktop layout becomes the `md:` variant
-- `useIsMobile()` hook (already exists) is used inside `PlannerView` for the JS logic that needs to know which mode it's in (tab/scroll sync, conditional rendering of the tab bar vs. desktop's 4-col grid)
+If 36px renders too tall/short visually, easy to tweak after.
 
-### 4. Files to change
+### 3. Task detail modal — bottom sheet on mobile
 
-- `src/pages/AppHome.tsx`
-  - `PlannerView`: split into `PlannerMobile` and `PlannerDesktop` (or branch on `useIsMobile()` inside the same component). Mobile path renders the tab bar + horizontal snap scroller. Desktop path keeps the current 4-column grid + arrows.
-  - `FocusView`: responsive padding/typography classes
-- No changes to `TaskCard`, `AppBar`, `TaskDetailModal`, drag sensors, or any backend/AI code
+The current `TaskDetailModal` uses `Dialog` which renders centered with `max-w-[720px]` and a 2-column grid (`md:grid-cols-[1fr_280px]`). On mobile it collapses to one column but is still a centered dialog, which is cramped and gets covered by the bottom AppBar.
 
-### 5. Out of scope
+**Approach:** branch on `useIsMobile()`. Desktop keeps the exact current `Dialog` (no changes — desktop is preserved). Mobile renders the same content inside a bottom `Sheet` (`side="bottom"`) using the existing `src/components/ui/sheet.tsx`.
 
-- Proposal modal, Settings modal, Completed modal — keeping current responsive behavior
-- Onboarding screen — separate pass if you want
-- Landing/Auth pages — already adjusted in earlier work
-- Cross-column swipe-while-dragging — not adding; "Move to" buttons in detail modal handle it
+Mobile sheet specifics:
+- Slides up from bottom
+- Height: `h-[88vh]`, rounded top corners `rounded-t-[20px]`
+- Internal scrolling (`overflow-y-auto`) so long content (reasoning + all fields + delete button) is reachable
+- Bottom padding `pb-32` to clear the floating AppBar input
+- Single-column layout (skip the `md:grid-cols-[1fr_280px]` split — fields stack under the title/reasoning/move-to section)
+- Close handle: small drag indicator at top + tap outside to close (Sheet handles both)
 
-### 6. Verification (after build)
+I'll extract the body content (title textarea + reasoning + move-to + fields + delete) into a small inner component used by both Dialog (desktop) and Sheet (mobile) so they stay in sync.
 
-1. Resize preview to 390px: tabs visible, Today column shown, Tomorrow column peeks on right
-2. Swipe left → snaps to Tomorrow, underline moves to Tomorrow tab
-3. Tap "Someday" tab → snaps to Someday column
-4. Resize to 1024px: original 4-column desktop grid returns, no tabs
-5. Focus view at 390px: less padding, day header sized for phone
+**Files:**
+- `src/components/TaskDetailModal.tsx` — add `useIsMobile()` branch, import `Sheet`/`SheetContent` from `@/components/ui/sheet`, extract shared body.
+
+### 4. Other modals — same pattern check
+
+Quick audit:
+- `SettingsModal` (Dialog, max-w probably tall content) — likely also bad on mobile. I'll apply the same Sheet-on-mobile pattern.
+- `CompletedModal` — same treatment.
+- `Proposal modal` (inline in `AppHome.tsx`) — already has `max-w-[440px]` and `max-h-[60vh]` scrolling, works ok on mobile but I'll convert to Sheet on mobile for consistency.
+- `AlertDialog` confirmations (clear tasks, etc.) — leave as-is; they're tiny confirm prompts, work fine centered.
+
+So all four content-heavy modals get the mobile-Sheet treatment:
+1. `TaskDetailModal`
+2. `SettingsModal`
+3. `CompletedModal`
+4. Proposal modal (inline in `AppHome.tsx`)
+
+Desktop Dialog rendering is preserved exactly for all four.
+
+### Verification (after build)
+
+1. Mobile (390px): "Today" column header sits flush left, aligned with card edges below
+2. Logo on Landing and AppHome is visibly larger (~60px wide)
+3. Tap a task on mobile → sheet slides up from bottom, all fields scrollable, delete button reachable
+4. Open Settings / Completed / Proposal on mobile → all come up as bottom sheets
+5. Desktop (1024px+): all four modals look identical to before — centered Dialog, no Sheet
+
+### Out of scope
+
+- AppBar itself (you didn't ask)
+- AlertDialog confirmations
+- Onboarding screen
+- Any AI / backend code
