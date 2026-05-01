@@ -538,15 +538,24 @@ export default function AppHome() {
 
   const variant = profile?.character ?? "blue";
 
+  // Idle fade — Focus view only; bubble visibility forces chrome back.
+  const anyModalOpen = !!proposals || settingsOpen || completedOpen || !!selectedTask;
+  const idleEnabled = view === "focus" && !anyModalOpen;
+  const idle = useIdle(4000, idleEnabled);
+  const focusIdleHidden = view === "focus" && idle && !bubbleVisible && !anyModalOpen;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* ── Fixed header ── */}
-      {!proposals && !settingsOpen && !completedOpen && (
+      {/* ── Fixed header ── (hidden on mobile when in Planner; faded when Focus is idle) */}
+      {!anyModalOpen && !(useIsMobileSafe() && view === "planner") && (
         <header
-          className="hidden md:flex fixed top-0 left-0 right-0 z-[100] items-center bg-background border-b border-divider"
+          className={cn(
+            "fixed top-0 left-0 right-0 z-[100] flex items-center bg-background border-b border-divider transition-opacity duration-500",
+            focusIdleHidden && "opacity-0 pointer-events-none",
+          )}
           style={{ height: 64 }}
         >
-          <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
+          <div className="w-full max-w-[1280px] mx-auto px-4 md:px-10 flex items-center justify-between">
             <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none" draggable={false} />
 
             {/* Toggle Focus | Planner */}
