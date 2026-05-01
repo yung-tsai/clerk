@@ -48,7 +48,11 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
 
   return (
     <Dialog open={!!task} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[720px] p-0 overflow-hidden bg-background">
+      <DialogContent className="max-w-[720px] p-0 overflow-hidden bg-background [&>button]:hidden md:[&>button]:inline-flex">
+        {/* Mobile-only sheet header (Settings-style); desktop keeps the corner X */}
+        <div className="md:hidden">
+          <MobileSheetHeader title="Task" onClose={() => onOpenChange(false)} />
+        </div>
         <div className="overflow-y-auto max-h-[92vh] md:max-h-none pb-28 md:pb-0">
         <div className="grid md:grid-cols-[1fr_280px] gap-0">
           {/* Left */}
