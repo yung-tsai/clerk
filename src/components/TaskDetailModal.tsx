@@ -28,9 +28,14 @@ interface Props {
 export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete }: Props) {
   const [local, setLocal] = useState<TaskCardData | null>(task);
   const debounceRef = useRef<number | null>(null);
+  const titleRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     setLocal(task);
+    // Autofocus title when opened with an empty title (per-column add flow)
+    if (task && task.title === "") {
+      window.setTimeout(() => titleRef.current?.focus(), 60);
+    }
   }, [task]);
 
   function update(patch: TaskPatch) {
