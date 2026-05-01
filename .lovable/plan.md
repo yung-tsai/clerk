@@ -1,58 +1,52 @@
-## Plan: Focus idle fade, modal/bar layering, sheet consistency, Settings auto-save
+# Planner refinements
 
-Three independent fixes scoped tightly so Planner mobile and desktop modals stay untouched.
+Three changes to make the Planner board easier to scan and faster to add to.
 
-### 1. Focus page — bring back header on mobile + idle fade
+## 1. Make 'Someday' more discoverable
 
-Currently the global header in `src/pages/AppHome.tsx` is `hidden md:flex`, so on mobile Focus has no Clerk logo / Focus·Planner toggle at all. Restore both, and fade the chrome when the user is idle — but only on Focus.
+Tighten column padding so 'Someday' partially shows on common desktop widths, AND keep a soft right-edge fade as a visual hint that more is there. Arrows stay.
 
-- Make the header visible on mobile **only when `view === "focus"`**. On Planner mobile, keep it hidden (the fixed tab bar is the header there).
-- Add an idle timer hook in `AppHome` (e.g. `useIdle(4000)`) that listens to `pointermove`, `pointerdown`, `keydown`, `scroll`, `touchstart` and resets a 4s timer. Returns `idle: boolean`.
-- When `view === "focus"` and `idle === true` and no modal/proposal is open: apply `opacity-0 pointer-events-none` (with `transition-opacity duration-500`) to both the `<header>` and the `<AppBar>` wrapper. Any pointer/key/scroll event brings them back instantly.
-- Planner view ignores idle entirely — header (desktop) and bottom bar stay fully visible.
-- The bubble/quip flow continues to work; when Clerk speaks (`bubbleVisible`), force the bar visible regardless of idle so the user can read it.
+- Reduce inter-column padding from `pr-7` / `pl-7` (28px) to `pr-4` / `pl-4` (16px). Also reduce column width from `380px` to `320px`. Net effect: at ~1280px viewport, Today + Tomorrow + Upcoming fit fully and ~80–100px of 'Someday' peeks.
+- Add a 24px right-edge gradient fade overlay inside the scroller container (white → transparent), only visible when `canRight` is true. Pure visual hint, doesn't block clicks (`pointer-events-none`).
+- Keep arrows for full navigation.
 
-### 2. Hide the bottom AppBar whenever any sheet/modal is open
+## 2. Filled blue arrows, same placement
 
-Today `AppBar` is hidden only when `proposals || settingsOpen || completedOpen` are open. The task detail sheet (`selectedTask`) is missing from that list, so the bar floats on top of the bottom-sheet on mobile.
+Keep the current vertical-center placement on the left/right edges. Restyle:
 
-- In `AppHome.tsx`, add `!selectedTask` to both the header guard (line 543) and the AppBar guard (line 623).
-- That single change covers the task sheet. All other modal types are already in the guard.
+- Background: `bg-primary` (the brand blue `#567CF8`)
+- Icon color: white
+- Drop the white border; keep soft shadow
+- Hover: slightly darker blue + larger shadow
 
-### 3. Make all mobile sheets visually consistent (Settings style)
+## 3. Per-column "Add task"
 
-The shared `DialogContent` in `src/components/ui/dialog.tsx` already renders as a bottom sheet on mobile (`inset-x-0 bottom-0 rounded-t-[20px]`, slide-in-from-bottom). Good. The inconsistency is the *inner* chrome:
+Each column gets its own add affordance at the bottom of the task list. Clicking it opens the existing `TaskDetailModal` pre-filled with that column (and a blank title), so the user lands directly in edit mode for the column they chose. No Clerk routing, no AI sort.
 
-- **SettingsModal** has a sticky header bar with "Close" (left) + title (center) + action (right), a translucent backdrop-blur, and a tinted gradient background. This is the look we want everywhere on mobile.
-- **TaskDetailModal** and **CompletedModal** currently use the default Radix `X` close button in the corner with no top bar.
+- New component `AddTaskCard` rendered as the last item in each `DroppableColumn`. Matches the screenshot: dashed-border card, centered `+` icon, hover lifts to solid border.
+- Click handler creates a new task row in Supabase with `col` set to that column, blank `title`, `reason = null`, then immediately opens `TaskDetailModal` for it.
+- Same component renders on mobile inside each column on the Planner mobile view — consistent UX.
+- The card is non-draggable and excluded from drag/drop targeting.
 
-Plan:
-- Extract a small `SheetHeader` helper in a new file `src/components/ui/sheet-header.tsx` with the Settings header pattern: `Close` chevron-left button on the left, centered title, optional right-side slot. Include the `bg-[rgba(245,245,243,0.85)] backdrop-blur` styling and bottom hairline border.
-- Use `SheetHeader` in `TaskDetailModal` and `CompletedModal`, but **only render it on mobile** (`md:hidden`) so desktop dialogs stay exactly as they are today (centered, with the corner X).
-- Hide the default Radix `X` close on mobile for these two modals by adding `[&>button]:hidden md:[&>button]:inline-flex` (matching what SettingsModal already does, but scoped to mobile).
-- Result: on mobile, all three sheets slide up from the bottom with the same header bar; on desktop, nothing changes.
+## Technical notes
 
-### 4. Settings — remove "Save" button (auto-save)
+Files to edit:
+- `src/pages/AppHome.tsx`
+  - `PlannerDesktop`: column width 380→320, padding 7→4, add right-edge fade overlay, restyle both arrow buttons.
+  - `PlannerMobile`: render `AddTaskCard` after each column's task list.
+  - `DroppableColumn` (or its caller): accept an `onAddTask(col)` prop and render `AddTaskCard` after the task list.
+  - Add `handleAddToColumn(col)` that inserts a blank task row scoped to that column for the current user, then sets `selectedTask` to open the modal.
+- New `src/components/AddTaskCard.tsx`
+  - Dashed border, centered `+`, matches existing `TaskCard` width/radius. Click → calls `onAdd`.
+- `src/components/TaskDetailModal.tsx`
+  - On open, if `title === ""`, autofocus the title textarea so the user can type immediately.
 
-`SettingsModal.tsx` currently saves only when the user taps "Save" (line 106-114). The fields are simple (name + character) and `onCharacterPreview` already updates the avatar live. Switch to auto-save:
+Layout sanity check at 1280px: scroller width ≈ 1200px (after `px-10`). With 4 × 320px columns + 3 × 32px gutters (16px on each side of internal dividers) = 1280 + 96 = too wide. Effective cols actually use `pr-4`/`pl-4` only between, so gutters total ~96px → 'Someday' ends up partially visible (~20–60% depending on container), which is the goal. The fade + arrow reinforce.
 
-- Remove the `handleSave` button from the header. Replace the right slot with empty space (or a subtle "Saved" toast indicator — skip for simplicity).
-- Auto-persist on change:
-  - **Name:** debounce 600ms after `onChange`, then call `onSave({ display_name: name.trim(), character })`.
-  - **Character:** save immediately when picked (already previews live; just also persist).
-- Keep `onSave` signature as-is — only the trigger changes.
-- Drop `saving` state (no longer needed for the button); keep optimistic UI.
+```text
+desktop @1280px:
+[ Today ][ Tomorrow ][ Upcoming ][ Some…│fade│
+  ←                                          →
+```
 
-### Files to touch
-
-- `src/pages/AppHome.tsx` — header `hidden md:flex` → conditional on view+idle; add idle hook; add `!selectedTask` to guard.
-- `src/components/ui/sheet-header.tsx` — new shared mobile sheet header.
-- `src/components/TaskDetailModal.tsx` — add `<SheetHeader className="md:hidden" />`, hide default close on mobile.
-- `src/components/CompletedModal.tsx` — same treatment.
-- `src/components/SettingsModal.tsx` — remove Save button, add debounced auto-save on name + immediate save on character pick.
-
-### Out of scope / preserved
-
-- Planner mobile layout, tab bar, column padding — untouched.
-- Desktop versions of all three modals — untouched (no visual change).
-- `dialog.tsx` base component — already handles mobile bottom-sheet correctly; no edit needed.
+No DB schema changes. No new dependencies.
