@@ -11,6 +11,8 @@ import { classify } from "@/lib/clerk-classify";
 import { isNewDay, planCarryOver } from "@/lib/carry-over";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
+import { clerkSay } from "@/lib/clerk-say";
+import { ClerkCorner } from "@/components/ClerkBubble";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
 import { CompletedModal } from "@/components/CompletedModal";
@@ -661,7 +663,7 @@ export default function AppHome() {
             toast.error(error.message);
           } else {
             setTasks([]);
-            toast.success("All tasks cleared.");
+            clerkSay("All tasks cleared.");
           }
         }}
       />
@@ -675,6 +677,8 @@ export default function AppHome() {
           variant={variant}
         />
       )}
+
+      <ClerkCorner variant={variant} />
     </div>
   );
 }
