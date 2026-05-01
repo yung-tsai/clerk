@@ -28,9 +28,14 @@ interface Props {
 export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete }: Props) {
   const [local, setLocal] = useState<TaskCardData | null>(task);
   const debounceRef = useRef<number | null>(null);
+  const titleRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     setLocal(task);
+    // Autofocus title when opened with an empty title (per-column add flow)
+    if (task && task.title === "") {
+      window.setTimeout(() => titleRef.current?.focus(), 60);
+    }
   }, [task]);
 
   function update(patch: TaskPatch) {
@@ -58,6 +63,7 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
           {/* Left */}
           <div className="p-7 pr-5 flex flex-col gap-7 min-w-0">
             <textarea
+              ref={titleRef}
               value={local.title}
               onChange={(e) => update({ title: e.target.value })}
               rows={2}
