@@ -409,26 +409,27 @@ export default function AppHome() {
     await supabase.from("tasks").update({ col }).eq("id", t.id);
   }
 
-  async function handleAddToColumn(col: ClerkCol) {
+  function handleAddToColumn(col: ClerkCol) {
     if (!user) return;
-    const supabase = await getLovableCloudClient();
-    const { data, error } = await supabase
-      .from("tasks")
-      .insert({
-        user_id: user.id,
-        title: "",
-        col,
-        position: Math.floor(Date.now() / 1000),
-      })
-      .select()
-      .single();
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    const newTask = data as Task;
-    setTasks((prev) => [newTask, ...prev]);
-    setSelectedTask(newTask);
+    // Draft-first: don't insert yet. The row is only persisted when the user
+    // types a non-empty title in the modal (see TaskDetailModal onPatch handler).
+    const draft: Task = {
+      id: `draft-${Date.now()}`,
+      user_id: user.id,
+      title: "",
+      col,
+      position: Math.floor(Date.now() / 1000),
+      task_time: null,
+      location: null,
+      category: null,
+      cat_color: 0,
+      due_date: null,
+      reason: null,
+      note: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as Task;
+    setSelectedTask(draft);
   }
   function fireMoveQuip(prevCol: ClerkCol, nextCol: ClerkCol) {
     const within =
