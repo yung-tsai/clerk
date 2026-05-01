@@ -875,12 +875,14 @@ function PlannerMobile({
   onOpen,
   dropTarget,
   activeId,
+  onAddTask,
 }: {
   grouped: Record<ClerkCol, Task[]>;
   onComplete: (t: Task) => void;
   onOpen: (t: Task) => void;
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
+  onAddTask: (col: ClerkCol) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<Array<HTMLDivElement | null>>([]);
