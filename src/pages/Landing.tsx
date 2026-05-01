@@ -7,11 +7,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import clerkLogo from "@/assets/clerk-logo.svg";
 
 const BUBBLE_LINES = [
-  "Tell me what's on your mind. I'll tell you what to start with — and why.",
+  "Dump it on me. I'll prioritize what's first — and tell you why.",
   "Twelve things on your plate? I'll pick one.",
   "I don't just sort. I explain.",
   "Stuck on what's first? That's my job.",
-  "You decide enough. Let me decide this.",
+  "You decide enough. Let me handle this one.",
 ];
 
 
