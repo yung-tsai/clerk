@@ -11,8 +11,7 @@ import { classify } from "@/lib/clerk-classify";
 import { isNewDay, planCarryOver } from "@/lib/carry-over";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
-import { clerkSay } from "@/lib/clerk-say";
-import { ClerkCorner } from "@/components/ClerkBubble";
+import { clerkSay, subscribeClerk } from "@/lib/clerk-say";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
 import { CompletedModal } from "@/components/CompletedModal";
@@ -201,6 +200,12 @@ export default function AppHome() {
     if (bubbleTimer.current) window.clearTimeout(bubbleTimer.current);
     bubbleTimer.current = window.setTimeout(() => setBubbleVisible(false), ms);
   }
+
+  // Route global clerkSay() messages through the in-input Clerk bubble.
+  useEffect(() => {
+    return subscribeClerk((msg, duration) => showBubble(msg, duration));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const grouped = useMemo(() => {
     const g: Record<ClerkCol, Task[]> = { today: [], tomorrow: [], upcoming: [], someday: [] };
@@ -687,8 +692,6 @@ export default function AppHome() {
           variant={variant}
         />
       )}
-
-      <ClerkCorner variant={variant} />
     </div>
   );
 }
