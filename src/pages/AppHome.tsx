@@ -667,6 +667,13 @@ export default function AppHome() {
                         {p.reason}
                       </div>
                     )}
+                    {(p.taskTime || p.dueDate || p.location || p.category) && (
+                      <div className="font-plex-mono text-[11px] text-muted-foreground mt-1">
+                        {[p.taskTime, p.dueDate, p.location && `@${p.location}`, p.category]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
+                    )}
                   </div>
                   <select
                     value={p.col}
