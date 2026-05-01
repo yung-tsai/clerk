@@ -54,7 +54,7 @@ export default function Landing() {
               className="font-plex font-light leading-[1.05] tracking-[-0.03em] text-foreground mb-7 animate-fade-up"
               style={{ fontSize: "clamp(30px, 5.6vw, 52px)" }}
             >
-              <strong className="font-semibold">Finally know what to do first.</strong>
+              <strong className="font-semibold font-mono text-5xl">The to-do app that prioritizes and explains why.</strong>
             </h1>
 
             {/* CTA */}
@@ -99,7 +99,7 @@ export default function Landing() {
 
         {/* ── HOW IT WORKS (moved up — answers "how does this work?" right after hero) ── */}
         <section className="w-full max-w-[640px] mx-auto mb-16 sm:mb-[72px] animate-fade-up">
-          <p className="font-mono-plex text-[10px] font-light uppercase tracking-[0.1em] text-faint text-center mb-8">
+          <p className="font-mono-plex uppercase tracking-[0.1em] text-center mb-8 text-lg font-mono font-normal text-secondary-foreground">
             How it works
           </p>
           <div className="flex flex-col">
