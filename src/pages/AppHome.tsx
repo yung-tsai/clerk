@@ -1044,7 +1044,6 @@ function PlannerMobile({
                 tasks={grouped[col]}
                 onComplete={onComplete}
                 onOpen={onOpen}
-                emptyText="Nothing yet."
                 dropTarget={dropTarget}
                 activeId={activeId}
                 onAddTask={onAddTask}
@@ -1112,7 +1111,6 @@ function PlannerDesktop({
                 tasks={grouped[col]}
                 onComplete={onComplete}
                 onOpen={onOpen}
-                emptyText="Nothing yet."
                 dropTarget={dropTarget}
                 activeId={activeId}
                 onAddTask={onAddTask}
