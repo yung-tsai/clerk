@@ -635,24 +635,33 @@ export default function AppHome() {
         </DndContext>
       </main>
 
-      {/* ── Bottom bar (hidden while proposal/settings modal is open) ── */}
-      {!proposals && !settingsOpen && !completedOpen && (
-        <AppBar
-          variant={variant}
-          thinking={thinking}
-          bubble={bubble}
-          bubbleVisible={bubbleVisible}
-          view={view}
-          inputValue={input}
-          onInputChange={setInput}
-          onSubmit={() => processInput(input)}
-          onSetView={persistView}
-          onOpenSettings={() => setSettingsOpen(true)}
-          onOpenCompleted={() => setCompletedOpen(true)}
-          onSignOut={async () => {
-            await signOut();
-            navigate("/");
-          }}
+      {/* ── Bottom bar (hidden while any modal/sheet is open; faded when Focus is idle) ── */}
+      {!anyModalOpen && (
+        <div
+          className={cn(
+            "transition-opacity duration-500",
+            focusIdleHidden && "opacity-0 pointer-events-none",
+          )}
+        >
+          <AppBar
+            variant={variant}
+            thinking={thinking}
+            bubble={bubble}
+            bubbleVisible={bubbleVisible}
+            view={view}
+            inputValue={input}
+            onInputChange={setInput}
+            onSubmit={() => processInput(input)}
+            onSetView={persistView}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenCompleted={() => setCompletedOpen(true)}
+            onSignOut={async () => {
+              await signOut();
+              navigate("/");
+            }}
+          />
+        </div>
+      )}
         />
       )}
 
