@@ -1014,12 +1014,14 @@ function PlannerDesktop({
   onOpen,
   dropTarget,
   activeId,
+  onAddTask,
 }: {
   grouped: Record<ClerkCol, Task[]>;
   onComplete: (t: Task) => void;
   onOpen: (t: Task) => void;
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
+  onAddTask: (col: ClerkCol) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
@@ -1044,7 +1046,7 @@ function PlannerDesktop({
   const scrollByCol = (dir: 1 | -1) => {
     const el = scrollerRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * 408, behavior: "smooth" });
+    el.scrollBy({ left: dir * 340, behavior: "smooth" });
   };
 
   return (
@@ -1052,15 +1054,15 @@ function PlannerDesktop({
       <div ref={scrollerRef} className="overflow-x-auto overflow-y-hidden no-scrollbar">
         <div
           className="grid"
-          style={{ gridTemplateColumns: "repeat(4, 380px)", minWidth: "100%" }}
+          style={{ gridTemplateColumns: "repeat(4, 320px)", minWidth: "100%" }}
         >
           {COLS.map((col, i) => (
             <div
               key={col}
               className={cn(
                 "min-w-0",
-                i < COLS.length - 1 && "border-r border-divider pr-7",
-                i > 0 && "pl-7"
+                i < COLS.length - 1 && "border-r border-divider pr-4",
+                i > 0 && "pl-4"
               )}
             >
               <div className="flex items-baseline justify-between pb-3 mb-3">
@@ -1085,18 +1087,31 @@ function PlannerDesktop({
                 emptyText="Nothing yet."
                 dropTarget={dropTarget}
                 activeId={activeId}
+                onAddTask={onAddTask}
               />
             </div>
           ))}
         </div>
       </div>
 
+      {/* Right-edge fade hint when more columns are scrollable */}
+      {canRight && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-7 bottom-10 right-10 w-16 transition-opacity"
+          style={{
+            background:
+              "linear-gradient(to right, hsl(var(--background) / 0) 0%, hsl(var(--background)) 100%)",
+          }}
+        />
+      )}
+
       {canLeft && (
         <button
           type="button"
           onClick={() => scrollByCol(-1)}
           aria-label="Scroll left"
-          className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white border border-border shadow-[0_2px_10px_rgba(0,0,0,0.08)] text-foreground hover:shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-shadow"
+          className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_2px_10px_rgba(86,124,248,0.35)] hover:bg-primary/90 hover:shadow-[0_4px_16px_rgba(86,124,248,0.45)] transition-all"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -1106,7 +1121,7 @@ function PlannerDesktop({
           type="button"
           onClick={() => scrollByCol(1)}
           aria-label="Scroll right"
-          className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white border border-border shadow-[0_2px_10px_rgba(0,0,0,0.08)] text-foreground hover:shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-shadow"
+          className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-20 h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_2px_10px_rgba(86,124,248,0.35)] hover:bg-primary/90 hover:shadow-[0_4px_16px_rgba(86,124,248,0.45)] transition-all"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
