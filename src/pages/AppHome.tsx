@@ -602,8 +602,12 @@ export default function AppHome() {
 
       {/* ── Views ── */}
       <main
-        className="fixed inset-0 overflow-y-auto pt-0 md:pt-16 pb-[120px]"
+        className={cn(
+          "fixed inset-0 overflow-y-auto pb-[120px]",
+          headerHiddenOnMobilePlanner ? "pt-0" : "pt-16",
+        )}
       >
+
         <DndContext
           sensors={sensors}
           collisionDetection={collisionDetection}
