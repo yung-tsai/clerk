@@ -1,18 +1,7 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasLovableCloudEnv } from "@/lib/lovable-cloud";
-import { useIsMobile } from "@/hooks/use-mobile";
 import clerkLogo from "@/assets/clerk-logo.svg";
-
-const BUBBLE_LINES = [
-  "Dump it on me. I'll prioritize what's first — and tell you why.",
-  "Twelve things on your plate? I'll pick one.",
-  "I don't just sort. I explain.",
-  "Stuck on what's first? That's my job.",
-  "You decide enough. Let me handle this one.",
-];
 
 
 
@@ -35,25 +24,8 @@ const HOW_STEPS = [
 
 export default function Landing() {
   const { user } = useAuth();
-  const isMobile = useIsMobile();
   const primaryPath = hasLovableCloudEnv ? (user ? "/app" : "/onboarding") : "/auth";
 
-  // Rotating bubble (slowed from 3.8s to 6s for readability)
-  const [lineIdx, setLineIdx] = useState(0);
-  const [fading, setFading] = useState(false);
-  const rotate = () => {
-    setFading(true);
-    setTimeout(() => {
-      setLineIdx((i) => (i + 1) % BUBBLE_LINES.length);
-      setFading(false);
-    }, 300);
-  };
-  useEffect(() => {
-    const id = setInterval(rotate, 6000);
-    return () => clearInterval(id);
-  }, []);
-
-  const charSize = isMobile ? 56 : 64;
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
@@ -76,30 +48,14 @@ export default function Landing() {
 
         {/* ── HERO: 2-col on desktop, single-col on mobile ── */}
         <section className="w-full grid md:grid-cols-[1fr_minmax(0,440px)] gap-10 md:gap-14 items-center mb-16 sm:mb-[88px]">
-          {/* LEFT: copy + CTA + mascot */}
+          {/* LEFT: copy + CTA */}
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
             <h1
-              className="font-plex font-light leading-[1.05] tracking-[-0.03em] text-foreground mb-4 animate-fade-up"
+              className="font-plex font-light leading-[1.05] tracking-[-0.03em] text-foreground mb-7 animate-fade-up"
               style={{ fontSize: "clamp(30px, 5.6vw, 52px)" }}
             >
-              The to-do app that <strong className="font-semibold">prioritizes and explains what to do first.</strong>
+              <strong className="font-semibold">Finally know what to do first.</strong>
             </h1>
-            {/* Mascot + bubble — character on left, bubble tail points left toward him */}
-            <div className="mb-7 flex items-end justify-center md:justify-start gap-0 max-w-full animate-fade-up">
-              <div className="mb-1 flex-shrink-0">
-                <ClerkCharacter size={charSize} onClick={rotate} />
-              </div>
-              <div className="relative mb-2 -ml-1">
-                <div
-                  className="bg-white border border-black/[0.08] rounded-[20px_20px_20px_4px] px-4 py-3 text-[13px] sm:text-[13.5px] font-normal text-foreground leading-[1.5] shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-left flex items-center min-h-[52px]"
-                  style={{ maxWidth: "min(280px, calc(100vw - 130px))" }}
-                >
-                  <span className={`bubble-text ${fading ? "fade-out" : ""}`}>
-                    {BUBBLE_LINES[lineIdx]}
-                  </span>
-                </div>
-              </div>
-            </div>
 
             {/* CTA */}
             <Link
