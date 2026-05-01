@@ -620,7 +620,6 @@ export default function AppHome() {
               )}
             </div>
           </div>
-          </div>
         </header>
       )}
 
