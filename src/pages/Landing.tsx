@@ -14,17 +14,7 @@ const BUBBLE_LINES = [
   "You decide enough. Let me decide this.",
 ];
 
-type ProposalCol = "Today" | "Tomorrow" | "Someday";
-const PROPOSAL_TASKS: { title: string; col: ProposalCol; reason: string }[] = [
-  { title: "Finish the case study", col: "Today", reason: "Due Friday — that's close." },
-  { title: "Call dentist to book appointment", col: "Tomorrow", reason: "Not urgent today." },
-  { title: "Learn Spanish someday", col: "Someday", reason: "Where dreams live." },
-];
-const COL_PILL_BG: Record<ProposalCol, string> = {
-  Today: "hsl(var(--tag-blue))",
-  Tomorrow: "hsl(var(--tag-yellow))",
-  Someday: "hsl(var(--tag-pink))",
-};
+
 
 const TENSION_BEFORE = [
   ["🌀", "You don't know where to start"],
