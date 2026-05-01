@@ -175,8 +175,18 @@ export default function AppHome() {
           supabase.from("profiles").update({ view_mode: "planner" }).eq("id", user.id);
         } else {
           setView(vm);
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const localHour = Number(
+            new Intl.DateTimeFormat("en-US", {
+              hour: "numeric",
+              hour12: false,
+              timeZone: tz,
+            }).format(new Date())
+          );
+          const timeOfDay =
+            localHour < 12 ? "Morning" : localHour < 18 ? "Afternoon" : "Evening";
           const greet = p.display_name
-            ? `Morning, ${p.display_name}.`
+            ? `${timeOfDay}, ${p.display_name}.`
             : GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
           showBubble(greet, 4500);
         }
