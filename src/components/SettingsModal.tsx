@@ -14,6 +14,7 @@ import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { CHARACTERS, CHARACTER_LABELS, type CharacterVariant } from "@/lib/characters";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { clerkSay } from "@/lib/clerk-say";
 
 export interface SettingsData {
   display_name: string | null;
@@ -242,7 +243,7 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
                 <button
                   type="button"
                   onClick={() =>
-                    toast("Coming soon — account sync is on the way.")
+                    clerkSay("Coming soon — account sync is on the way.")
                   }
                   className="text-[13px] font-medium text-white bg-[#1A1A1A] rounded-[10px] px-4 py-2.5 hover:bg-[#2A2A2A] transition-colors flex-shrink-0"
                 >

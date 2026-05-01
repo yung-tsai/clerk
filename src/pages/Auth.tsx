@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { toast } from "sonner";
+import { clerkSay } from "@/lib/clerk-say";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { lovable } from "@/integrations/lovable";
 
@@ -26,7 +27,7 @@ export default function Auth() {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
-        toast.success("Check your email for a reset link.");
+        clerkSay("Check your email for a reset link.");
         setMode("signin");
         return;
       }
@@ -38,7 +39,7 @@ export default function Auth() {
           options: { emailRedirectTo: window.location.origin + "/onboarding" },
         });
         if (error) throw error;
-        toast.success("Account created. Welcome.");
+        clerkSay("Account created. Welcome.");
         navigate("/onboarding");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });

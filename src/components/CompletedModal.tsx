@@ -15,6 +15,7 @@ import type { CharacterVariant } from "@/lib/characters";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { clerkSay } from "@/lib/clerk-say";
 
 interface Props {
   open: boolean;
@@ -106,7 +107,7 @@ export function CompletedModal({ open, onOpenChange, userId, variant }: Props) {
         toast.error(error.message);
       } else {
         setRows([]);
-        toast.success("History cleared.");
+        clerkSay("History cleared.");
       }
     } finally {
       setClearing(false);

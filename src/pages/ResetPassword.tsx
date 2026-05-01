@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { toast } from "sonner";
+import { clerkSay } from "@/lib/clerk-say";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 
 export default function ResetPassword() {
@@ -54,7 +55,7 @@ export default function ResetPassword() {
       const supabase = await getLovableCloudClient();
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      toast.success("Password updated. You're signed in.");
+      clerkSay("Password updated. You're signed in.");
       navigate("/app");
     } catch (err: any) {
       toast.error(err.message || "Could not update password");
