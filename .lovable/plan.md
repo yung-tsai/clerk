@@ -1,40 +1,68 @@
-## Two small fixes to the add-task flow
+# Replace right-column preview with hero video
 
-### 1. Don't create empty tasks
+## What changes
 
-**Problem:** Clicking the `+` AddTaskCard immediately inserts a row in `tasks` with `title: ""` and opens the modal. If the user closes the modal without typing, a titleless task is left in the DB and renders as a near-empty card.
+Above the fold on `/` (Landing page), the right column currently shows a static `ProposalPreview` card. Replace it with the uploaded video (`landing-video.mp4`), which is a square 960×960, ~8s clip (1.8MB).
 
-**Fix:** Switch to a draft-first flow. The modal opens with a local-only draft task; the row is only inserted into Supabase once the user types a title.
+Everything else in the hero stays the same: left-column copy, mascot+bubble, CTA, micro-promise, and audience line.
 
-**Changes in `src/pages/AppHome.tsx`:**
+## How it will look
 
-- `handleAddToColumn(col)` — no longer hits Supabase. Builds an in-memory draft task object with a temp id (e.g. `draft-${Date.now()}`), no `user_id` write, and sets it as `selectedTask`. Does NOT push into the `tasks` array (so it doesn't render in the column yet).
-- A new flag (e.g. tracking `selectedTask.id.startsWith("draft-")`) marks the draft state.
-- The modal's first patch handler is intercepted: if the task is a draft and the patch contains a non-empty `title`, insert the row into Supabase, swap the temp id for the real one in `selectedTask`, and add it to `tasks`. Subsequent patches behave normally.
-- Modal close: if still a draft (never got a title), discard — no DB write, no toast.
+```text
+Desktop (≥ md)                              Mobile (< md)
+┌──────────────────────┬─────────────────┐  ┌──────────────────┐
+│ H1: explains what    │                 │  │ H1               │
+│ to do first.         │   ┌─────────┐   │  │ Mascot + bubble  │
+│                      │   │         │   │  │ CTA              │
+│ Mascot 🗨 bubble     │   │  VIDEO  │   │  │ ─────            │
+│                      │   │  (1:1)  │   │  │ ┌────────────┐   │
+│ [ Get started → ]    │   │         │   │  │ │   VIDEO    │   │
+│ no account needed    │   └─────────┘   │  │ │   (1:1)    │   │
+│ Made for ADHD…       │                 │  │ └────────────┘   │
+└──────────────────────┴─────────────────┘  └──────────────────┘
+```
 
-**Changes in `src/components/TaskDetailModal.tsx`:**
+- Same column slot: `max-w-[440px]`, right-aligned on desktop, centered on mobile.
+- Square aspect ratio preserved (1:1) — video fills the column width.
+- Soft container: rounded-[20px], subtle border + shadow matching the existing card aesthetic, on the `#F5F5F3` background.
+- Slight hover lift kept (`hover:-translate-y-1`) to mirror the previous card's feel.
 
-- No structural change. The autofocus-on-empty-title behavior already works for drafts.
-- Optionally: disable the "Move to" buttons while in draft state (can't move a non-existent row). Low priority.
+## Behavior
 
-### 2. Remove "Nothing yet" empty state
+- `autoPlay`, `muted`, `loop`, `playsInline` — plays silently on load, on every device including iOS Safari.
+- No controls, no poster flash — first frame shows immediately.
+- `preload="auto"` so it's ready by the time the hero animates in.
 
-The dashed `+` AddTaskCard is always rendered at the bottom of every column, so the empty-state text is redundant.
+## Files
 
-**Changes in `src/pages/AppHome.tsx`:**
+- **Add asset**: copy `user-uploads://landing-video.mp4` → `public/landing-hero.mp4` (1.8MB; `public/` is correct since it's a static media file referenced by URL, not bundled).
+- **Edit `src/pages/Landing.tsx`**:
+  - Replace the `<ProposalPreview />` usage in the hero's right column with a new inline `<HeroVideo />` (or just a `<video>` element).
+  - Keep the `ProposalPreview` component definition in the file for now (in case we want it back later) — or remove it. Recommendation: **remove** it to keep the file lean; we can reintroduce from git history if needed.
 
-- In `DroppableColumn` (around line 1123–1131): remove the `<p>{emptyText}</p>` block. Keep the `DropIndicator` rendering for the empty-with-active-drag case.
-- Remove the now-unused `emptyText` prop from `DroppableColumn`'s signature.
-- Remove the `emptyText="Nothing yet..."` props passed at lines 850, 997, 1065.
+## Technical details
 
-Empty columns will then show only the dashed `+` card, which is enough affordance.
+```tsx
+// Right column of the hero section
+<div className="w-full max-w-[440px] mx-auto md:mx-0 animate-fade-up">
+  <div className="rounded-[20px] overflow-hidden border border-black/[0.08]
+                  shadow-[0_24px_60px_rgba(0,0,0,0.12)] bg-white
+                  transition-transform hover:-translate-y-1 duration-300">
+    <video
+      src="/landing-hero.mp4"
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="auto"
+      className="block w-full h-auto aspect-square object-cover"
+    />
+  </div>
+</div>
+```
 
-### Files
-- `src/pages/AppHome.tsx` — both changes
-- `src/components/TaskDetailModal.tsx` — minor (only if we disable Move-to in draft state)
+No other sections (How it works, Tension, Final CTA, footer) are touched.
 
-### Out of scope
-- No schema/migration changes.
-- No changes to the existing inline task card, drag-and-drop, or AI sort flow.
-- No change to AddTaskCard component itself.
+## Open question
+
+If you'd rather **keep** `ProposalPreview` as a fallback (e.g., shown below the video, or swapped on mobile to save bandwidth), say the word and I'll wire that instead. Default plan: video fully replaces it in both desktop and mobile.
