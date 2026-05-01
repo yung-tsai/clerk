@@ -66,7 +66,7 @@ export default function Landing() {
   const charSize = isMobile ? 56 : 64;
 
   return (
-    <div className="min-h-screen app-bg overflow-x-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1180px] flex-col px-6 pt-7 pb-20">
         {/* Header */}
         <header className="mb-10 sm:mb-12 flex w-full items-center justify-between">
