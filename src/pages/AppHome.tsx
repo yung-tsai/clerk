@@ -12,6 +12,7 @@ import { isNewDay, planCarryOver } from "@/lib/carry-over";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
 import { clerkSay, subscribeClerk } from "@/lib/clerk-say";
+import { quip, quipForMove } from "@/lib/clerk-quips";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
 import { CompletedModal } from "@/components/CompletedModal";
