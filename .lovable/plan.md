@@ -1,36 +1,32 @@
-# Option A + Focus page polish
+## Fix: true-center the Focus/Planner toggle
 
-## 1. Planner desktop: show all 4 columns (Option A)
+The current 3-col grid centers the toggle within its *cell*, not the viewport. Since the logo cell and streak cell have different intrinsic widths, the middle cell is offset — the toggle drifts.
 
-In `PlannerDesktop` (`src/pages/AppHome.tsx`):
-- Bump container `max-w-[1280px]` → `max-w-[1440px]`.
-- Keep columns at `320px` × 4 (1280px of columns + dividers fit comfortably inside 1440px - 80px horizontal padding).
-- Remove the left/right blue scroll arrow buttons entirely.
-- Remove the right-edge fade overlay.
-- Keep `overflow-x-auto` on the inner scroller as a graceful fallback for narrow laptops (<1280px), but no chrome.
+### Change
 
-## 2. Focus page: true-center the chrome
+In `src/pages/AppHome.tsx`, the header inner container:
 
-The header uses `flex justify-between`, so "Focus | Planner" sits in the middle of remaining space, not the actual viewport center. Same visual drift the user spotted.
+- Switch from `grid grid-cols-3` back to a simple `flex justify-between items-center` for logo + streak.
+- Render the toggle as a **sibling absolutely positioned** to the header: `absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2`. This pins it to the true viewport center, exactly like `AppBar` already does.
+- Parent header gets `relative` so the absolute child anchors correctly.
 
-- Change the header inner container from `flex justify-between` to `grid grid-cols-3 items-center` with `justify-self-start` (logo) / `justify-self-center` (toggle) / `justify-self-end` (streak). Now the toggle is true-centered regardless of side widths.
-- AppBar is already `left-1/2 -translate-x-1/2` (true viewport-centered) — no change needed.
-- FocusView content (date heading + task column) is already wrapped in `max-w-[420px] mx-auto` — that part is fine.
+### Shape
 
-## 3. Focus page: inline "+" card at bottom of list
+```text
+<header class="relative ...">
+  <div class="max-w-[1280px] mx-auto px-4 md:px-10 flex justify-between items-center">
+    <img logo />
+    <div streak />
+  </div>
+  <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+    Focus | Planner toggle
+  </div>
+</header>
+```
 
-`FocusView` calls `DroppableColumn` without `onAddTask`, so no add card renders. Add it.
+### Why this works
 
-- Pass `onAddTask` from `AppHome` down into `FocusView` (new prop), then forward to `DroppableColumn`.
-- Reuses the existing `handleAddToColumn("today")` flow → creates blank task in Today, opens detail modal with title autofocused. Same UX as the per-column add we just shipped on Planner.
+Absolute positioning takes the toggle out of normal flow, so its center is anchored to the viewport (via the full-width `relative` header), not to leftover grid space. Logo and streak can grow/shrink freely without nudging it.
 
-## Technical notes
-
-Files to edit:
-- `src/pages/AppHome.tsx`
-  - Header inner container: `flex justify-between` → `grid grid-cols-3 items-center` with `justify-self-*` on each child.
-  - `FocusView` signature: add `onAddTask: (col: ClerkCol) => void`. Forward to `DroppableColumn`.
-  - Caller of `<FocusView />` (line ~641): pass `onAddTask={handleAddToColumn}`.
-  - `PlannerDesktop`: `max-w-[1280px]` → `max-w-[1440px]`. Delete the `canRight` fade `<div>` and both `canLeft`/`canRight` `<button>`s. Remove now-unused `ChevronLeft`/`ChevronRight` imports and the `canLeft`/`canRight`/`scrollByCol` state if nothing else uses them.
-
-No DB or schema changes.
+### Files
+- `src/pages/AppHome.tsx` — header markup only. No logic, no other components.

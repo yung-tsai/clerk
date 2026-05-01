@@ -577,47 +577,45 @@ export default function AppHome() {
           )}
           style={{ height: 64 }}
         >
-          <div className="w-full max-w-[1280px] mx-auto px-4 md:px-10 grid grid-cols-3 items-center">
-            <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none justify-self-start" draggable={false} />
-
-            {/* Toggle Focus | Planner — true-centered */}
-            <div className="flex items-center gap-1 justify-self-center">
-              <button
-                onClick={() => persistView("focus")}
-                className={cn(
-                  "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
-                  view === "focus" ? "text-foreground" : "text-faint hover:text-muted-foreground"
-                )}
-              >
-                Focus
-              </button>
-              <span className="text-faint text-[12px]">|</span>
-              <button
-                onClick={() => persistView("planner")}
-                className={cn(
-                  "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
-                  view === "planner" ? "text-foreground" : "text-faint hover:text-muted-foreground"
-                )}
-              >
-                Planner
-              </button>
-            </div>
+          <div className="w-full max-w-[1280px] mx-auto px-4 md:px-10 flex justify-between items-center">
+            <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none" draggable={false} />
 
             {/* Streak badge — only when ≥ 2 days */}
-            <div className="justify-self-end">
-              {(profile?.streak ?? 0) >= 2 ? (
-                <button
-                  type="button"
-                  onClick={() => setSettingsOpen(true)}
-                  title={`${profile?.streak}-day streak`}
-                  className="font-plex-mono text-[12px] font-medium text-[#2A2A2A] bg-[#FFF7CE] hover:bg-[#FFEFA8] transition-colors rounded-full px-2.5 py-1 leading-none"
-                >
-                  🔥 {profile?.streak}
-                </button>
-              ) : (
-                <div className="w-[26px]" aria-hidden />
+            {(profile?.streak ?? 0) >= 2 ? (
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                title={`${profile?.streak}-day streak`}
+                className="font-plex-mono text-[12px] font-medium text-[#2A2A2A] bg-[#FFF7CE] hover:bg-[#FFEFA8] transition-colors rounded-full px-2.5 py-1 leading-none"
+              >
+                🔥 {profile?.streak}
+              </button>
+            ) : (
+              <div className="w-[26px]" aria-hidden />
+            )}
+          </div>
+
+          {/* Toggle Focus | Planner — true viewport-centered */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1">
+            <button
+              onClick={() => persistView("focus")}
+              className={cn(
+                "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
+                view === "focus" ? "text-foreground" : "text-faint hover:text-muted-foreground"
               )}
-            </div>
+            >
+              Focus
+            </button>
+            <span className="text-faint text-[12px]">|</span>
+            <button
+              onClick={() => persistView("planner")}
+              className={cn(
+                "font-sans text-[12px] font-medium px-2 py-1 transition-colors",
+                view === "planner" ? "text-foreground" : "text-faint hover:text-muted-foreground"
+              )}
+            >
+              Planner
+            </button>
           </div>
         </header>
       )}
