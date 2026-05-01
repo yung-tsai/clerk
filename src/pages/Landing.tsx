@@ -56,22 +56,6 @@ export default function Landing() {
             >
               <strong className="font-semibold">Finally know what to do first.</strong>
             </h1>
-            {/* Mascot + bubble — character on left, bubble tail points left toward him */}
-            <div className="mb-7 flex items-end justify-center md:justify-start gap-0 max-w-full animate-fade-up">
-              <div className="mb-1 flex-shrink-0">
-                <ClerkCharacter size={charSize} onClick={rotate} />
-              </div>
-              <div className="relative mb-2 -ml-1">
-                <div
-                  className="bg-white border border-black/[0.08] rounded-[20px_20px_20px_4px] px-4 py-3 text-[13px] sm:text-[13.5px] font-normal text-foreground leading-[1.5] shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-left flex items-center min-h-[52px]"
-                  style={{ maxWidth: "min(280px, calc(100vw - 130px))" }}
-                >
-                  <span className={`bubble-text ${fading ? "fade-out" : ""}`}>
-                    {BUBBLE_LINES[lineIdx]}
-                  </span>
-                </div>
-              </div>
-            </div>
 
             {/* CTA */}
             <Link
