@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { MobileSheetHeader } from "@/components/ui/sheet-header";
 import { cn } from "@/lib/utils";
 import type { ClerkCol, TaskCardData } from "@/components/TaskCard";
 
