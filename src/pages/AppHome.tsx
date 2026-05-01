@@ -410,7 +410,27 @@ export default function AppHome() {
     await supabase.from("tasks").update({ col }).eq("id", t.id);
   }
 
-  // Shared between drag-end and the modal "Move to" buttons.
+  async function handleAddToColumn(col: ClerkCol) {
+    if (!user) return;
+    const supabase = await getLovableCloudClient();
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert({
+        user_id: user.id,
+        title: "",
+        col,
+        position: Math.floor(Date.now() / 1000),
+      })
+      .select()
+      .single();
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const newTask = data as Task;
+    setTasks((prev) => [newTask, ...prev]);
+    setSelectedTask(newTask);
+  }
   function fireMoveQuip(prevCol: ClerkCol, nextCol: ClerkCol) {
     const within =
       lastSortAcceptedAt.current !== null &&
