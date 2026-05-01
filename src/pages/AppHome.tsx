@@ -578,11 +578,11 @@ export default function AppHome() {
           )}
           style={{ height: 64 }}
         >
-          <div className="w-full max-w-[1280px] mx-auto px-4 md:px-10 flex items-center justify-between">
-            <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none" draggable={false} />
+          <div className="w-full max-w-[1280px] mx-auto px-4 md:px-10 grid grid-cols-3 items-center">
+            <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none justify-self-start" draggable={false} />
 
-            {/* Toggle Focus | Planner */}
-            <div className="flex items-center gap-1">
+            {/* Toggle Focus | Planner — true-centered */}
+            <div className="flex items-center gap-1 justify-self-center">
               <button
                 onClick={() => persistView("focus")}
                 className={cn(
@@ -605,18 +605,21 @@ export default function AppHome() {
             </div>
 
             {/* Streak badge — only when ≥ 2 days */}
-            {(profile?.streak ?? 0) >= 2 ? (
-              <button
-                type="button"
-                onClick={() => setSettingsOpen(true)}
-                title={`${profile?.streak}-day streak`}
-                className="font-plex-mono text-[12px] font-medium text-[#2A2A2A] bg-[#FFF7CE] hover:bg-[#FFEFA8] transition-colors rounded-full px-2.5 py-1 leading-none"
-              >
-                🔥 {profile?.streak}
-              </button>
-            ) : (
-              <div className="w-[26px]" aria-hidden />
-            )}
+            <div className="justify-self-end">
+              {(profile?.streak ?? 0) >= 2 ? (
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen(true)}
+                  title={`${profile?.streak}-day streak`}
+                  className="font-plex-mono text-[12px] font-medium text-[#2A2A2A] bg-[#FFF7CE] hover:bg-[#FFEFA8] transition-colors rounded-full px-2.5 py-1 leading-none"
+                >
+                  🔥 {profile?.streak}
+                </button>
+              ) : (
+                <div className="w-[26px]" aria-hidden />
+              )}
+            </div>
+          </div>
           </div>
         </header>
       )}

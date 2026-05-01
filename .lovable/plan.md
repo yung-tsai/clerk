@@ -1,52 +1,36 @@
-# Planner refinements
+# Option A + Focus page polish
 
-Three changes to make the Planner board easier to scan and faster to add to.
+## 1. Planner desktop: show all 4 columns (Option A)
 
-## 1. Make 'Someday' more discoverable
+In `PlannerDesktop` (`src/pages/AppHome.tsx`):
+- Bump container `max-w-[1280px]` → `max-w-[1440px]`.
+- Keep columns at `320px` × 4 (1280px of columns + dividers fit comfortably inside 1440px - 80px horizontal padding).
+- Remove the left/right blue scroll arrow buttons entirely.
+- Remove the right-edge fade overlay.
+- Keep `overflow-x-auto` on the inner scroller as a graceful fallback for narrow laptops (<1280px), but no chrome.
 
-Tighten column padding so 'Someday' partially shows on common desktop widths, AND keep a soft right-edge fade as a visual hint that more is there. Arrows stay.
+## 2. Focus page: true-center the chrome
 
-- Reduce inter-column padding from `pr-7` / `pl-7` (28px) to `pr-4` / `pl-4` (16px). Also reduce column width from `380px` to `320px`. Net effect: at ~1280px viewport, Today + Tomorrow + Upcoming fit fully and ~80–100px of 'Someday' peeks.
-- Add a 24px right-edge gradient fade overlay inside the scroller container (white → transparent), only visible when `canRight` is true. Pure visual hint, doesn't block clicks (`pointer-events-none`).
-- Keep arrows for full navigation.
+The header uses `flex justify-between`, so "Focus | Planner" sits in the middle of remaining space, not the actual viewport center. Same visual drift the user spotted.
 
-## 2. Filled blue arrows, same placement
+- Change the header inner container from `flex justify-between` to `grid grid-cols-3 items-center` with `justify-self-start` (logo) / `justify-self-center` (toggle) / `justify-self-end` (streak). Now the toggle is true-centered regardless of side widths.
+- AppBar is already `left-1/2 -translate-x-1/2` (true viewport-centered) — no change needed.
+- FocusView content (date heading + task column) is already wrapped in `max-w-[420px] mx-auto` — that part is fine.
 
-Keep the current vertical-center placement on the left/right edges. Restyle:
+## 3. Focus page: inline "+" card at bottom of list
 
-- Background: `bg-primary` (the brand blue `#567CF8`)
-- Icon color: white
-- Drop the white border; keep soft shadow
-- Hover: slightly darker blue + larger shadow
+`FocusView` calls `DroppableColumn` without `onAddTask`, so no add card renders. Add it.
 
-## 3. Per-column "Add task"
-
-Each column gets its own add affordance at the bottom of the task list. Clicking it opens the existing `TaskDetailModal` pre-filled with that column (and a blank title), so the user lands directly in edit mode for the column they chose. No Clerk routing, no AI sort.
-
-- New component `AddTaskCard` rendered as the last item in each `DroppableColumn`. Matches the screenshot: dashed-border card, centered `+` icon, hover lifts to solid border.
-- Click handler creates a new task row in Supabase with `col` set to that column, blank `title`, `reason = null`, then immediately opens `TaskDetailModal` for it.
-- Same component renders on mobile inside each column on the Planner mobile view — consistent UX.
-- The card is non-draggable and excluded from drag/drop targeting.
+- Pass `onAddTask` from `AppHome` down into `FocusView` (new prop), then forward to `DroppableColumn`.
+- Reuses the existing `handleAddToColumn("today")` flow → creates blank task in Today, opens detail modal with title autofocused. Same UX as the per-column add we just shipped on Planner.
 
 ## Technical notes
 
 Files to edit:
 - `src/pages/AppHome.tsx`
-  - `PlannerDesktop`: column width 380→320, padding 7→4, add right-edge fade overlay, restyle both arrow buttons.
-  - `PlannerMobile`: render `AddTaskCard` after each column's task list.
-  - `DroppableColumn` (or its caller): accept an `onAddTask(col)` prop and render `AddTaskCard` after the task list.
-  - Add `handleAddToColumn(col)` that inserts a blank task row scoped to that column for the current user, then sets `selectedTask` to open the modal.
-- New `src/components/AddTaskCard.tsx`
-  - Dashed border, centered `+`, matches existing `TaskCard` width/radius. Click → calls `onAdd`.
-- `src/components/TaskDetailModal.tsx`
-  - On open, if `title === ""`, autofocus the title textarea so the user can type immediately.
+  - Header inner container: `flex justify-between` → `grid grid-cols-3 items-center` with `justify-self-*` on each child.
+  - `FocusView` signature: add `onAddTask: (col: ClerkCol) => void`. Forward to `DroppableColumn`.
+  - Caller of `<FocusView />` (line ~641): pass `onAddTask={handleAddToColumn}`.
+  - `PlannerDesktop`: `max-w-[1280px]` → `max-w-[1440px]`. Delete the `canRight` fade `<div>` and both `canLeft`/`canRight` `<button>`s. Remove now-unused `ChevronLeft`/`ChevronRight` imports and the `canLeft`/`canRight`/`scrollByCol` state if nothing else uses them.
 
-Layout sanity check at 1280px: scroller width ≈ 1200px (after `px-10`). With 4 × 320px columns + 3 × 32px gutters (16px on each side of internal dividers) = 1280 + 96 = too wide. Effective cols actually use `pr-4`/`pl-4` only between, so gutters total ~96px → 'Someday' ends up partially visible (~20–60% depending on container), which is the goal. The fade + arrow reinforce.
-
-```text
-desktop @1280px:
-[ Today ][ Tomorrow ][ Upcoming ][ Some…│fade│
-  ←                                          →
-```
-
-No DB schema changes. No new dependencies.
+No DB or schema changes.
