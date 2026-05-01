@@ -248,8 +248,11 @@ export default function AppHome() {
         },
       });
       if (error) throw error;
-      if (data?.tasks?.length) sorted = data.tasks;
-      else throw new Error("Empty AI response");
+      if (data?.tasks?.length) {
+        sorted = data.tasks;
+        // Diagnostic: confirms the AI returned the new fields per proposal.
+        console.log("[sort-tasks] proposals from AI:", sorted);
+      } else throw new Error("Empty AI response");
     } catch (err: any) {
       // AI sort failed (network, 429, 402, empty response). Fall back to local
       // classify and let Clerk own the message — no double-notify with toasts.

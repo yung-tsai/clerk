@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-preview",
+        model: "google/gemini-3-flash-preview",
         messages: [
           {
             role: "system",
@@ -247,6 +247,22 @@ Deno.serve(async (req) => {
     const call = data?.choices?.[0]?.message?.tool_calls?.[0];
     const args = call?.function?.arguments;
     const parsed = args ? JSON.parse(args) : { tasks: [] };
+
+    // Diagnostic: log just the extracted fields per task so regressions show up
+    // in edge logs without dumping the full AI payload.
+    console.log(
+      "[sort-tasks] extracted:",
+      JSON.stringify(
+        (parsed.tasks ?? []).map((t: any) => ({
+          title: t.title,
+          col: t.col,
+          taskTime: t.taskTime,
+          dueDate: t.dueDate,
+          location: t.location,
+          category: t.category,
+        }))
+      )
+    );
 
     return new Response(JSON.stringify({ tasks: parsed.tasks ?? [] }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
