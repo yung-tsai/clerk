@@ -134,9 +134,20 @@ export default function Landing() {
 
           </div>
 
-          {/* RIGHT: Proposal Modal preview — the magic moment */}
+          {/* RIGHT: Hero video */}
           <div className="w-full max-w-[440px] mx-auto md:mx-0 animate-fade-up">
-            <ProposalPreview />
+            <div className="rounded-[20px] overflow-hidden border border-black/[0.08] shadow-[0_24px_60px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.9)_inset] bg-white transition-transform hover:-translate-y-1 duration-300">
+              <video
+                src="/landing-hero.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                aria-hidden="true"
+                className="block w-full h-auto aspect-square object-cover"
+              />
+            </div>
           </div>
         </section>
 
