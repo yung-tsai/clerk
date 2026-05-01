@@ -753,8 +753,52 @@ export default function AppHome() {
       {/* ── Task detail modal ── */}
       <TaskDetailModal
         task={selectedTask}
-        onOpenChange={(o) => !o && setSelectedTask(null)}
+        onOpenChange={(o) => {
+          if (!o) {
+            // Discard empty drafts on close — never persisted
+            setSelectedTask(null);
+          }
+        }}
         onPatch={(id, patch) => {
+          const isDraft = id.startsWith("draft-");
+          if (isDraft) {
+            // Only persist once the user types a non-empty title
+            const nextTitle = patch.title !== undefined ? patch.title : selectedTask?.title;
+            if (!nextTitle || !nextTitle.trim()) {
+              // Update local draft state (for tag/time/etc typed before title)
+              setSelectedTask((prev) => (prev ? { ...prev, ...patch } : prev));
+              return;
+            }
+            // Promote draft → real task
+            const draft = selectedTask;
+            if (!draft || !user) return;
+            (async () => {
+              const supabase = await getLovableCloudClient();
+              const { data, error } = await supabase
+                .from("tasks")
+                .insert({
+                  user_id: user.id,
+                  title: nextTitle.trim(),
+                  col: draft.col,
+                  position: draft.position,
+                  task_time: patch.task_time ?? draft.task_time,
+                  location: patch.location ?? draft.location,
+                  category: patch.category ?? draft.category,
+                  cat_color: patch.cat_color ?? draft.cat_color,
+                  due_date: patch.due_date ?? draft.due_date,
+                })
+                .select()
+                .single();
+              if (error) {
+                toast.error(error.message);
+                return;
+              }
+              const newTask = data as Task;
+              setTasks((prev) => [newTask, ...prev]);
+              setSelectedTask(newTask);
+            })();
+            return;
+          }
           setTasks((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
           (async () => {
             const supabase = await getLovableCloudClient();
@@ -762,10 +806,15 @@ export default function AppHome() {
           })();
         }}
         onMove={(t, col) => {
+          if (t.id.startsWith("draft-")) return; // can't move an unsaved draft
           moveTask(t as Task, col);
           setSelectedTask(null);
         }}
         onDelete={(t) => {
+          if (t.id.startsWith("draft-")) {
+            setSelectedTask(null);
+            return;
+          }
           deleteTask(t as Task);
           setSelectedTask(null);
         }}
