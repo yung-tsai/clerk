@@ -862,6 +862,7 @@ function PlannerView(props: {
   onOpen: (t: Task) => void;
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
+  onAddTask: (col: ClerkCol) => void;
 }) {
   const isMobile = useIsMobile();
   return isMobile ? <PlannerMobile {...props} /> : <PlannerDesktop {...props} />;
