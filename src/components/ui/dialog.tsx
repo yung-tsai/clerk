@@ -36,15 +36,17 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        // Mobile: bottom sheet
-        "fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[92vh] gap-4 border-t bg-background p-6 shadow-lg duration-200",
-        "rounded-t-[20px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        // Base
+        "fixed z-50 grid w-full gap-4 bg-background shadow-lg duration-200",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        // Mobile (default): bottom sheet
+        "inset-x-0 bottom-0 max-h-[92vh] border-t rounded-t-[20px] p-6",
         "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-        // Desktop: centered dialog (original behavior)
-        "md:inset-x-auto md:bottom-auto md:left-[50%] md:top-[50%] md:max-w-lg md:max-h-none md:translate-x-[-50%] md:translate-y-[-50%] md:border md:rounded-lg",
-        "md:data-[state=closed]:slide-out-to-left-1/2 md:data-[state=open]:slide-in-from-left-1/2 md:data-[state=closed]:slide-out-to-top-[48%] md:data-[state=open]:slide-in-from-top-[48%] md:data-[state=closed]:zoom-out-95 md:data-[state=open]:zoom-in-95",
-        // Reset mobile-only slide on desktop so the zoom/slide-in-top animation runs cleanly
-        "md:data-[state=closed]:!slide-out-to-bottom-0 md:data-[state=open]:!slide-in-from-bottom-0",
+        // Desktop (md+): centered dialog — overrides mobile values
+        "md:inset-x-auto md:bottom-auto md:left-[50%] md:top-[50%] md:max-h-none md:max-w-lg md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-lg md:border",
+        "md:data-[state=closed]:slide-out-to-left-1/2 md:data-[state=open]:slide-in-from-left-1/2",
+        "md:data-[state=closed]:slide-out-to-top-[48%] md:data-[state=open]:slide-in-from-top-[48%]",
+        "md:data-[state=closed]:zoom-out-95 md:data-[state=open]:zoom-in-95",
         className,
       )}
       {...props}
