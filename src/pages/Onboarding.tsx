@@ -77,7 +77,10 @@ export default function Onboarding() {
       let sorted: Proposal[] = [];
       try {
         const { data, error: fnErr } = await supabase.functions.invoke("sort-tasks", {
-          body: { titles: parts },
+          body: {
+            input: seed,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          },
         });
         if (fnErr) throw fnErr;
         sorted = (data?.tasks ?? []) as Proposal[];
