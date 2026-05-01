@@ -995,6 +995,7 @@ function PlannerMobile({
                 emptyText="Nothing yet."
                 dropTarget={dropTarget}
                 activeId={activeId}
+                onAddTask={onAddTask}
               />
             </div>
           ))}
