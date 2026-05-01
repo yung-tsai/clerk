@@ -48,10 +48,10 @@ export default function Landing() {
 
         {/* ── HERO: 2-col on desktop, single-col on mobile ── */}
         <section className="w-full grid md:grid-cols-[1fr_minmax(0,440px)] gap-10 md:gap-14 items-center mb-16 sm:mb-[88px]">
-          {/* LEFT: copy + CTA + mascot */}
+          {/* LEFT: copy + CTA */}
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
             <h1
-              className="font-plex font-light leading-[1.05] tracking-[-0.03em] text-foreground mb-4 animate-fade-up"
+              className="font-plex font-light leading-[1.05] tracking-[-0.03em] text-foreground mb-7 animate-fade-up"
               style={{ fontSize: "clamp(30px, 5.6vw, 52px)" }}
             >
               <strong className="font-semibold">Finally know what to do first.</strong>
