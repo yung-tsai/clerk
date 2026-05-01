@@ -1,68 +1,56 @@
-# Replace right-column preview with hero video
+# Remove mascot + bubble from hero (and decide on H1)
 
-## What changes
+## H1 recommendation
 
-Above the fold on `/` (Landing page), the right column currently shows a static `ProposalPreview` card. Replace it with the uploaded video (`landing-video.mp4`), which is a square 960×960, ~8s clip (1.8MB).
+Current: *"The to-do app that prioritizes and explains what to do first."*
 
-Everything else in the hero stays the same: left-column copy, mascot+bubble, CTA, micro-promise, and audience line.
+It's clear but not converting — it describes the app, not the user's outcome. My pick:
 
-## How it will look
+**A. "Finally know what to do first."** — outcome-led, six words, pairs perfectly with the video (red dumps mess → blue sorts → "ohhh, finally"). Strongest stopping power.
+
+**B. "The to-do app that decides what's first — so you don't have to."** — keeps your structure, adds the relief, names the real pain (deciding).
+
+**C.** Keep the current H1.
+
+I'll proceed with **the user's choice** — please pick A, B, or C in your reply. Default if you don't specify: **A**.
+
+## Hero cleanup (always doing this)
+
+Remove the Clerk mascot + speech bubble from the hero left column. The video on the right now carries all the character/personality — having a second mascot duplicates the job and crowds the layout.
+
+### What gets removed in `src/pages/Landing.tsx`
+
+- The entire mascot-and-bubble JSX block (lines ~87–102): the `ClerkCharacter` + the rotating speech bubble.
+- The `BUBBLE_LINES` constant (lines 9–15).
+- Bubble rotation state and effects: `lineIdx`, `fading`, `rotate()`, the `useInterval` setup (lines ~41–54).
+- `charSize` constant + `useIsMobile` import if no longer used elsewhere on the page.
+- `ClerkCharacter` import if no longer referenced.
+- Unused `useEffect`/`useState` imports if nothing else needs them.
+
+### Hero layout after removal
 
 ```text
-Desktop (≥ md)                              Mobile (< md)
-┌──────────────────────┬─────────────────┐  ┌──────────────────┐
-│ H1: explains what    │                 │  │ H1               │
-│ to do first.         │   ┌─────────┐   │  │ Mascot + bubble  │
-│                      │   │         │   │  │ CTA              │
-│ Mascot 🗨 bubble     │   │  VIDEO  │   │  │ ─────            │
-│                      │   │  (1:1)  │   │  │ ┌────────────┐   │
-│ [ Get started → ]    │   │         │   │  │ │   VIDEO    │   │
-│ no account needed    │   └─────────┘   │  │ │   (1:1)    │   │
-│ Made for ADHD…       │                 │  │ └────────────┘   │
-└──────────────────────┴─────────────────┘  └──────────────────┘
+LEFT COLUMN                          RIGHT COLUMN
+┌──────────────────────┐             ┌─────────────┐
+│ H1                   │             │             │
+│                      │             │   VIDEO     │
+│ [ Get started → ]    │             │             │
+│ no account needed    │             │             │
+│ Made for ADHD…       │             └─────────────┘
+└──────────────────────┘
 ```
 
-- Same column slot: `max-w-[440px]`, right-aligned on desktop, centered on mobile.
-- Square aspect ratio preserved (1:1) — video fills the column width.
-- Soft container: rounded-[20px], subtle border + shadow matching the existing card aesthetic, on the `#F5F5F3` background.
-- Slight hover lift kept (`hover:-translate-y-1`) to mirror the previous card's feel.
+Spacing tightens slightly: replace the mascot block with a small spacer (`mb-7` worth of room) so the H1 → CTA gap stays balanced.
 
-## Behavior
+## Other character/bubble usage
 
-- `autoPlay`, `muted`, `loop`, `playsInline` — plays silently on load, on every device including iOS Safari.
-- No controls, no poster flash — first frame shows immediately.
-- `preload="auto"` so it's ready by the time the hero animates in.
+Mascot stays everywhere else — the in-app `AppHome`, the Proposal Modal, etc. This change is **landing-hero only**.
 
-## Files
+## Memory update
 
-- **Add asset**: copy `user-uploads://landing-video.mp4` → `public/landing-hero.mp4` (1.8MB; `public/` is correct since it's a static media file referenced by URL, not bundled).
-- **Edit `src/pages/Landing.tsx`**:
-  - Replace the `<ProposalPreview />` usage in the hero's right column with a new inline `<HeroVideo />` (or just a `<video>` element).
-  - Keep the `ProposalPreview` component definition in the file for now (in case we want it back later) — or remove it. Recommendation: **remove** it to keep the file lean; we can reintroduce from git history if needed.
+Update `mem://design/landing-voice` to reflect:
+- New H1 (whichever you pick).
+- "Hero left column has no mascot; video carries personality."
+- Remove the BUBBLE_LINES rules section (no longer applicable to landing).
 
-## Technical details
-
-```tsx
-// Right column of the hero section
-<div className="w-full max-w-[440px] mx-auto md:mx-0 animate-fade-up">
-  <div className="rounded-[20px] overflow-hidden border border-black/[0.08]
-                  shadow-[0_24px_60px_rgba(0,0,0,0.12)] bg-white
-                  transition-transform hover:-translate-y-1 duration-300">
-    <video
-      src="/landing-hero.mp4"
-      autoPlay
-      muted
-      loop
-      playsInline
-      preload="auto"
-      className="block w-full h-auto aspect-square object-cover"
-    />
-  </div>
-</div>
-```
-
-No other sections (How it works, Tension, Final CTA, footer) are touched.
-
-## Open question
-
-If you'd rather **keep** `ProposalPreview` as a fallback (e.g., shown below the video, or swapped on mobile to save bandwidth), say the word and I'll wire that instead. Default plan: video fully replaces it in both desktop and mobile.
+Mascot/bubble copy guidance still applies to in-app surfaces.
