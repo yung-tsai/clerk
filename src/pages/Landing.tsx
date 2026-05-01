@@ -24,25 +24,8 @@ const HOW_STEPS = [
 
 export default function Landing() {
   const { user } = useAuth();
-  const isMobile = useIsMobile();
   const primaryPath = hasLovableCloudEnv ? (user ? "/app" : "/onboarding") : "/auth";
 
-  // Rotating bubble (slowed from 3.8s to 6s for readability)
-  const [lineIdx, setLineIdx] = useState(0);
-  const [fading, setFading] = useState(false);
-  const rotate = () => {
-    setFading(true);
-    setTimeout(() => {
-      setLineIdx((i) => (i + 1) % BUBBLE_LINES.length);
-      setFading(false);
-    }, 300);
-  };
-  useEffect(() => {
-    const id = setInterval(rotate, 6000);
-    return () => clearInterval(id);
-  }, []);
-
-  const charSize = isMobile ? 56 : 64;
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
