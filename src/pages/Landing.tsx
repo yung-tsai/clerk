@@ -7,11 +7,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import clerkLogo from "@/assets/clerk-logo.svg";
 
 const BUBBLE_LINES = [
-  "Tell me what's on your mind. I'll tell you what to start with — and why.",
+  "Dump it on me. I'll prioritize what's first — and tell you why.",
   "Twelve things on your plate? I'll pick one.",
   "I don't just sort. I explain.",
   "Stuck on what's first? That's my job.",
-  "You decide enough. Let me decide this.",
+  "You decide enough. Let me handle this one.",
 ];
 
 
@@ -82,7 +82,7 @@ export default function Landing() {
               className="font-plex font-light leading-[1.05] tracking-[-0.03em] text-foreground mb-4 animate-fade-up"
               style={{ fontSize: "clamp(30px, 5.6vw, 52px)" }}
             >
-              The to-do app that <strong className="font-semibold">explains what to do first.</strong>
+              The to-do app that <strong className="font-semibold">prioritizes and explains what to do first.</strong>
             </h1>
             {/* Mascot + bubble — character on left, bubble tail points left toward him */}
             <div className="mb-7 flex items-end justify-center md:justify-start gap-0 max-w-full animate-fade-up">
