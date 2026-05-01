@@ -812,7 +812,155 @@ function FocusView({
 }
 
 /* ───────── PLANNER VIEW ───────── */
-function PlannerView({
+function PlannerView(props: {
+  grouped: Record<ClerkCol, Task[]>;
+  onComplete: (t: Task) => void;
+  onOpen: (t: Task) => void;
+  dropTarget: { col: ClerkCol; index: number } | null;
+  activeId: string | null;
+}) {
+  const isMobile = useIsMobile();
+  return isMobile ? <PlannerMobile {...props} /> : <PlannerDesktop {...props} />;
+}
+
+/* ───────── PLANNER (MOBILE) ───────── */
+function PlannerMobile({
+  grouped,
+  onComplete,
+  onOpen,
+  dropTarget,
+  activeId,
+}: {
+  grouped: Record<ClerkCol, Task[]>;
+  onComplete: (t: Task) => void;
+  onOpen: (t: Task) => void;
+  dropTarget: { col: ClerkCol; index: number } | null;
+  activeId: string | null;
+}) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const colRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const programmaticScroll = useRef(false);
+
+  // Update active tab as user swipes
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    let raf = 0;
+    const onScroll = () => {
+      if (programmaticScroll.current) return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const left = el.scrollLeft;
+        const w = el.clientWidth;
+        // Snap width = first column's offsetWidth + gap; use clientWidth*0.85 approx
+        let nearest = 0;
+        let best = Infinity;
+        colRefs.current.forEach((c, i) => {
+          if (!c) return;
+          const d = Math.abs(c.offsetLeft - left);
+          if (d < best) {
+            best = d;
+            nearest = i;
+          }
+        });
+        setActiveIdx(nearest);
+      });
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const goTo = (idx: number) => {
+    const el = scrollerRef.current;
+    const target = colRefs.current[idx];
+    if (!el || !target) return;
+    setActiveIdx(idx);
+    programmaticScroll.current = true;
+    el.scrollTo({ left: target.offsetLeft, behavior: "smooth" });
+    window.setTimeout(() => {
+      programmaticScroll.current = false;
+    }, 500);
+  };
+
+  return (
+    <div className="w-full pt-3 pb-8">
+      {/* Tab bar */}
+      <div className="px-4 border-b border-divider">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar -mb-px">
+          {COLS.map((col, i) => {
+            const active = i === activeIdx;
+            return (
+              <button
+                key={col}
+                type="button"
+                onClick={() => goTo(i)}
+                className={cn(
+                  "shrink-0 px-3 py-2.5 font-plex text-[14px] transition-colors border-b-2 -mb-px",
+                  active
+                    ? "text-foreground border-primary"
+                    : "text-muted-foreground border-transparent"
+                )}
+              >
+                {COL_TITLES[col]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Horizontal snap scroller */}
+      <div
+        ref={scrollerRef}
+        className="overflow-x-auto overflow-y-hidden no-scrollbar mt-4"
+        style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
+      >
+        <div className="flex gap-3 px-4">
+          {COLS.map((col, i) => (
+            <div
+              key={col}
+              ref={(el) => (colRefs.current[i] = el)}
+              className="shrink-0"
+              style={{ width: "85vw", maxWidth: 380, scrollSnapAlign: "start" }}
+            >
+              <div className="flex items-baseline justify-between pb-3 mb-3">
+                <span
+                  className="font-plex"
+                  style={{ fontSize: 20, fontWeight: 400, color: "#3F3F3F", letterSpacing: "-0.02em", lineHeight: "26px" }}
+                >
+                  {COL_TITLES[col]}
+                </span>
+                <span
+                  className="font-plex-mono"
+                  style={{ fontSize: 16, fontWeight: 300, color: "#11181C", letterSpacing: "-0.02em", lineHeight: "21px" }}
+                >
+                  {String(grouped[col].length).padStart(2, "0")}
+                </span>
+              </div>
+              <DroppableColumn
+                col={col}
+                tasks={grouped[col]}
+                onComplete={onComplete}
+                onOpen={onOpen}
+                emptyText="Nothing yet."
+                dropTarget={dropTarget}
+                activeId={activeId}
+              />
+            </div>
+          ))}
+          {/* Trailing spacer so last column can snap to start */}
+          <div className="shrink-0" style={{ width: "15vw" }} aria-hidden />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ───────── PLANNER (DESKTOP) ───────── */
+function PlannerDesktop({
   grouped,
   onComplete,
   onOpen,
@@ -848,7 +996,6 @@ function PlannerView({
   const scrollByCol = (dir: 1 | -1) => {
     const el = scrollerRef.current;
     if (!el) return;
-    // 380 column + 28px gutter (pl-7)
     el.scrollBy({ left: dir * 408, behavior: "smooth" });
   };
 
@@ -896,7 +1043,6 @@ function PlannerView({
         </div>
       </div>
 
-      {/* Scroll arrows — desktop only */}
       {canLeft && (
         <button
           type="button"
