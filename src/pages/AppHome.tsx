@@ -83,6 +83,11 @@ export default function AppHome() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const bubbleTimer = useRef<number | null>(null);
   const loadedOnce = useRef(false);
+  // When the user moves a task within ~10s of accepting a sort, treat it
+  // as disagreement with Clerk's choice (fires `move.disagree`).
+  // Cleared after first use so it only fires once per sort.
+  const lastSortAcceptedAt = useRef<number | null>(null);
+  const DISAGREE_WINDOW_MS = 10_000;
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -178,10 +183,13 @@ export default function AppHome() {
           );
           const timeOfDay =
             localHour < 12 ? "Morning" : localHour < 18 ? "Afternoon" : "Evening";
-          const greet = p.display_name
-            ? `${timeOfDay}, ${p.display_name}.`
-            : GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-          showBubble(greet, 4500);
+          const greetKey = p.display_name
+            ? (`greeting.${timeOfDay.toLowerCase()}` as
+                | "greeting.morning"
+                | "greeting.afternoon"
+                | "greeting.evening")
+            : "greeting.anon";
+          showBubble(quip(greetKey, { name: p.display_name }), 4500);
         }
       }
     })();
@@ -235,8 +243,9 @@ export default function AppHome() {
       if (data?.tasks?.length) sorted = data.tasks;
       else throw new Error("Empty AI response");
     } catch (err: any) {
-      if (err?.context?.status === 429) toast.error("Rate limited. Using local sort.");
-      else if (err?.context?.status === 402) toast.error("AI credits exhausted. Using local sort.");
+      // AI sort failed (network, 429, 402, empty response). Fall back to local
+      // classify and let Clerk own the message — no double-notify with toasts.
+      showBubble(quip("error.ai"), 4500);
       sorted = parts.map((title) => {
         const { col, reason } = classify(title);
         return { title, col, reason };
@@ -264,9 +273,11 @@ export default function AppHome() {
       return;
     }
     setTasks((prev) => [...((data as Task[]) ?? []), ...prev]);
+    const allToday = proposals.every((p) => p.col === "today");
     setProposals(null);
     setInput("");
-    showBubble("Sorted.");
+    lastSortAcceptedAt.current = Date.now();
+    showBubble(quip(allToday ? "accept.allToday" : "accept"));
   }
 
   function updateProposalCol(idx: number, col: ClerkCol) {
