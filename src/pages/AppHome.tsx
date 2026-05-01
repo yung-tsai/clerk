@@ -205,8 +205,9 @@ export default function AppHome() {
 
   async function processInput(raw: string) {
     if (!user) return;
+    if (!raw.trim()) return;
+    // Local fallback only — AI now handles extraction from the raw string.
     const parts = raw.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
-    if (!parts.length) return;
     setThinking(true);
     showBubble("Thinking...", 60_000);
 
@@ -214,7 +215,10 @@ export default function AppHome() {
     try {
       const supabase = await getLovableCloudClient();
       const { data, error } = await supabase.functions.invoke("sort-tasks", {
-        body: { titles: parts },
+        body: {
+          input: raw,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
       });
       if (error) throw error;
       if (data?.tasks?.length) sorted = data.tasks;
