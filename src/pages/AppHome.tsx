@@ -820,12 +820,14 @@ function FocusView({
   onOpen,
   dropTarget,
   activeId,
+  onAddTask,
 }: {
   tasks: Task[];
   onComplete: (t: Task) => void;
   onOpen: (t: Task) => void;
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
+  onAddTask: (col: ClerkCol) => void;
 }) {
   const today = new Date();
   return (
