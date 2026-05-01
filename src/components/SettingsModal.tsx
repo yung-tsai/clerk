@@ -112,14 +112,8 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
               Close
             </button>
             <span className="text-[15px] font-semibold tracking-[-0.01em] text-[#1A1A1A]">Settings</span>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="text-[13px] font-medium text-[#567CF8] hover:opacity-70 transition-opacity disabled:opacity-40"
-            >
-              {saving ? "..." : "Save"}
-            </button>
+            <span className="w-[44px]" aria-hidden />
+
           </div>
 
           <div className="overflow-y-auto px-5 pt-5 pb-28 md:pb-7">
