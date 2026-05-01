@@ -546,7 +546,7 @@ export default function AppHome() {
           style={{ height: 64 }}
         >
           <div className="w-full max-w-[1280px] mx-auto px-10 flex items-center justify-between">
-            <img src={clerkLogo} alt="Clerk" className="h-[22px] w-auto select-none" draggable={false} />
+            <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none" draggable={false} />
 
             {/* Toggle Focus | Planner */}
             <div className="flex items-center gap-1">
@@ -887,9 +887,9 @@ function PlannerMobile({
   };
 
   return (
-    <div className="w-full pt-3 pb-8">
+    <div className="w-full pt-4 pb-32">
       {/* Tab bar */}
-      <div className="px-4 border-b border-divider">
+      <div className="px-5 border-b border-divider">
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar -mb-px">
           {COLS.map((col, i) => {
             const active = i === activeIdx;
@@ -915,10 +915,10 @@ function PlannerMobile({
       {/* Horizontal snap scroller */}
       <div
         ref={scrollerRef}
-        className="overflow-x-auto overflow-y-hidden no-scrollbar mt-4"
+        className="overflow-x-auto overflow-y-hidden no-scrollbar mt-5"
         style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
       >
-        <div className="flex gap-3 px-4">
+        <div className="flex gap-3 px-5">
           {COLS.map((col, i) => (
             <div
               key={col}
@@ -926,7 +926,7 @@ function PlannerMobile({
               className="shrink-0"
               style={{ width: "85vw", maxWidth: 380, scrollSnapAlign: "start" }}
             >
-              <div className="flex items-baseline justify-between pb-3 mb-3">
+              <div className="flex items-baseline justify-between pb-3 mb-4">
                 <span
                   className="font-plex"
                   style={{ fontSize: 20, fontWeight: 400, color: "#3F3F3F", letterSpacing: "-0.02em", lineHeight: "26px" }}

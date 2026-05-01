@@ -48,6 +48,7 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
   return (
     <Dialog open={!!task} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[720px] p-0 overflow-hidden bg-background">
+        <div className="overflow-y-auto max-h-[92vh] md:max-h-none pb-28 md:pb-0">
         <div className="grid md:grid-cols-[1fr_280px] gap-0">
           {/* Left */}
           <div className="p-7 pr-5 flex flex-col gap-7 min-w-0">
@@ -149,6 +150,7 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
               </button>
             </div>
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

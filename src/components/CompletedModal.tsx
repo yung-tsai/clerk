@@ -120,7 +120,7 @@ export function CompletedModal({ open, onOpenChange, userId, variant }: Props) {
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-[560px] p-0 gap-0 border-none shadow-none bg-transparent [&>button]:hidden">
           <div
-            className="rounded-[20px] overflow-hidden max-h-[85vh] flex flex-col"
+            className="rounded-[20px] overflow-hidden max-h-[92vh] md:max-h-[85vh] flex flex-col"
             style={{
               background:
                 "radial-gradient(ellipse 60% 50% at 10% 10%, rgba(206,255,231,0.4) 0%, transparent 100%), radial-gradient(ellipse 50% 45% at 90% 5%, rgba(185,205,255,0.3) 0%, transparent 100%), #F5F5F3",
@@ -163,7 +163,7 @@ export function CompletedModal({ open, onOpenChange, userId, variant }: Props) {
             </div>
 
             {/* Body */}
-            <div className="overflow-y-auto px-5 pt-5 pb-7 flex-1">
+            <div className="overflow-y-auto px-5 pt-5 pb-28 md:pb-7 flex-1">
               {loading ? (
                 <p className="font-mono-plex text-[12px] text-[#9CA3AF] text-center py-12">Loading…</p>
               ) : rows.length === 0 ? (
