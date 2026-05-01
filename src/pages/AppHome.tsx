@@ -18,6 +18,7 @@ import { SettingsModal } from "@/components/SettingsModal";
 import { CompletedModal } from "@/components/CompletedModal";
 import { TaskDetailModal, type TaskPatch } from "@/components/TaskDetailModal";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DndContext,
   MouseSensor,
