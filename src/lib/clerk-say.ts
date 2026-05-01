@@ -1,12 +1,11 @@
-// VOICE PASS NEEDED — Claude territory.
-// These strings are placeholders matching the previous toast copy.
-// Claude should rewrite them in Clerk's voice (warm, sassy, calm).
-// Sites currently using clerkSay (replace strings, keep keys/locations):
-//   AppHome — "All tasks cleared."
-//   CompletedModal — "History cleared."
-//   Auth — "Account created. Welcome." / "Check your email for a reset link."
-//   ResetPassword — "Password updated. You're signed in."
-//   SettingsModal — "Coming soon — account sync is on the way."
+// Transport for Clerk's bubble messages.
+// All quip *strings* live in `src/lib/clerk-quips.ts` (the tone bank) —
+// don't add literal copy here. clerkSay() just delivers a string to whichever
+// component is currently rendering the bubble (today: AppBar via AppHome).
+//
+// A few legacy literals still call clerkSay() directly with their own copy
+// (Auth, ResetPassword, SettingsModal, CompletedModal, settings clear-all).
+// Those are intentionally outside the tone bank for now — see plan.
 
 type Listener = (message: string, duration: number) => void;
 

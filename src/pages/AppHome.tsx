@@ -12,6 +12,7 @@ import { isNewDay, planCarryOver } from "@/lib/carry-over";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
 import { clerkSay, subscribeClerk } from "@/lib/clerk-say";
+import { quip, quipForMove } from "@/lib/clerk-quips";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
 import { CompletedModal } from "@/components/CompletedModal";
@@ -58,13 +59,6 @@ const COL_PILL_BG: Record<ClerkCol, string> = {
   someday: "#FFCEFB",
 };
 
-const GREETINGS = [
-  "Add your tasks. I'll figure out where they go.",
-  "What's on your mind?",
-  "Brain dump time.",
-  "Type. I'll sort.",
-];
-
 export default function AppHome() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -89,6 +83,11 @@ export default function AppHome() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const bubbleTimer = useRef<number | null>(null);
   const loadedOnce = useRef(false);
+  // When the user moves a task within ~10s of accepting a sort, treat it
+  // as disagreement with Clerk's choice (fires `move.disagree`).
+  // Cleared after first use so it only fires once per sort.
+  const lastSortAcceptedAt = useRef<number | null>(null);
+  const DISAGREE_WINDOW_MS = 10_000;
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -184,10 +183,13 @@ export default function AppHome() {
           );
           const timeOfDay =
             localHour < 12 ? "Morning" : localHour < 18 ? "Afternoon" : "Evening";
-          const greet = p.display_name
-            ? `${timeOfDay}, ${p.display_name}.`
-            : GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-          showBubble(greet, 4500);
+          const greetKey = p.display_name
+            ? (`greeting.${timeOfDay.toLowerCase()}` as
+                | "greeting.morning"
+                | "greeting.afternoon"
+                | "greeting.evening")
+            : "greeting.anon";
+          showBubble(quip(greetKey, { name: p.display_name }), 4500);
         }
       }
     })();
@@ -241,8 +243,9 @@ export default function AppHome() {
       if (data?.tasks?.length) sorted = data.tasks;
       else throw new Error("Empty AI response");
     } catch (err: any) {
-      if (err?.context?.status === 429) toast.error("Rate limited. Using local sort.");
-      else if (err?.context?.status === 402) toast.error("AI credits exhausted. Using local sort.");
+      // AI sort failed (network, 429, 402, empty response). Fall back to local
+      // classify and let Clerk own the message — no double-notify with toasts.
+      showBubble(quip("error.ai"), 4500);
       sorted = parts.map((title) => {
         const { col, reason } = classify(title);
         return { title, col, reason };
@@ -270,9 +273,11 @@ export default function AppHome() {
       return;
     }
     setTasks((prev) => [...((data as Task[]) ?? []), ...prev]);
+    const allToday = proposals.every((p) => p.col === "today");
     setProposals(null);
     setInput("");
-    showBubble("Sorted.");
+    lastSortAcceptedAt.current = Date.now();
+    showBubble(quip(allToday ? "accept.allToday" : "accept"));
   }
 
   function updateProposalCol(idx: number, col: ClerkCol) {
@@ -305,31 +310,41 @@ export default function AppHome() {
       });
     }
 
-    // Milestone celebration — only when crossing the threshold
-    const STREAK_LINES: Record<number, string> = {
-      3: "Three days. That's a streak. 🔥",
-      7: "A full week. I noticed. 💫",
-      30: "Thirty days. This is a lifestyle now. 👑",
+    // Pick a quip. Priority:
+    //   1. Milestone (streak or task count) — most notable
+    //   2. Cleared the today column — bigger moment
+    //   3. Normal "done" line
+    type MilestoneKey =
+      | "milestone.streak.3" | "milestone.streak.7" | "milestone.streak.30"
+      | "milestone.tasks.5" | "milestone.tasks.10" | "milestone.tasks.50";
+    const STREAK_KEYS: Record<number, MilestoneKey> = {
+      3: "milestone.streak.3",
+      7: "milestone.streak.7",
+      30: "milestone.streak.30",
     };
-    const TASK_LINES: Record<number, string> = {
-      1: "First one done. Welcome in. ⚡",
-      10: "Ten tasks. You're getting the hang of this. 🎯",
-      50: "Fifty done. Seriously impressive. 🏆",
-      100: "One hundred. We're a team now.",
+    const TASK_KEYS: Record<number, MilestoneKey> = {
+      5: "milestone.tasks.5",
+      10: "milestone.tasks.10",
+      50: "milestone.tasks.50",
     };
-    let celebration: string | null = null;
-    if (nextStreak !== prevStreak && STREAK_LINES[nextStreak]) {
-      celebration = STREAK_LINES[nextStreak];
-    } else if (TASK_LINES[nextCompleted]) {
-      celebration = TASK_LINES[nextCompleted];
+    const name = profile?.display_name ?? null;
+    let milestoneKey: MilestoneKey | null = null;
+    if (nextStreak !== prevStreak && STREAK_KEYS[nextStreak]) {
+      milestoneKey = STREAK_KEYS[nextStreak];
+    } else if (TASK_KEYS[nextCompleted]) {
+      milestoneKey = TASK_KEYS[nextCompleted];
     }
 
-    if (celebration) {
-      showBubble(celebration, 5000);
+    const clearedToday =
+      t.col === "today" &&
+      tasks.filter((x) => x.col === "today" && x.id !== t.id).length === 0;
+
+    if (milestoneKey) {
+      showBubble(quip(milestoneKey, { name }), 5000);
+    } else if (clearedToday) {
+      showBubble(quip("complete.allToday", { name }), 5000);
     } else {
-      // Rotate Done lines for low-key feedback
-      const lines = ["Done. Next.", "Nice. Onward.", "Off the list.", "Cleared."];
-      showBubble(lines[Math.floor(Math.random() * lines.length)]);
+      showBubble(quip("complete.normal"));
     }
 
     await Promise.all([
@@ -359,9 +374,25 @@ export default function AppHome() {
 
   async function moveTask(t: Task, col: ClerkCol) {
     if (col === t.col) return;
+    const prevCol = t.col;
     const supabase = await getLovableCloudClient();
     setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, col } : x)));
+    fireMoveQuip(prevCol, col);
     await supabase.from("tasks").update({ col }).eq("id", t.id);
+  }
+
+  // Shared between drag-end and the modal "Move to" buttons.
+  function fireMoveQuip(prevCol: ClerkCol, nextCol: ClerkCol) {
+    const within =
+      lastSortAcceptedAt.current !== null &&
+      Date.now() - lastSortAcceptedAt.current < DISAGREE_WINDOW_MS;
+    if (within) lastSortAcceptedAt.current = null; // one-shot per sort
+    showBubble(
+      quipForMove(prevCol, nextCol, {
+        withinDisagreeWindow: within,
+        name: profile?.display_name ?? null,
+      })
+    );
   }
 
   // ─── Drag & drop ───
@@ -447,6 +478,12 @@ export default function AppHome() {
         .map((x) => (x.id === activeId ? { ...x, col: targetCol, position: newPos } : x))
         .sort((a, b) => a.position - b.position)
     );
+
+    // Only fire a quip when the column actually changed — pure reordering
+    // within a column shouldn't trigger Clerk.
+    if (activeTask.col !== targetCol) {
+      fireMoveQuip(activeTask.col, targetCol);
+    }
 
     const supabase = await getLovableCloudClient();
     await supabase
