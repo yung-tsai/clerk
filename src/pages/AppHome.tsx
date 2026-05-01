@@ -662,8 +662,7 @@ export default function AppHome() {
           />
         </div>
       )}
-        />
-      )}
+
 
       {/* ── Proposal modal ── */}
       <Dialog
