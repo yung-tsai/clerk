@@ -59,13 +59,6 @@ const COL_PILL_BG: Record<ClerkCol, string> = {
   someday: "#FFCEFB",
 };
 
-const GREETINGS = [
-  "Add your tasks. I'll figure out where they go.",
-  "What's on your mind?",
-  "Brain dump time.",
-  "Type. I'll sort.",
-];
-
 export default function AppHome() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
