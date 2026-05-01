@@ -853,6 +853,7 @@ function FocusView({
           emptyText="Nothing yet. Add tasks below."
           dropTarget={dropTarget}
           activeId={activeId}
+          onAddTask={onAddTask}
         />
       </div>
     </div>
