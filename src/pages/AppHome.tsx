@@ -1141,7 +1141,6 @@ function DroppableColumn({
   tasks,
   onComplete,
   onOpen,
-  emptyText,
   dropTarget,
   activeId,
   onAddTask,
@@ -1150,7 +1149,6 @@ function DroppableColumn({
   tasks: Task[];
   onComplete: (t: Task) => void;
   onOpen: (t: Task) => void;
-  emptyText: string;
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask?: (col: ClerkCol) => void;
@@ -1171,14 +1169,7 @@ function DroppableColumn({
         )}
       >
         {visible.length === 0 ? (
-          <>
-            {showIndicator && <DropIndicator />}
-            {!showIndicator && (
-              <p className="py-6 text-[12px]" style={{ color: "#D1D5DB" }}>
-                {emptyText}
-              </p>
-            )}
-          </>
+          showIndicator && <DropIndicator />
         ) : (
           visible.map((t, idx) => (
             <div key={t.id} className="flex flex-col gap-2">
