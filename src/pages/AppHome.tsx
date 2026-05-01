@@ -1029,45 +1029,21 @@ function PlannerDesktop({
   onAddTask: (col: ClerkCol) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const [canLeft, setCanLeft] = useState(false);
-  const [canRight, setCanRight] = useState(false);
-
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const update = () => {
-      setCanLeft(el.scrollLeft > 4);
-      setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-    };
-    update();
-    el.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      el.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, []);
-
-  const scrollByCol = (dir: 1 | -1) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir * 340, behavior: "smooth" });
-  };
 
   return (
-    <div className="max-w-[1280px] mx-auto px-10 pt-7 pb-10 relative">
+    <div className="max-w-[1440px] mx-auto px-10 pt-7 pb-10">
       <div ref={scrollerRef} className="overflow-x-auto overflow-y-hidden no-scrollbar">
         <div
           className="grid"
-          style={{ gridTemplateColumns: "repeat(4, 320px)", minWidth: "100%" }}
+          style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))", minWidth: "100%" }}
         >
           {COLS.map((col, i) => (
             <div
               key={col}
               className={cn(
                 "min-w-0",
-                i < COLS.length - 1 && "border-r border-divider pr-4",
-                i > 0 && "pl-4"
+                i < COLS.length - 1 && "border-r border-divider pr-5",
+                i > 0 && "pl-5"
               )}
             >
               <div className="flex items-baseline justify-between pb-3 mb-3">
@@ -1098,39 +1074,6 @@ function PlannerDesktop({
           ))}
         </div>
       </div>
-
-      {/* Right-edge fade hint when more columns are scrollable */}
-      {canRight && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute top-7 bottom-10 right-10 w-16 transition-opacity"
-          style={{
-            background:
-              "linear-gradient(to right, hsl(var(--background) / 0) 0%, hsl(var(--background)) 100%)",
-          }}
-        />
-      )}
-
-      {canLeft && (
-        <button
-          type="button"
-          onClick={() => scrollByCol(-1)}
-          aria-label="Scroll left"
-          className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_2px_10px_rgba(86,124,248,0.35)] hover:bg-primary/90 hover:shadow-[0_4px_16px_rgba(86,124,248,0.45)] transition-all"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-      )}
-      {canRight && (
-        <button
-          type="button"
-          onClick={() => scrollByCol(1)}
-          aria-label="Scroll right"
-          className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-20 h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_2px_10px_rgba(86,124,248,0.35)] hover:bg-primary/90 hover:shadow-[0_4px_16px_rgba(86,124,248,0.45)] transition-all"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      )}
     </div>
   );
 }
