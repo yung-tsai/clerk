@@ -75,9 +75,14 @@ export default function Landing() {
               {ctaLabel}
               <ArrowIcon stroke="#1A1A1A" />
             </Link>
-            <span className="font-sans-plex text-[13px] font-medium text-white/75">
-              Free to start. No credit card.
-            </span>
+            <div className="flex flex-col gap-1.5">
+              <span className="font-sans-plex text-[14px] font-medium text-white/90">
+                Built for ADHD, anxiety, and anyone who overthinks their list.
+              </span>
+              <span className="font-sans-plex text-[13px] font-medium text-white/55">
+                Free to start. No credit card.
+              </span>
+            </div>
           </div>
         </div>
 
