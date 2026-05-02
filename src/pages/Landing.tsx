@@ -3,183 +3,217 @@ import { useAuth } from "@/contexts/AuthContext";
 import { hasLovableCloudEnv } from "@/lib/lovable-cloud";
 import clerkLogo from "@/assets/clerk-logo.svg";
 
+const ArrowIcon = ({ stroke = "currentColor" }: { stroke?: string }) => (
+  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+    <path d="M3 7.5h9M9 4l3.5 3.5L9 11" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
-
-const TENSION_BEFORE = [
-  ["🌀", "You don't know where to start"],
-  ["😤", "Everything feels equally important"],
-  ["😶", "You second-guess every decision"],
-];
-const TENSION_AFTER = [
-  ["🎯", "One clear next task"],
-  ["💡", "You know why it's first"],
-  ["😌", "No more second-guessing"],
-];
-
-const HOW_STEPS = [
-  ["01", "Type what's on your mind", "No forms. No categories. Just dump everything — work, home, errands. Clerk reads it all."],
-  ["02", "Clerk picks what's first — and explains why", "Not just where it goes. Why it goes there. \"Due Friday — that's close.\" \"Tomorrow's problem.\" You see the reasoning."],
-  ["03", "You stop deciding, start doing", "Disagree with a pick? Move it. But mostly, you'll just trust it and start."],
-];
+const MascotInline = () => (
+  <svg width="32" height="27" viewBox="0 0 137 115" fill="none" style={{ overflow: "visible" }} aria-hidden="true">
+    <path d="M60.5962 39.5038L78.1603 0L93.9679 39.5038L119.436 35.9924L111.532 57.0611L137 74.6183L103.628 83.3969L111.532 113.244L72.0128 96.5649L63.2308 115L45.6667 96.5649L16.6859 108.855L30.7372 80.7634L0 57.0611L33.3718 55.3053L30.7372 21.0687L60.5962 39.5038Z" fill="#567CF8" />
+    <ellipse cx="50" cy="67" rx="12" ry="15" fill="white" />
+    <ellipse cx="54" cy="71" rx="6" ry="8" fill="#1A1A1A" />
+    <ellipse cx="75" cy="66" rx="12" ry="15" transform="rotate(-5 75 66)" fill="white" />
+    <ellipse cx="72" cy="70" rx="6" ry="8" transform="rotate(-7 72 70)" fill="#1A1A1A" />
+  </svg>
+);
 
 export default function Landing() {
   const { user } = useAuth();
   const primaryPath = hasLovableCloudEnv ? (user ? "/app" : "/onboarding") : "/auth";
-
+  const navOpenPath = user ? "/app" : "/auth";
+  const ctaLabel = user ? "Open Clerk" : "Get started free";
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1180px] flex-col px-6 pt-7 pb-20">
-        {/* Header */}
-        <header className="mb-10 sm:mb-12 flex w-full items-center justify-between">
-          <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none" draggable={false} />
-          <nav className="flex items-center gap-6">
-            {user ? (
-              <Link to="/app" className="font-mono-plex text-[11px] font-light uppercase tracking-[0.05em] text-muted-foreground hover:text-foreground transition-colors">
-                Open
-              </Link>
-            ) : (
-              <Link to="/auth" className="font-mono-plex text-[11px] font-light uppercase tracking-[0.05em] text-muted-foreground hover:text-foreground transition-colors">
-                Sign in
-              </Link>
-            )}
-          </nav>
-        </header>
+    <div className="min-h-screen bg-[#0A0A0A] text-white overflow-x-hidden">
+      {/* ══ HERO ══ */}
+      <section className="relative w-full h-screen min-h-[600px] flex flex-col overflow-hidden">
+        {/* Background video */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover object-center z-0 hidden md:block"
+          src="/landing-hero.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+        />
+        {/* Mobile poster fallback (uses first frame of video as static via video element with no autoplay would fail; use a colored block) */}
+        <div className="absolute inset-0 z-0 md:hidden bg-gradient-to-br from-[#1a1a2e] via-[#0a0a0a] to-[#0a0a0a]" />
 
-        {/* ── HERO: 2-col on desktop, single-col on mobile ── */}
-        <section className="w-full grid md:grid-cols-[1fr_minmax(0,440px)] gap-10 md:gap-14 items-center mb-16 sm:mb-[88px]">
-          {/* LEFT: copy + CTA */}
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            <h1
-              className="font-plex font-light leading-[1.05] tracking-[-0.03em] text-foreground mb-7 animate-fade-up"
-              style={{ fontSize: "clamp(30px, 5.6vw, 52px)" }}
-            >
-              <strong className="font-semibold font-mono text-5xl">Your clerk<br />for a calmer<br />to-do list.</strong>
-            </h1>
+        {/* Dark overlay */}
+        <div className="absolute inset-0 z-[1] hero-overlay-dark" />
 
-            {/* CTA */}
-            <Link
-              to={primaryPath}
-              className="inline-flex items-center gap-2.5 rounded-full bg-foreground px-9 py-4 font-plex text-[15px] font-medium text-background tracking-[-0.01em] shadow-[0_4px_20px_rgba(0,0,0,0.14)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(0,0,0,0.18)] min-h-[48px] mb-3 animate-fade-up"
-            >
-              {user ? "Open Clerk" : "Get started free"}
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                <path d="M2.5 7.5h10M9 4l3.5 3.5L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-
-            {/* Micro-promise (own line) */}
-            <span className="font-mono-plex text-[11px] font-light tracking-[0.03em] text-faint mb-2.5 animate-fade-up">
-              No account needed to try
-            </span>
-
-            {/* Audience positioning (own line, italic, more visible) */}
-            <p className="font-plex text-[12.5px] italic font-light text-muted-foreground leading-[1.5] max-w-[340px] animate-fade-up">
-              Made for ADHD, anxiety, and anyone who overthinks their list.
-            </p>
-
-          </div>
-
-          {/* RIGHT: Hero video */}
-          <div className="w-full max-w-[440px] mx-auto md:mx-0 animate-fade-up">
-            <div className="rounded-[20px] overflow-hidden border border-black/[0.08] shadow-[0_24px_60px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.9)_inset] bg-white transition-transform hover:-translate-y-1 duration-300">
-              <video
-                src="/landing-hero.mp4"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-                aria-hidden="true"
-                className="block w-full h-auto aspect-square object-cover"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* ── HOW IT WORKS (moved up — answers "how does this work?" right after hero) ── */}
-        <section className="w-full max-w-[640px] mx-auto mb-16 sm:mb-[72px] animate-fade-up">
-          <p className="font-mono-plex uppercase tracking-[0.1em] text-center mb-8 text-lg font-mono font-normal text-secondary-foreground">
-            How it works
-          </p>
-          <div className="flex flex-col">
-            {HOW_STEPS.map(([num, title, desc], i) => (
-              <div key={num} className={`flex gap-5 items-start py-5 ${i < HOW_STEPS.length - 1 ? "border-b border-black/[0.08]" : ""}`}>
-                <span className="font-mono-plex text-[11px] font-normal text-muted-foreground tracking-[0.05em] flex-shrink-0 mt-1 w-5">{num}</span>
-                <div>
-                  <div className="font-plex text-[15px] sm:text-[16px] font-medium text-foreground tracking-[-0.015em] mb-1.5">{title}</div>
-                  <p className="font-plex text-[13.5px] font-normal text-foreground/75 leading-[1.55]">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── TENSION: Sound familiar? — now the closer before final CTA ── */}
-        <section className="w-full max-w-[720px] mx-auto mb-12 sm:mb-16 animate-fade-up">
-          <p className="font-mono-plex text-[10px] font-light uppercase tracking-[0.1em] text-faint text-center mb-6">
-            Does this sound like you?
-          </p>
-          <div className="grid grid-cols-1 min-[440px]:grid-cols-2 gap-3">
-            {/* Without Clerk — visually heavier, mono font, red accent */}
-            <div className="bg-white/55 backdrop-blur-md border border-black/[0.06] border-l-[3px] border-l-[#DC2626]/40 rounded-[20px] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.05)]">
-              <div className="font-mono-plex text-[10px] font-normal uppercase tracking-[0.08em] mb-4 flex items-center gap-1.5 text-[#DC2626]">
-                <span>✕</span> Without Clerk
-              </div>
-              {TENSION_BEFORE.map(([icon, text], i) => (
-                <div key={i} className={`font-mono-plex text-[12.5px] font-normal text-foreground/85 leading-[1.5] py-2.5 flex items-start gap-2 ${i < TENSION_BEFORE.length - 1 ? "border-b border-black/5" : ""}`}>
-                  <span className="text-[14px] flex-shrink-0 mt-px">{icon}</span>
-                  <span>{text}</span>
-                </div>
-              ))}
-            </div>
-            {/* With Clerk — lighter, plex font, green accent */}
-            <div className="bg-white/85 backdrop-blur-md border border-black/[0.06] border-l-[3px] border-l-[#059669]/45 rounded-[20px] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-              <div className="font-mono-plex text-[10px] font-normal uppercase tracking-[0.08em] mb-4 flex items-center gap-1.5 text-[#059669]">
-                <span>✓</span> With Clerk
-              </div>
-              {TENSION_AFTER.map(([icon, text], i) => (
-                <div key={i} className={`font-plex text-[13.5px] font-normal text-foreground leading-[1.5] py-2.5 flex items-start gap-2 ${i < TENSION_AFTER.length - 1 ? "border-b border-black/5" : ""}`}>
-                  <span className="text-[14px] flex-shrink-0 mt-px">{icon}</span>
-                  <span>{text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── FINAL CTA ── */}
-        <section className="w-full max-w-[540px] mx-auto text-center animate-fade-up">
-          <h2
-            className="font-plex font-light tracking-[-0.025em] leading-[1.15] text-foreground mb-7"
-            style={{ fontSize: "clamp(26px, 5.5vw, 40px)" }}
+        {/* Nav */}
+        <nav className="relative z-10 flex items-center justify-between px-6 sm:px-12 py-7">
+          <img src={clerkLogo} alt="Clerk" className="h-[28px] w-auto select-none brightness-0 invert" draggable={false} />
+          <Link
+            to={navOpenPath}
+            className="font-mono-plex text-[12px] font-light text-white/70 bg-white/10 border border-white/20 rounded-full px-5 py-2 backdrop-blur-md tracking-[0.05em] hover:bg-white/20 hover:text-white transition-colors"
           >
-            Stop deciding.<br /><strong className="font-semibold">Start doing.</strong>
-          </h2>
-          <div className="flex flex-col items-center gap-2.5">
+            {user ? "Open →" : "Sign in →"}
+          </Link>
+        </nav>
+
+        {/* Hero content */}
+        <div className="relative z-10 flex-1 flex flex-col justify-center px-6 sm:px-12 pb-20 max-w-[680px]">
+          <h1
+            className="font-mono-plex font-medium leading-[1.05] tracking-[-0.03em] text-white mb-7 animate-fade-up"
+            style={{ fontSize: "clamp(38px, 6vw, 72px)" }}
+          >
+            Your clerk<br />
+            for a calmer<br />
+            <span className="text-white/75 font-light">to-do list.</span>
+          </h1>
+          <div className="flex flex-col items-start gap-3.5 animate-fade-up">
             <Link
               to={primaryPath}
-              className="inline-flex items-center gap-2.5 rounded-full bg-foreground px-9 py-4 font-plex text-[15px] font-medium text-background tracking-[-0.01em] shadow-[0_4px_20px_rgba(0,0,0,0.14)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(0,0,0,0.18)] min-h-[48px]"
+              className="inline-flex items-center gap-2.5 bg-white text-[#1A1A1A] font-sans-plex text-[15px] font-semibold px-9 py-4 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.3)] tracking-[-0.01em] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
             >
-              {user ? "Open Clerk" : "Get started free"}
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                <path d="M2.5 7.5h10M9 4l3.5 3.5L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              {ctaLabel}
+              <ArrowIcon stroke="#1A1A1A" />
             </Link>
-            <span className="font-mono-plex text-[11px] font-light tracking-[0.03em] text-faint">
+            <span className="font-sans-plex text-[13px] font-medium text-white/75">
               No account needed to try
             </span>
-            <p className="font-plex text-[12.5px] italic font-light text-muted-foreground leading-[1.5] max-w-[340px] mt-1">
-              Made for ADHD, anxiety, and anyone who overthinks their list.
-            </p>
           </div>
-        </section>
+        </div>
 
-        <footer className="mt-16 sm:mt-[72px] text-center">
-          <p className="font-mono-plex text-[11px] font-light text-faint tracking-[0.03em]">© 2026 Clerk</p>
-        </footer>
-      </div>
+        {/* Scroll hint */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 opacity-40 animate-scroll-bounce">
+          <span className="font-mono-plex text-[9px] font-light text-white tracking-[0.12em] uppercase">
+            How it works
+          </span>
+          <div className="w-px h-6 bg-white" />
+        </div>
+      </section>
+
+      {/* ══ HOW IT WORKS ══ */}
+      <section className="bg-[#F5F5F3] text-[#1A1A1A] px-6 sm:px-12 py-16 sm:py-24">
+        <h2 className="font-serif font-bold tracking-[-0.03em] text-[#1A1A1A] leading-[1.08] text-center mb-16 sm:mb-20 max-w-[600px] mx-auto" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "clamp(36px, 5vw, 56px)" }}>
+          How it works.
+        </h2>
+
+        <div className="max-w-[900px] mx-auto flex flex-col gap-16 sm:gap-20">
+          {/* Step 01 */}
+          <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
+            <div>
+              <div className="font-mono-plex text-[11px] font-light text-[#9CA3AF] tracking-[0.08em] mb-3.5">01</div>
+              <h3 className="font-sans-plex font-semibold tracking-[-0.025em] text-[#1A1A1A] mb-3 leading-[1.15]" style={{ fontSize: "clamp(22px, 3vw, 30px)" }}>
+                Dump everything<br />on your mind.
+              </h3>
+              <p className="font-mono-plex text-[13px] font-light text-[#6A7282] leading-[1.7]">
+                No forms. No categories. Type it all at once — work, home, errands, whatever. Clerk reads it all.
+              </p>
+            </div>
+            <div className="bg-white rounded-[20px] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
+              <div className="font-mono-plex text-[10px] font-normal text-[#9CA3AF] tracking-[0.1em] uppercase mb-3">
+                What needs doing?
+              </div>
+              <div className="font-sans-plex text-[16px] text-[#1A1A1A] leading-[1.6] p-4 bg-[#F9FAFB] rounded-xl border-[1.5px] border-[#E5E7EB]">
+                Finish case study due Friday, call dentist tomorrow at 9, pick up kids at Lincoln Elementary, go for a run in the morning, learn Spanish someday
+                <span className="inline-block w-0.5 h-[18px] bg-[#567CF8] ml-0.5 align-middle animate-cursor-blink" />
+              </div>
+            </div>
+          </div>
+
+          {/* Step 02 */}
+          <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
+            <div>
+              <div className="font-mono-plex text-[11px] font-light text-[#9CA3AF] tracking-[0.08em] mb-3.5">02</div>
+              <h3 className="font-sans-plex font-semibold tracking-[-0.025em] text-[#1A1A1A] mb-3 leading-[1.15]" style={{ fontSize: "clamp(22px, 3vw, 30px)" }}>
+                Clerk sorts and<br />explains why.
+              </h3>
+              <p className="font-mono-plex text-[13px] font-light text-[#6A7282] leading-[1.7]">
+                Clerk reads the urgency, the deadlines, the emotional weight — and tells you exactly why each task landed where it did.
+              </p>
+            </div>
+            <div className="bg-white rounded-[20px] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.1)]">
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <MascotInline />
+                <div className="text-[16px] font-semibold text-[#1A1A1A] tracking-[-0.01em]">Here's what I'd do.</div>
+              </div>
+              <div className="font-mono-plex text-[11px] font-light text-[#9CA3AF] mb-5 pl-[42px]">
+                Tap a column to move anything.
+              </div>
+              <div className="flex flex-col gap-2.5 mb-5">
+                {[
+                  { title: "Finish case study", col: "Today", colCls: "bg-[#CEDAFF]", reason: "Due Friday — that's close. Do it first." },
+                  { title: "Call dentist", col: "Tomorrow", colCls: "bg-[#FFF7CE]", reason: "You said tomorrow at 9. Tomorrow it is." },
+                  { title: "Learn Spanish", col: "Someday", colCls: "bg-[#FFCEFB]", reason: "No deadline. Someday where dreams live." },
+                ].map((t) => (
+                  <div key={t.title} className="bg-[#F9FAFB] rounded-xl px-3.5 py-3">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-[14px] font-medium text-[#1A1A1A] tracking-[-0.005em]">{t.title}</span>
+                      <span className={`font-mono-plex text-[10px] font-normal px-2.5 py-[3px] rounded-full text-[#1A1A1A] flex-shrink-0 ${t.colCls}`}>{t.col}</span>
+                    </div>
+                    <div className="font-mono-plex text-[11px] font-light text-[#9CA3AF] leading-[1.5] italic">
+                      {t.reason}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button className="w-full bg-[#1A1A1A] text-white font-sans-plex text-[14px] font-medium py-3.5 rounded-xl tracking-[-0.01em]">
+                Looks good
+              </button>
+            </div>
+          </div>
+
+          {/* Step 03 */}
+          <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
+            <div>
+              <div className="font-mono-plex text-[11px] font-light text-[#9CA3AF] tracking-[0.08em] mb-3.5">03</div>
+              <h3 className="font-sans-plex font-semibold tracking-[-0.025em] text-[#1A1A1A] mb-3 leading-[1.15]" style={{ fontSize: "clamp(22px, 3vw, 30px)" }}>
+                You stay<br />in control.
+              </h3>
+              <p className="font-mono-plex text-[13px] font-light text-[#6A7282] leading-[1.7]">
+                Disagree with where something landed? Move it. Clerk never locks you in. You always have the final say.
+              </p>
+            </div>
+            <div className="bg-white rounded-[20px] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.08)] flex flex-col gap-2.5">
+              <div className="rounded-xl px-4 py-3.5 border-[1.5px] border-[#567CF8] bg-[rgba(86,124,248,0.06)]">
+                <div className="font-mono-plex text-[10px] font-normal text-[#9CA3AF] tracking-[0.08em] uppercase mb-1.5">Today</div>
+                <div className="text-[14px] font-medium text-[#1A1A1A]">Finish case study</div>
+              </div>
+              {[
+                { label: "Tomorrow", task: "Call dentist · 9:00 AM" },
+                { label: "Upcoming", task: "Pick up kids · Lincoln Elementary" },
+                { label: "Someday", task: "Learn Spanish" },
+              ].map((c) => (
+                <div key={c.label} className="rounded-xl px-4 py-3.5 border-[1.5px] border-transparent bg-[#F9FAFB]">
+                  <div className="font-mono-plex text-[10px] font-normal text-[#9CA3AF] tracking-[0.08em] uppercase mb-1.5">{c.label}</div>
+                  <div className="text-[14px] font-medium text-[#1A1A1A]">{c.task}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ FINAL CTA ══ */}
+      <section className="bg-[#1A1A1A] px-6 sm:px-12 py-16 sm:py-24 text-center flex flex-col items-center">
+        <h2 className="font-mono-plex font-medium tracking-[-0.03em] text-white leading-[1.1] mb-3.5" style={{ fontSize: "clamp(28px, 5vw, 52px)" }}>
+          Your tasks won't<br />sort themselves.<br />But Clerk will.
+        </h2>
+        <p className="font-mono-plex text-[13px] font-light text-white/40 mb-10 tracking-[0.02em]">
+          No account needed to try.
+        </p>
+        <Link
+          to={primaryPath}
+          className="inline-flex items-center gap-2.5 bg-white text-[#1A1A1A] font-sans-plex text-[15px] font-semibold px-10 py-4 rounded-full shadow-[0_4px_24px_rgba(255,255,255,0.15)] tracking-[-0.01em] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(255,255,255,0.2)] mb-4"
+        >
+          {ctaLabel}
+          <ArrowIcon stroke="#1A1A1A" />
+        </Link>
+      </section>
+
+      {/* ══ FOOTER ══ */}
+      <footer className="bg-[#1A1A1A] border-t border-white/[0.06] px-6 sm:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-center">
+        <p className="font-mono-plex text-[11px] font-light text-white/20 tracking-[0.04em]">© 2026 Clerk</p>
+        <p className="font-mono-plex text-[11px] font-light text-white/20 tracking-[0.04em]">Early Access</p>
+      </footer>
     </div>
   );
 }
-
