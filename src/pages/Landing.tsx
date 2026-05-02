@@ -74,7 +74,7 @@ export default function Landing() {
               <ArrowIcon stroke="#1A1A1A" />
             </Link>
             <span className="font-sans-plex text-[13px] font-medium text-white/75">
-              No account needed to try
+              Free to start. No credit card.
             </span>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function Landing() {
           Your tasks won't<br />sort themselves.<br />But Clerk will.
         </h2>
         <p className="font-mono-plex text-[13px] font-light text-white/40 mb-10 tracking-[0.02em]">
-          No account needed to try.
+          Free to start. No credit card.
         </p>
         <Link
           to={primaryPath}
@@ -208,9 +208,16 @@ export default function Landing() {
       </section>
 
       {/* ══ FOOTER ══ */}
-      <footer className="bg-[#1A1A1A] border-t border-white/[0.06] px-6 sm:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-center">
-        <p className="font-mono-plex text-[11px] font-light text-white/20 tracking-[0.04em]">© 2026 Clerk</p>
-        <p className="font-mono-plex text-[11px] font-light text-white/20 tracking-[0.04em]">Early Access</p>
+      <footer className="bg-[#1A1A1A] border-t border-white/[0.06] px-6 sm:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center">
+        <p className="font-mono-plex text-[11px] font-light text-white/30 tracking-[0.04em]">© 2026 Clerk · Early Access</p>
+        <nav className="flex items-center gap-5">
+          <Link to="/privacy" className="font-mono-plex text-[11px] font-light text-white/30 hover:text-white/70 tracking-[0.04em] transition-colors">
+            Privacy
+          </Link>
+          <Link to="/terms" className="font-mono-plex text-[11px] font-light text-white/30 hover:text-white/70 tracking-[0.04em] transition-colors">
+            Terms
+          </Link>
+        </nav>
       </footer>
     </div>
   );

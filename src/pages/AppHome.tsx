@@ -257,7 +257,14 @@ export default function AppHome() {
       } else throw new Error("Empty AI response");
     } catch (err: any) {
       // AI sort failed (network, 429, 402, empty response). Fall back to local
-      // classify and let Clerk own the message — no double-notify with toasts.
+      // classify and surface a clear toast so the user knows the AI is offline.
+      const msg = typeof err?.message === "string" ? err.message : "";
+      const friendly = msg.toLowerCase().includes("rate")
+        ? "AI rate-limited. Used a quick local sort instead."
+        : msg.toLowerCase().includes("credit")
+        ? "AI credits exhausted. Used a quick local sort instead."
+        : "AI offline. Used a quick local sort — you can drag tasks to fix anything.";
+      toast.error(friendly);
       showBubble(quip("error.ai"), 4500);
       sorted = parts.map((title) => {
         const { col, reason } = classify(title);
@@ -843,6 +850,24 @@ export default function AppHome() {
           } else {
             setTasks([]);
             clerkSay("All tasks cleared.");
+          }
+        }}
+        onSignOut={async () => {
+          setSettingsOpen(false);
+          await signOut();
+          navigate("/");
+        }}
+        onDeleteAccount={async () => {
+          if (!user) return;
+          try {
+            const supabase = await getLovableCloudClient();
+            const { error } = await supabase.functions.invoke("delete-account", { body: {} });
+            if (error) throw error;
+            await signOut();
+            toast.success("Account deleted.");
+            navigate("/");
+          } catch (err: any) {
+            toast.error(err?.message || "Could not delete account");
           }
         }}
       />

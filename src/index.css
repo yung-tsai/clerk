@@ -218,3 +218,20 @@
 @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 .animate-cursor-blink { animation: cursor-blink 1s step-end infinite; }
 
+/* Respect reduced-motion: disable decorative animations + autoplay video */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-scroll-bounce,
+  .animate-cursor-blink {
+    animation: none !important;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  video[autoplay] {
+    display: none;
+  }
+}
+

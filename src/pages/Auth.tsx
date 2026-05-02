@@ -15,6 +15,7 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [confirmSent, setConfirmSent] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,12 +34,17 @@ export default function Auth() {
       }
 
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin + "/onboarding" },
         });
         if (error) throw error;
+        // If email confirmation is required, there's no session yet.
+        if (!data.session) {
+          setConfirmSent(true);
+          return;
+        }
         clerkSay("Account created. Welcome.");
         navigate("/onboarding");
       } else {
@@ -89,6 +95,28 @@ export default function Auth() {
         <Link to="/" className="mb-6">
           <ClerkCharacter size={64} />
         </Link>
+        {confirmSent ? (
+          <>
+            <h1 className="font-plex text-[28px] font-light tracking-[-0.02em] mb-2 text-center">
+              Check your email
+            </h1>
+            <p className="font-mono-plex text-[12px] text-muted-foreground mb-8 text-center leading-[1.6]">
+              I sent a confirmation link to <span className="text-foreground">{email}</span>.
+              <br />
+              Click it to finish creating your account.
+            </p>
+            <button
+              onClick={() => {
+                setConfirmSent(false);
+                setMode("signin");
+              }}
+              className="font-mono-plex text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              ← Back to sign in
+            </button>
+          </>
+        ) : (
+        <>
         <h1 className="font-plex text-[28px] font-light tracking-[-0.02em] mb-1">{t.h1}</h1>
         <p className="font-mono-plex text-[12px] text-muted-foreground mb-8">{t.sub}</p>
 
@@ -164,6 +192,8 @@ export default function Auth() {
             ? "Have an account? Sign in"
             : "New here? Sign up"}
         </button>
+        </>
+        )}
       </div>
     </div>
   );
