@@ -317,6 +317,7 @@ export default function AppHome() {
       return;
     }
     setTasks((prev) => [...((data as Task[]) ?? []), ...prev]);
+    for (const p of proposals) track("task_added", { source: "ai_sort", col: p.col });
     const allToday = proposals.every((p) => p.col === "today");
     setProposals(null);
     setInput("");
