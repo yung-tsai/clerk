@@ -82,24 +82,12 @@ export default function Onboarding() {
         category?: string;
       };
 
-      let sorted: Proposal[] = [];
-      try {
-        const { data, error: fnErr } = await supabase.functions.invoke("sort-tasks", {
-          body: {
-            input: seed,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          },
-        });
-        if (fnErr) throw fnErr;
-        sorted = (data?.tasks ?? []) as Proposal[];
-        if (!sorted.length) throw new Error("empty");
-      } catch {
-        // Local fallback so we still hand off proposals
-        sorted = parts.map((title) => {
-          const { col, reason } = classify(title);
-          return { title, col, reason };
-        });
-      }
+      // Onboarding demo runs entirely client-side via the local classifier.
+      // Real AI sorting happens once the user is in the app and authenticated.
+      const sorted: Proposal[] = parts.map((title) => {
+        const { col, reason } = classify(title);
+        return { title, col, reason };
+      });
 
       navigate("/app", { state: { pendingProposals: sorted } });
     } catch (e: any) {
