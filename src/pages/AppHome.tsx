@@ -104,6 +104,11 @@ export default function AppHome() {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
+  // Identify the current user in analytics whenever auth state lands.
+  useEffect(() => {
+    if (user) identify(user.id, { email: user.email ?? undefined });
+  }, [user]);
+
   // Load tasks + profile (only once per mount; tab refocus shouldn't re-trigger)
   useEffect(() => {
     if (!user) return;
