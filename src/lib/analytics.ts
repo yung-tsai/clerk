@@ -1,12 +1,13 @@
 import posthog from "posthog-js";
 
-// Public PostHog project key (phc_...). Safe to ship in the client bundle.
-// Set via VITE_POSTHOG_KEY in your .env file. Leave empty to disable analytics
-// in local/dev environments.
-const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
+// Public PostHog project key (phc_...). Safe to ship in the client bundle —
+// these keys are designed to be exposed in browser JS.
+const POSTHOG_KEY =
+  (import.meta.env.VITE_POSTHOG_KEY as string | undefined) ||
+  "phc_kfgxD3yyRh5iraFh3ryUzX53usx6jXT3YBfR9Q8SUjLR";
 const POSTHOG_HOST =
   (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ||
-  "https://eu.i.posthog.com";
+  "https://us.i.posthog.com";
 
 let initialized = false;
 
