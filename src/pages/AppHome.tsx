@@ -232,6 +232,7 @@ export default function AppHome() {
   }, [tasks]);
 
   async function persistView(v: ViewMode) {
+    if (v !== view) track("view_changed", { to: v, from: view });
     setView(v);
     if (!user) return;
     const supabase = await getLovableCloudClient();
@@ -316,6 +317,7 @@ export default function AppHome() {
       return;
     }
     setTasks((prev) => [...((data as Task[]) ?? []), ...prev]);
+    for (const p of proposals) track("task_added", { source: "ai_sort", col: p.col });
     const allToday = proposals.every((p) => p.col === "today");
     setProposals(null);
     setInput("");
@@ -413,6 +415,7 @@ export default function AppHome() {
   async function deleteTask(t: Task) {
     const supabase = await getLovableCloudClient();
     setTasks((prev) => prev.filter((x) => x.id !== t.id));
+    track("task_deleted", { col: t.col, has_category: !!t.category });
     await supabase.from("tasks").delete().eq("id", t.id);
   }
 
@@ -421,6 +424,7 @@ export default function AppHome() {
     const prevCol = t.col;
     const supabase = await getLovableCloudClient();
     setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, col } : x)));
+    track("task_moved", { from: prevCol, to: col, source: "modal" });
     fireMoveQuip(prevCol, col);
     await supabase.from("tasks").update({ col }).eq("id", t.id);
   }
@@ -547,6 +551,7 @@ export default function AppHome() {
     // Only fire a quip when the column actually changed — pure reordering
     // within a column shouldn't trigger Clerk.
     if (activeTask.col !== targetCol) {
+      track("task_moved", { from: activeTask.col, to: targetCol, source: "drag" });
       fireMoveQuip(activeTask.col, targetCol);
     }
 
@@ -811,6 +816,7 @@ export default function AppHome() {
               }
               const newTask = data as Task;
               setTasks((prev) => [newTask, ...prev]);
+              track("task_added", { source: "manual", col: newTask.col });
               setSelectedTask(newTask);
             })();
             return;
