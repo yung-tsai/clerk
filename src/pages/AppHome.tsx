@@ -816,6 +816,7 @@ export default function AppHome() {
               }
               const newTask = data as Task;
               setTasks((prev) => [newTask, ...prev]);
+              track("task_added", { source: "manual", col: newTask.col });
               setSelectedTask(newTask);
             })();
             return;
