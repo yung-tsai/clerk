@@ -15,6 +15,7 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [confirmSent, setConfirmSent] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,12 +34,17 @@ export default function Auth() {
       }
 
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin + "/onboarding" },
         });
         if (error) throw error;
+        // If email confirmation is required, there's no session yet.
+        if (!data.session) {
+          setConfirmSent(true);
+          return;
+        }
         clerkSay("Account created. Welcome.");
         navigate("/onboarding");
       } else {
