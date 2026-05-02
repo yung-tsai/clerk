@@ -550,6 +550,7 @@ export default function AppHome() {
     // Only fire a quip when the column actually changed — pure reordering
     // within a column shouldn't trigger Clerk.
     if (activeTask.col !== targetCol) {
+      track("task_moved", { from: activeTask.col, to: targetCol, source: "drag" });
       fireMoveQuip(activeTask.col, targetCol);
     }
 
