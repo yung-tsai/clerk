@@ -414,6 +414,7 @@ export default function AppHome() {
   async function deleteTask(t: Task) {
     const supabase = await getLovableCloudClient();
     setTasks((prev) => prev.filter((x) => x.id !== t.id));
+    track("task_deleted", { col: t.col, has_category: !!t.category });
     await supabase.from("tasks").delete().eq("id", t.id);
   }
 
