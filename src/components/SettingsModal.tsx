@@ -288,6 +288,24 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
                   Clear
                 </button>
               </div>
+              <div className="border-t border-black/[0.07] flex items-center justify-between p-5 gap-4">
+                <div className="min-w-0">
+                  <div className="text-[14px] font-medium text-[#1A1A1A] mb-0.5 tracking-[-0.005em]">
+                    Delete account
+                  </div>
+                  <div className="font-mono-plex text-[11px] font-light text-[#9CA3AF] leading-[1.4]">
+                    Permanently removes your account, all tasks, and history.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => setConfirmDelete(true)}
+                  className="text-[13px] font-medium text-[#DC2626] border border-[#FCA5A5] rounded-[10px] px-4 py-2.5 hover:bg-[#FEF2F2] transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                >
+                  Delete
+                </button>
+              </div>
             </Card>
 
             <p className="text-center font-mono-plex text-[10px] font-light text-[#9CA3AF] tracking-[0.04em] mt-8">
@@ -323,6 +341,36 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
             className="bg-[#DC2626] hover:bg-[#B91C1C]"
           >
             {clearing ? "Clearing…" : "Clear all tasks"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This permanently deletes your account, all your tasks, your completed history, your streak, and your profile. This can't be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={async (e) => {
+              e.preventDefault();
+              setDeleting(true);
+              try {
+                await onDeleteAccount();
+              } finally {
+                setDeleting(false);
+                setConfirmDelete(false);
+              }
+            }}
+            disabled={deleting}
+            className="bg-[#DC2626] hover:bg-[#B91C1C]"
+          >
+            {deleting ? "Deleting…" : "Delete account"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
