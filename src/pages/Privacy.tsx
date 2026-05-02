@@ -22,9 +22,11 @@ export default function Privacy() {
             <h2 className="font-plex text-[18px] font-semibold mb-3 text-foreground">What we collect</h2>
             <p>
               When you create an account we store your email address, an
-              optional display name, and the tasks you write. That's it. We do
-              not collect analytics about how you use the app yet, and we do
-              not sell or share your data.
+              optional display name, and the tasks you write. We also use a
+              privacy-friendly product analytics tool (PostHog, hosted in the
+              EU) to count things like sign-ups, completed tasks, and clicks
+              on key buttons so we can understand which parts of Clerk help
+              and which don't. We never sell or share your data.
             </p>
           </section>
 
@@ -59,11 +61,12 @@ export default function Privacy() {
           </section>
 
           <section>
-            <h2 className="font-plex text-[18px] font-semibold mb-3 text-foreground">Cookies</h2>
+            <h2 className="font-plex text-[18px] font-semibold mb-3 text-foreground">Cookies & analytics</h2>
             <p>
-              We use only the cookies and local storage necessary to keep you
-              signed in. No tracking cookies, no third-party advertising
-              cookies.
+              We use the cookies and local storage necessary to keep you
+              signed in. PostHog (our analytics tool) sets a cookie to count
+              unique users — it does not track you across other websites,
+              and we don't use any third-party advertising cookies.
             </p>
           </section>
 
