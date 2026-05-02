@@ -232,6 +232,7 @@ export default function AppHome() {
   }, [tasks]);
 
   async function persistView(v: ViewMode) {
+    if (v !== view) track("view_changed", { to: v, from: view });
     setView(v);
     if (!user) return;
     const supabase = await getLovableCloudClient();
