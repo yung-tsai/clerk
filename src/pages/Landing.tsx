@@ -31,7 +31,7 @@ export default function Landing() {
       <section className="relative w-full h-screen min-h-[600px] flex flex-col overflow-hidden">
         {/* Background video */}
         <video
-          className="absolute inset-0 w-full h-full object-cover object-center z-0 hidden md:block"
+          className="absolute inset-0 w-full h-full object-cover object-center z-0"
           src="/landing-hero.mp4"
           autoPlay
           muted
@@ -40,8 +40,6 @@ export default function Landing() {
           preload="auto"
           aria-hidden="true"
         />
-        {/* Mobile poster fallback (uses first frame of video as static via video element with no autoplay would fail; use a colored block) */}
-        <div className="absolute inset-0 z-0 md:hidden bg-gradient-to-br from-[#1a1a2e] via-[#0a0a0a] to-[#0a0a0a]" />
 
         {/* Dark overlay */}
         <div className="absolute inset-0 z-[1] hero-overlay-dark" />
@@ -63,9 +61,9 @@ export default function Landing() {
             className="font-mono-plex font-medium leading-[1.05] tracking-[-0.03em] text-white mb-7 animate-fade-up"
             style={{ fontSize: "clamp(38px, 6vw, 72px)" }}
           >
-            Your clerk<br />
-            for a calmer<br />
-            <span className="text-white/75 font-light">to-do list.</span>
+            Clerk sorts<br />
+            your tasks.<br />
+            <span className="text-white/75 font-light">Better focus.</span>
           </h1>
           <div className="flex flex-col items-start gap-3.5 animate-fade-up">
             <Link
