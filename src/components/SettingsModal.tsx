@@ -33,6 +33,10 @@ interface SettingsModalProps {
   onCharacterPreview?: (c: CharacterVariant) => void;
   /** Wipe all active tasks (does not touch completed history). */
   onClearAllTasks: () => Promise<void> | void;
+  /** Sign the current user out. */
+  onSignOut: () => Promise<void> | void;
+  /** Permanently delete the user's account and all data. */
+  onDeleteAccount: () => Promise<void> | void;
 }
 
 const MILESTONES = [
@@ -44,11 +48,13 @@ const MILESTONES = [
   { id: "streak_30", icon: "👑", name: "30-day streak", desc: "This is a lifestyle now.", threshold: 30, key: "streak" as const },
 ];
 
-export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPreview, onClearAllTasks }: SettingsModalProps) {
+export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPreview, onClearAllTasks, onSignOut, onDeleteAccount }: SettingsModalProps) {
   const [name, setName] = useState(data.display_name ?? "");
   const [character, setCharacter] = useState<CharacterVariant>(data.character);
   const [confirmClearTasks, setConfirmClearTasks] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const nameDebounce = useRef<number | null>(null);
   const lastSavedName = useRef<string>(data.display_name ?? "");
 
@@ -231,25 +237,18 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
               <div className="flex items-center justify-between p-5 gap-4">
                 <div className="min-w-0">
                   <div className="text-[14px] font-medium text-[#1A1A1A] mb-0.5 tracking-[-0.005em]">
-                    {data.email ? "Signed in" : "Back up your tasks"}
+                    Signed in
                   </div>
                   <div className="font-mono-plex text-[11px] font-light text-[#9CA3AF] leading-[1.4] truncate">
-                    {data.email ?? (
-                      <>
-                        Saved on this device only.<br />
-                        Create an account to sync everywhere.
-                      </>
-                    )}
+                    {data.email ?? "—"}
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() =>
-                    clerkSay("Coming soon — account sync is on the way.")
-                  }
-                  className="text-[13px] font-medium text-white bg-[#1A1A1A] rounded-[10px] px-4 py-2.5 hover:bg-[#2A2A2A] transition-colors flex-shrink-0"
+                  onClick={() => void onSignOut()}
+                  className="text-[13px] font-medium text-[#1A1A1A] bg-white border border-[#E5E7EB] rounded-[10px] px-4 py-2.5 hover:bg-[#F9FAFB] transition-colors flex-shrink-0"
                 >
-                  {data.email ? "Manage" : "Back up"}
+                  Sign out
                 </button>
               </div>
             </Card>
