@@ -18,6 +18,7 @@ import { SettingsModal } from "@/components/SettingsModal";
 import { CompletedModal } from "@/components/CompletedModal";
 import { TaskDetailModal, type TaskPatch } from "@/components/TaskDetailModal";
 import { cn } from "@/lib/utils";
+import { track, identify, resetAnalytics } from "@/lib/analytics";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIdle } from "@/hooks/use-idle";
 import {
@@ -102,6 +103,11 @@ export default function AppHome() {
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
+
+  // Identify the current user in analytics whenever auth state lands.
+  useEffect(() => {
+    if (user) identify(user.id, { email: user.email ?? undefined });
+  }, [user]);
 
   // Load tasks + profile (only once per mount; tab refocus shouldn't re-trigger)
   useEffect(() => {
@@ -254,6 +260,7 @@ export default function AppHome() {
         sorted = data.tasks;
         // Diagnostic: confirms the AI returned the new fields per proposal.
         console.log("[sort-tasks] proposals from AI:", sorted);
+        track("tasks_sorted", { count: sorted.length, source: "ai" });
       } else throw new Error("Empty AI response");
     } catch (err: any) {
       // AI sort failed (network, 429, 402, empty response). Fall back to local
@@ -270,6 +277,7 @@ export default function AppHome() {
         const { col, reason } = classify(title);
         return { title, col, reason };
       });
+      track("tasks_sorted", { count: sorted.length, source: "fallback" });
     }
     setThinking(false);
     setBubbleVisible(false);
@@ -323,6 +331,7 @@ export default function AppHome() {
     if (!user) return;
     const supabase = await getLovableCloudClient();
     setTasks((prev) => prev.filter((x) => x.id !== t.id));
+    track("task_completed", { col: t.col, has_category: !!t.category });
 
     // Compute new streak / counters
     const today = new Date().toISOString().slice(0, 10);
@@ -854,6 +863,8 @@ export default function AppHome() {
         }}
         onSignOut={async () => {
           setSettingsOpen(false);
+          track("signed_out");
+          resetAnalytics();
           await signOut();
           navigate("/");
         }}
@@ -863,6 +874,8 @@ export default function AppHome() {
             const supabase = await getLovableCloudClient();
             const { error } = await supabase.functions.invoke("delete-account", { body: {} });
             if (error) throw error;
+            track("account_deleted");
+            resetAnalytics();
             await signOut();
             toast.success("Account deleted.");
             navigate("/");

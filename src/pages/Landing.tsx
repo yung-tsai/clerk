@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasLovableCloudEnv } from "@/lib/lovable-cloud";
+import { track } from "@/lib/analytics";
 import clerkLogo from "@/assets/clerk-logo.svg";
 
 const ArrowIcon = ({ stroke = "currentColor" }: { stroke?: string }) => (
@@ -68,6 +69,7 @@ export default function Landing() {
           <div className="flex flex-col items-start gap-3.5 animate-fade-up">
             <Link
               to={primaryPath}
+              onClick={() => track("landing_cta_clicked", { location: "hero", authed: !!user })}
               className="inline-flex items-center gap-2.5 bg-white text-[#1A1A1A] font-sans-plex text-[15px] font-semibold px-9 py-4 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.3)] tracking-[-0.01em] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
             >
               {ctaLabel}
@@ -200,6 +202,7 @@ export default function Landing() {
         </p>
         <Link
           to={primaryPath}
+          onClick={() => track("landing_cta_clicked", { location: "footer", authed: !!user })}
           className="inline-flex items-center gap-2.5 bg-white text-[#1A1A1A] font-sans-plex text-[15px] font-semibold px-10 py-4 rounded-full shadow-[0_4px_24px_rgba(255,255,255,0.15)] tracking-[-0.01em] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(255,255,255,0.2)] mb-4"
         >
           {ctaLabel}

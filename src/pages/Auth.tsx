@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { clerkSay } from "@/lib/clerk-say";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { lovable } from "@/integrations/lovable";
+import { track, identify } from "@/lib/analytics";
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -34,6 +35,7 @@ export default function Auth() {
       }
 
       if (mode === "signup") {
+        track("signup_started", { method: "email" });
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -43,13 +45,18 @@ export default function Auth() {
         // If email confirmation is required, there's no session yet.
         if (!data.session) {
           setConfirmSent(true);
+          track("signup_email_sent", { method: "email" });
           return;
         }
+        if (data.user) identify(data.user.id, { email: data.user.email ?? undefined });
+        track("signup_completed", { method: "email" });
         clerkSay("Account created. Welcome.");
         navigate("/onboarding");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        if (data.user) identify(data.user.id, { email: data.user.email ?? undefined });
+        track("signin_completed", { method: "email" });
         navigate("/app");
       }
     } catch (err: any) {
@@ -61,6 +68,7 @@ export default function Auth() {
 
   const signInWithGoogle = async () => {
     setGoogleLoading(true);
+    track("signup_started", { method: "google" });
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: `${window.location.origin}/app`,

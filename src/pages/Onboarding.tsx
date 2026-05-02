@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { CHARACTERS, CHARACTER_LABELS, type CharacterVariant } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 const SCREENS = 4;
@@ -88,6 +89,8 @@ export default function Onboarding() {
         const { col, reason } = classify(title);
         return { title, col, reason };
       });
+
+      track("onboarding_completed", { tasks_seeded: sorted.length, character });
 
       navigate("/app", { state: { pendingProposals: sorted } });
     } catch (e: any) {
