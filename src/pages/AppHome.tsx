@@ -423,6 +423,7 @@ export default function AppHome() {
     const prevCol = t.col;
     const supabase = await getLovableCloudClient();
     setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, col } : x)));
+    track("task_moved", { from: prevCol, to: col, source: "modal" });
     fireMoveQuip(prevCol, col);
     await supabase.from("tasks").update({ col }).eq("id", t.id);
   }
