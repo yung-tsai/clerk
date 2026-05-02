@@ -192,6 +192,8 @@ export default function Auth() {
             ? "Have an account? Sign in"
             : "New here? Sign up"}
         </button>
+        </>
+        )}
       </div>
     </div>
   );
