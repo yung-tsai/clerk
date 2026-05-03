@@ -793,9 +793,17 @@ export default function AppHome() {
               setSelectedTask((prev) => (prev ? { ...prev, ...patch } : prev));
               return;
             }
+            // If insert is already in flight for this draft, just merge the
+            // patch into local state — the in-flight promotion will pick it up
+            // via selectedTask when it resolves.
+            if (promotingDrafts.current.has(id)) {
+              setSelectedTask((prev) => (prev ? { ...prev, ...patch } : prev));
+              return;
+            }
             // Promote draft → real task
             const draft = selectedTask;
             if (!draft || !user) return;
+            promotingDrafts.current.add(id);
             (async () => {
               const supabase = await getLovableCloudClient();
               const { data, error } = await supabase
@@ -813,6 +821,7 @@ export default function AppHome() {
                 })
                 .select()
                 .single();
+              promotingDrafts.current.delete(id);
               if (error) {
                 toast.error(error.message);
                 return;
@@ -820,7 +829,11 @@ export default function AppHome() {
               const newTask = data as Task;
               setTasks((prev) => [newTask, ...prev]);
               track("task_added", { source: "manual", col: newTask.col });
-              setSelectedTask(newTask);
+              // Swap selected task to the real one so subsequent patches use
+              // the normal update path (no second insert).
+              setSelectedTask((prev) =>
+                prev && prev.id === id ? { ...newTask, title: prev.title } : prev
+              );
             })();
             return;
           }
