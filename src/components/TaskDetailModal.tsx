@@ -31,12 +31,22 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
   const titleRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    setLocal(task);
+    // Only re-sync when the modal opens with a different task. This prevents
+    // wiping in-flight typed input when the parent swaps a draft for the
+    // freshly-inserted real task (different id, same logical task).
+    setLocal((prev) => {
+      if (prev && task && prev.id !== task.id && task.id.startsWith("draft-") === false && prev.id.startsWith("draft-")) {
+        // Draft → real task swap: keep the user's local edits, adopt new id/fields they haven't touched.
+        return { ...task, title: prev.title, task_time: prev.task_time, location: prev.location, category: prev.category, cat_color: prev.cat_color, due_date: prev.due_date };
+      }
+      return task;
+    });
     // Autofocus title when opened with an empty title (per-column add flow)
     if (task && task.title === "") {
       window.setTimeout(() => titleRef.current?.focus(), 60);
     }
-  }, [task]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.id]);
 
   function update(patch: TaskPatch) {
     if (!local) return;

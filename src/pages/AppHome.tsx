@@ -99,6 +99,9 @@ export default function AppHome() {
   // Cleared after first use so it only fires once per sort.
   const lastSortAcceptedAt = useRef<number | null>(null);
   const DISAGREE_WINDOW_MS = 10_000;
+  // Tracks draft ids whose insert is in flight, to prevent double-insert when
+  // the debounced onPatch fires again before the promotion completes.
+  const promotingDrafts = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -599,7 +602,7 @@ export default function AppHome() {
           )}
           style={{ height: 64 }}
         >
-          <div className="w-full max-w-[1280px] mx-auto px-4 md:px-10 flex justify-between items-center">
+          <div className="w-full max-w-[1440px] mx-auto px-4 md:px-10 flex justify-between items-center">
             <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none" draggable={false} />
 
             {/* Streak badge — only when ≥ 2 days */}
@@ -790,9 +793,17 @@ export default function AppHome() {
               setSelectedTask((prev) => (prev ? { ...prev, ...patch } : prev));
               return;
             }
+            // If insert is already in flight for this draft, just merge the
+            // patch into local state — the in-flight promotion will pick it up
+            // via selectedTask when it resolves.
+            if (promotingDrafts.current.has(id)) {
+              setSelectedTask((prev) => (prev ? { ...prev, ...patch } : prev));
+              return;
+            }
             // Promote draft → real task
             const draft = selectedTask;
             if (!draft || !user) return;
+            promotingDrafts.current.add(id);
             (async () => {
               const supabase = await getLovableCloudClient();
               const { data, error } = await supabase
@@ -810,6 +821,7 @@ export default function AppHome() {
                 })
                 .select()
                 .single();
+              promotingDrafts.current.delete(id);
               if (error) {
                 toast.error(error.message);
                 return;
@@ -817,7 +829,11 @@ export default function AppHome() {
               const newTask = data as Task;
               setTasks((prev) => [newTask, ...prev]);
               track("task_added", { source: "manual", col: newTask.col });
-              setSelectedTask(newTask);
+              // Swap selected task to the real one so subsequent patches use
+              // the normal update path (no second insert).
+              setSelectedTask((prev) =>
+                prev && prev.id === id ? { ...newTask, title: prev.title } : prev
+              );
             })();
             return;
           }
