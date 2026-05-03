@@ -599,7 +599,7 @@ export default function AppHome() {
           )}
           style={{ height: 64 }}
         >
-          <div className="w-full max-w-[1280px] mx-auto px-4 md:px-10 flex justify-between items-center">
+          <div className="w-full max-w-[1440px] mx-auto px-4 md:px-10 flex justify-between items-center">
             <img src={clerkLogo} alt="Clerk" className="h-[36px] w-auto select-none" draggable={false} />
 
             {/* Streak badge — only when ≥ 2 days */}
