@@ -99,6 +99,9 @@ export default function AppHome() {
   // Cleared after first use so it only fires once per sort.
   const lastSortAcceptedAt = useRef<number | null>(null);
   const DISAGREE_WINDOW_MS = 10_000;
+  // Tracks draft ids whose insert is in flight, to prevent double-insert when
+  // the debounced onPatch fires again before the promotion completes.
+  const promotingDrafts = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
