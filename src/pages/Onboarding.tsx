@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
-import { CHARACTERS, CHARACTER_LABELS, type CharacterVariant } from "@/lib/characters";
+import { CHARACTERS, CHARACTER_LABELS, isUnlocked, UNLOCK_THRESHOLDS, type CharacterVariant } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
@@ -207,39 +207,47 @@ function CharacterStep({
         Pick your Clerk, {name || "friend"}.
       </h2>
       <p className="font-plex-mono text-[12px] font-light text-muted-foreground text-center mb-7 sm:mb-9">
-        Two are ready. More are on the way.
+        Three Wes flavors. v3 unlocks as you go.
       </p>
 
-      <div className="grid grid-cols-3 min-[400px]:grid-cols-4 gap-2 sm:gap-3 w-full mb-7 sm:mb-8">
-        {CHARACTERS.map((c) => (
-          <button
-            key={c}
-            onClick={() => setCharacter(c)}
-            className={cn(
-              "flex flex-col items-center gap-2 px-2 pt-3 sm:pt-4 pb-3 sm:pb-3.5 rounded-[18px] border-2 bg-white/50 transition-all",
-              character === c ? "bg-white/90 border-foreground" : "border-transparent hover:bg-white/80 hover:-translate-y-0.5"
-            )}
-          >
-            <div className="h-9 flex items-center justify-center">
-              <ClerkCharacter variant={c} size={44} animated={false} />
-            </div>
-            <span className="font-plex-mono text-[10px] font-light text-muted-foreground tracking-[0.04em]">
-              {CHARACTER_LABELS[c]}
-            </span>
-          </button>
-        ))}
-        {[0, 1].map((i) => (
-          <div
-            key={i}
-            className="relative flex flex-col items-center gap-2 px-2 pt-3 sm:pt-4 pb-3 sm:pb-3.5 rounded-[18px] bg-white/50 border-2 border-transparent opacity-50 cursor-not-allowed"
-          >
-            <span className="absolute top-2 right-2 text-[11px]">🔒</span>
-            <div className="h-9 w-11 rounded-full bg-gray-300/40" />
-            <span className="font-plex-mono text-[10px] font-light tracking-[0.04em]" style={{ color: "#C4C8CC" }}>
-              Soon
-            </span>
-          </div>
-        ))}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full mb-7 sm:mb-8">
+        {CHARACTERS.map((c) => {
+          const unlocked = isUnlocked(c, 0);
+          const threshold = UNLOCK_THRESHOLDS[c];
+          return (
+            <button
+              key={c}
+              type="button"
+              disabled={!unlocked}
+              onClick={() => unlocked && setCharacter(c)}
+              className={cn(
+                "relative flex flex-col items-center gap-2 px-2 pt-3 sm:pt-4 pb-3 sm:pb-3.5 rounded-[18px] border-2 bg-white/50 transition-all",
+                !unlocked && "opacity-55 cursor-not-allowed",
+                unlocked && character === c && "bg-white/90 border-foreground",
+                unlocked && character !== c && "border-transparent hover:bg-white/80 hover:-translate-y-0.5",
+                !unlocked && "border-transparent",
+              )}
+            >
+              {!unlocked && (
+                <span className="absolute top-2 right-2 text-[11px]" aria-hidden>🔒</span>
+              )}
+              <div className="h-10 flex items-center justify-center">
+                <ClerkCharacter variant={c} size={48} animated={false} />
+              </div>
+              <span className="font-plex-mono text-[10px] font-light text-muted-foreground tracking-[0.04em]">
+                {CHARACTER_LABELS[c]}
+              </span>
+              {!unlocked && threshold && (
+                <span
+                  className="font-plex-mono text-[9px] font-light tracking-[0.04em] leading-tight text-center"
+                  style={{ color: "#9CA3AF" }}
+                >
+                  {threshold} done
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <button
