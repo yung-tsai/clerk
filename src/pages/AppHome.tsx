@@ -663,8 +663,8 @@ export default function AppHome() {
       {/* ── Views ── */}
       <main
         className={cn(
-          "fixed inset-0 overflow-y-auto pb-[120px]",
-          headerHiddenOnMobilePlanner ? "pt-0" : "pt-16",
+          "fixed inset-0 overflow-hidden",
+          headerHiddenOnMobilePlanner ? "pt-0 pb-[96px]" : "pt-16 pb-[120px] overflow-y-auto",
         )}
       >
 
@@ -677,9 +677,9 @@ export default function AppHome() {
           onDragCancel={() => { setActiveId(null); setDropTarget(null); }}
         >
           {view === "focus" ? (
-            <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} onAddTask={handleAddToColumn} />
+            <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} onAddTask={handleAddToColumn} onMoveCol={moveTask} />
           ) : (
-            <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} onAddTask={handleAddToColumn} />
+            <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} onAddTask={handleAddToColumn} onMoveCol={moveTask} />
           )}
           <DragOverlay dropAnimation={{ duration: 180, easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)" }}>
             {activeTaskOverlay ? (
@@ -943,6 +943,7 @@ function FocusView({
   dropTarget,
   activeId,
   onAddTask,
+  onMoveCol,
 }: {
   tasks: Task[];
   onComplete: (t: Task) => void;
@@ -950,6 +951,7 @@ function FocusView({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
+  onMoveCol?: (t: Task, col: ClerkCol) => void;
 }) {
   const today = new Date();
   return (
@@ -972,10 +974,10 @@ function FocusView({
           tasks={tasks}
           onComplete={onComplete}
           onOpen={onOpen}
-          
           dropTarget={dropTarget}
           activeId={activeId}
           onAddTask={onAddTask}
+          onMoveCol={onMoveCol}
         />
       </div>
     </div>
@@ -990,6 +992,7 @@ function PlannerView(props: {
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
+  onMoveCol?: (t: Task, col: ClerkCol) => void;
 }) {
   const isMobile = useIsMobile();
   return isMobile ? <PlannerMobile {...props} /> : <PlannerDesktop {...props} />;
@@ -1003,6 +1006,7 @@ function PlannerMobile({
   dropTarget,
   activeId,
   onAddTask,
+  onMoveCol,
 }: {
   grouped: Record<ClerkCol, Task[]>;
   onComplete: (t: Task) => void;
@@ -1010,6 +1014,7 @@ function PlannerMobile({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
+  onMoveCol?: (t: Task, col: ClerkCol) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -1061,7 +1066,7 @@ function PlannerMobile({
   };
 
   return (
-    <div className="w-full pt-[52px] pb-32">
+    <div className="w-full h-full flex flex-col">
       {/* Tab bar — fixed to top of viewport on mobile */}
       <div className="fixed top-0 inset-x-0 z-[150] bg-background/95 backdrop-blur-md border-b border-divider">
         <div className="flex items-end h-[48px] px-1">
@@ -1086,21 +1091,24 @@ function PlannerMobile({
         </div>
       </div>
 
-      {/* Horizontal snap scroller */}
+      {/* Spacer for the fixed tab bar */}
+      <div className="h-[48px] shrink-0" aria-hidden />
+
+      {/* Horizontal snap scroller — fills remaining space; columns scroll vertically inside */}
       <div
         ref={scrollerRef}
-        className="overflow-x-auto overflow-y-hidden no-scrollbar mt-4"
+        className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden no-scrollbar"
         style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
       >
-        <div className="flex gap-2 pr-5">
+        <div className="flex gap-2 pr-5 h-full">
           {COLS.map((col, i) => (
             <div
               key={col}
               ref={(el) => (colRefs.current[i] = el)}
-              className="shrink-0 pl-5"
-              style={{ width: "85vw", maxWidth: 380, scrollSnapAlign: "start" }}
+              className="shrink-0 pl-5 h-full flex flex-col"
+              style={{ width: "92vw", maxWidth: 380, scrollSnapAlign: "start" }}
             >
-              <div className="flex items-baseline justify-between pb-3 mb-4">
+              <div className="shrink-0 flex items-baseline justify-between pt-4 pb-3">
                 <span
                   className="font-plex"
                   style={{ fontSize: 20, fontWeight: 400, color: "#3F3F3F", letterSpacing: "-0.02em", lineHeight: "26px" }}
@@ -1114,19 +1122,23 @@ function PlannerMobile({
                   {String(grouped[col].length).padStart(2, "0")}
                 </span>
               </div>
-              <DroppableColumn
-                col={col}
-                tasks={grouped[col]}
-                onComplete={onComplete}
-                onOpen={onOpen}
-                dropTarget={dropTarget}
-                activeId={activeId}
-                onAddTask={onAddTask}
-              />
+              {/* Column body — internal vertical scroll so the page itself never grows */}
+              <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-4">
+                <DroppableColumn
+                  col={col}
+                  tasks={grouped[col]}
+                  onComplete={onComplete}
+                  onOpen={onOpen}
+                  dropTarget={dropTarget}
+                  activeId={activeId}
+                  onAddTask={onAddTask}
+                  onMoveCol={onMoveCol}
+                />
+              </div>
             </div>
           ))}
           {/* Trailing spacer so last column can snap to start */}
-          <div className="shrink-0" style={{ width: "15vw" }} aria-hidden />
+          <div className="shrink-0 h-full" style={{ width: "8vw" }} aria-hidden />
         </div>
       </div>
     </div>
@@ -1141,6 +1153,7 @@ function PlannerDesktop({
   dropTarget,
   activeId,
   onAddTask,
+  onMoveCol,
 }: {
   grouped: Record<ClerkCol, Task[]>;
   onComplete: (t: Task) => void;
@@ -1148,6 +1161,7 @@ function PlannerDesktop({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
+  onMoveCol?: (t: Task, col: ClerkCol) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -1189,6 +1203,7 @@ function PlannerDesktop({
                 dropTarget={dropTarget}
                 activeId={activeId}
                 onAddTask={onAddTask}
+                onMoveCol={onMoveCol}
               />
             </div>
           ))}
@@ -1217,6 +1232,7 @@ function DroppableColumn({
   dropTarget,
   activeId,
   onAddTask,
+  onMoveCol,
 }: {
   col: ClerkCol;
   tasks: Task[];
@@ -1225,6 +1241,7 @@ function DroppableColumn({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask?: (col: ClerkCol) => void;
+  onMoveCol?: (t: Task, col: ClerkCol) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${col}` });
   // Visible tasks exclude the active dragging card (it's in the overlay)
@@ -1251,6 +1268,7 @@ function DroppableColumn({
                 task={t}
                 onComplete={() => onComplete(t)}
                 onOpen={() => onOpen(t)}
+                onMoveCol={onMoveCol ? (c) => onMoveCol(t, c) : undefined}
               />
               {showIndicator && idx === visible.length - 1 && indicatorIdx === visible.length && (
                 <DropIndicator />
