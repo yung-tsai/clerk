@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { hasLovableCloudEnv } from "@/lib/lovable-cloud";
 import { track } from "@/lib/analytics";
 import clerkLogo from "@/assets/clerk-logo.svg";
+import wesMascot from "@/assets/wes.svg";
 
 const ArrowIcon = ({ stroke = "currentColor" }: { stroke?: string }) => (
   <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
@@ -11,13 +12,7 @@ const ArrowIcon = ({ stroke = "currentColor" }: { stroke?: string }) => (
 );
 
 const MascotInline = () => (
-  <svg width="32" height="27" viewBox="0 0 137 115" fill="none" style={{ overflow: "visible" }} aria-hidden="true">
-    <path d="M60.5962 39.5038L78.1603 0L93.9679 39.5038L119.436 35.9924L111.532 57.0611L137 74.6183L103.628 83.3969L111.532 113.244L72.0128 96.5649L63.2308 115L45.6667 96.5649L16.6859 108.855L30.7372 80.7634L0 57.0611L33.3718 55.3053L30.7372 21.0687L60.5962 39.5038Z" fill="#567CF8" />
-    <ellipse cx="50" cy="67" rx="12" ry="15" fill="white" />
-    <ellipse cx="54" cy="71" rx="6" ry="8" fill="#1A1A1A" />
-    <ellipse cx="75" cy="66" rx="12" ry="15" transform="rotate(-5 75 66)" fill="white" />
-    <ellipse cx="72" cy="70" rx="6" ry="8" transform="rotate(-7 72 70)" fill="#1A1A1A" />
-  </svg>
+  <img src={wesMascot} alt="" width={36} height={28} className="select-none" draggable={false} aria-hidden="true" />
 );
 
 export default function Landing() {
