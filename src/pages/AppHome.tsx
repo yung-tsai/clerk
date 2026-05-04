@@ -1132,6 +1132,7 @@ function PlannerMobile({
                   dropTarget={dropTarget}
                   activeId={activeId}
                   onAddTask={onAddTask}
+                  onMoveCol={onMoveCol}
                 />
               </div>
             </div>
