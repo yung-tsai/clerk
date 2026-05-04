@@ -1223,6 +1223,7 @@ function DroppableColumn({
   dropTarget,
   activeId,
   onAddTask,
+  onMoveCol,
 }: {
   col: ClerkCol;
   tasks: Task[];
@@ -1231,6 +1232,7 @@ function DroppableColumn({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask?: (col: ClerkCol) => void;
+  onMoveCol?: (t: Task, col: ClerkCol) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${col}` });
   // Visible tasks exclude the active dragging card (it's in the overlay)
@@ -1257,6 +1259,7 @@ function DroppableColumn({
                 task={t}
                 onComplete={() => onComplete(t)}
                 onOpen={() => onOpen(t)}
+                onMoveCol={onMoveCol ? (c) => onMoveCol(t, c) : undefined}
               />
               {showIndicator && idx === visible.length - 1 && indicatorIdx === visible.length && (
                 <DropIndicator />
