@@ -663,8 +663,8 @@ export default function AppHome() {
       {/* ── Views ── */}
       <main
         className={cn(
-          "fixed inset-0 overflow-y-auto pb-[120px]",
-          headerHiddenOnMobilePlanner ? "pt-0" : "pt-16",
+          "fixed inset-0 overflow-hidden",
+          headerHiddenOnMobilePlanner ? "pt-0 pb-[96px]" : "pt-16 pb-[120px] overflow-y-auto",
         )}
       >
 
