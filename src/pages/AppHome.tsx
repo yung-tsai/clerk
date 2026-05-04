@@ -6,7 +6,7 @@ import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { TaskCard, type ClerkCol, type TaskCardData } from "@/components/TaskCard";
 import { AddTaskCard } from "@/components/AddTaskCard";
 import { AppBar } from "@/components/AppBar";
-import { type CharacterVariant } from "@/lib/characters";
+import { type CharacterVariant, normalizeCharacter, LEGACY_CHARACTERS } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
 import { isNewDay, planCarryOver } from "@/lib/carry-over";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
@@ -175,7 +175,11 @@ export default function AppHome() {
           navigate("/onboarding");
           return;
         }
-        const char = (p.character as CharacterVariant) ?? "blue";
+        const char = normalizeCharacter(p.character);
+        // Silent migration: legacy 'blue' / 'coral' values get persisted as 'wes'.
+        if (p.character && LEGACY_CHARACTERS.has(p.character)) {
+          supabase.from("profiles").update({ character: "wes" }).eq("id", user.id);
+        }
         const vm = (p.view_mode as ViewMode) ?? "focus";
         setProfile({
           display_name: p.display_name,
@@ -581,7 +585,7 @@ export default function AppHome() {
     if (error) toast.error(error.message);
   }
 
-  const variant = profile?.character ?? "blue";
+  const variant: CharacterVariant = normalizeCharacter(profile?.character);
   const isMobile = useIsMobile();
 
   // Idle fade — Focus view only; bubble visibility forces chrome back.
