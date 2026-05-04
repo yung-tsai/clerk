@@ -1006,6 +1006,7 @@ function PlannerMobile({
   dropTarget,
   activeId,
   onAddTask,
+  onMoveCol,
 }: {
   grouped: Record<ClerkCol, Task[]>;
   onComplete: (t: Task) => void;
@@ -1013,6 +1014,7 @@ function PlannerMobile({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
+  onMoveCol?: (t: Task, col: ClerkCol) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<Array<HTMLDivElement | null>>([]);
