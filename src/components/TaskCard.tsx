@@ -125,11 +125,64 @@ export function TaskCard({ task, onComplete, onOpen, draggable = true, overlay =
         {task.title}
       </h3>
 
-      {/* Bottom row: location | check */}
-      <div className="mt-2 flex items-center justify-between gap-3 min-h-[22px]">
-        <span className="font-plex-mono text-[12px] text-[#2A2A2A] truncate">
+      {/* Bottom row: location | (mobile column chip) | check */}
+      <div className="mt-2 flex items-center justify-between gap-2 min-h-[22px]">
+        <span className="font-plex-mono text-[12px] text-[#2A2A2A] truncate flex-1 min-w-0">
           {task.location ? `@${task.location}` : <span className="text-faint">Add location</span>}
         </span>
+
+        {isMobile && onMoveCol && !overlay && (
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPickerOpen((o) => !o);
+                }}
+                aria-label="Move to column"
+                className="font-jb-mono text-[9px] uppercase tracking-[0.06em] text-[#2A2A2A] rounded-[3px] px-1.5 py-0.5 whitespace-nowrap flex-shrink-0"
+                style={{ background: COL_BG[task.col] }}
+              >
+                {COL_LABEL[task.col]}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              side="top"
+              className="w-auto p-1.5 z-[300]"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col gap-0.5">
+                {ALL_COLS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPickerOpen(false);
+                      if (c !== task.col) onMoveCol(c);
+                    }}
+                    className={cn(
+                      "font-jb-mono text-[10px] uppercase tracking-[0.06em] text-left rounded-[4px] px-2 py-1.5 transition-colors",
+                      c === task.col
+                        ? "text-faint cursor-default"
+                        : "text-[#2A2A2A] hover:bg-black/[0.04]"
+                    )}
+                  >
+                    <span
+                      className="inline-block w-2 h-2 rounded-full mr-2 align-middle"
+                      style={{ background: COL_BG[c] }}
+                    />
+                    {COL_LABEL[c]}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+
         <button
           type="button"
           onPointerDown={(e) => e.stopPropagation()}
