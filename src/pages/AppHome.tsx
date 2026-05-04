@@ -400,6 +400,17 @@ export default function AppHome() {
       showBubble(quip("complete.normal"));
     }
 
+    // One-shot Wes v3 unlock celebration when crossing 10 completed tasks.
+    if (
+      prevCompleted < 10 &&
+      nextCompleted >= 10 &&
+      typeof window !== "undefined" &&
+      localStorage.getItem("wes_v3_unlocked_seen") !== "1"
+    ) {
+      localStorage.setItem("wes_v3_unlocked_seen", "1");
+      toast.success("You unlocked Wes v3. Try it in Settings.");
+    }
+
     await Promise.all([
       supabase.from("tasks").delete().eq("id", t.id),
       supabase.from("completed_tasks").insert({

@@ -35,7 +35,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
-  const [character, setCharacter] = useState<CharacterVariant>("blue");
+  const [character, setCharacter] = useState<CharacterVariant>("wes");
   const [tasksDraft, setTasksDraft] = useState("");
   const [saving, setSaving] = useState(false);
 
