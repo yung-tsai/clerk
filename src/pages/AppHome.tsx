@@ -1203,6 +1203,7 @@ function PlannerDesktop({
                 dropTarget={dropTarget}
                 activeId={activeId}
                 onAddTask={onAddTask}
+                onMoveCol={onMoveCol}
               />
             </div>
           ))}
