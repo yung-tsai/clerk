@@ -27,15 +27,33 @@ interface Props {
   draggable?: boolean;
   /** When true, render as a static "lifted" card for DragOverlay */
   overlay?: boolean;
+  /** Mobile-only: tap-to-move column chip handler */
+  onMoveCol?: (col: ClerkCol) => void;
 }
 
 const CAT_BG = ["#CEDAFF", "#FFF7CE", "#CEFFE7", "#FFCEFB"];
 
-export function TaskCard({ task, onComplete, onOpen, draggable = true, overlay = false }: Props) {
+const COL_LABEL: Record<ClerkCol, string> = {
+  today: "Today",
+  tomorrow: "Tomorrow",
+  upcoming: "Upcoming",
+  someday: "Someday",
+};
+const COL_BG: Record<ClerkCol, string> = {
+  today: "#CEDAFF",
+  tomorrow: "#FFF7CE",
+  upcoming: "#CEFFE7",
+  someday: "#FFCEFB",
+};
+const ALL_COLS: ClerkCol[] = ["today", "tomorrow", "upcoming", "someday"];
+
+export function TaskCard({ task, onComplete, onOpen, draggable = true, overlay = false, onMoveCol }: Props) {
   const sortable = useSortable({ id: task.id, disabled: !draggable || overlay });
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable;
   const downPos = useRef<{ x: number; y: number } | null>(null);
   const movedRef = useRef(false);
+  const isMobile = useIsMobile();
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const style = overlay
     ? undefined
