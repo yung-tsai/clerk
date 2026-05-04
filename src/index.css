@@ -148,8 +148,8 @@
 
 /* ── Mascot float / thinking (matches reference HTML) ── */
 @keyframes char-float {
-  0%, 100% { transform: translateY(0px) rotate(-0.6deg); }
-  50%      { transform: translateY(-9px) rotate(0.6deg); }
+  0%, 100% { transform: translateY(0px) rotate(-0.4deg); }
+  50%      { transform: translateY(-3px) rotate(0.4deg); }
 }
 @keyframes char-think {
   0%, 100% { transform: scale(1); }
