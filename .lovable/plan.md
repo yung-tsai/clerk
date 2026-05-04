@@ -1,10 +1,13 @@
-## Update landing mascot to Wes
+## Two small updates
 
-The "Here's what I'd do" card on `/` (step 02) still uses the old star-shaped blue mascot SVG inlined in `src/pages/Landing.tsx`. Replace it with the current Wes character used everywhere else in the app.
+### 1. Replace logo
+Overwrite `src/assets/clerk-logo.svg` with the uploaded `Clerks.svg`. All four usages (`Landing`, `AppHome`, `Privacy`, `Terms`) import by path so no code changes needed.
 
-### Change
-- `src/pages/Landing.tsx`
-  - Add `import wesMascot from "@/assets/wes.svg";`
-  - Replace the `MascotInline` component (the inlined `<svg>` with the star path + eyes) with a simple `<img src={wesMascot} />` at ~36×28 to match the current visual footprint next to the "Here's what I'd do." headline.
+- `code--copy user-uploads://Clerks.svg src/assets/clerk-logo.svg` (overwrite)
 
-No other usages of the old mascot exist on the landing page. Expression stays neutral (static SVG, no eye-tracking needed in a marketing card).
+### 2. Smaller mascot float (from previous turn, was interrupted)
+The bottom-bar mascot bobs too high (~9px) and pokes above the input pill.
+
+- `src/index.css`, `@keyframes char-float`:
+  - translateY: `-9px` → `-3px`
+  - rotate: `±0.6deg` → `±0.4deg`
