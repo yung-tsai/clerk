@@ -943,6 +943,7 @@ function FocusView({
   dropTarget,
   activeId,
   onAddTask,
+  onMoveCol,
 }: {
   tasks: Task[];
   onComplete: (t: Task) => void;
@@ -950,6 +951,7 @@ function FocusView({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
+  onMoveCol?: (t: Task, col: ClerkCol) => void;
 }) {
   const today = new Date();
   return (
@@ -972,10 +974,10 @@ function FocusView({
           tasks={tasks}
           onComplete={onComplete}
           onOpen={onOpen}
-          
           dropTarget={dropTarget}
           activeId={activeId}
           onAddTask={onAddTask}
+          onMoveCol={onMoveCol}
         />
       </div>
     </div>
@@ -990,6 +992,7 @@ function PlannerView(props: {
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
+  onMoveCol?: (t: Task, col: ClerkCol) => void;
 }) {
   const isMobile = useIsMobile();
   return isMobile ? <PlannerMobile {...props} /> : <PlannerDesktop {...props} />;
