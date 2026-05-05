@@ -1306,7 +1306,8 @@ function DroppableColumn({
                 task={t}
                 onComplete={() => onComplete(t)}
                 onOpen={() => onOpen(t)}
-                onMoveCol={onMoveCol ? (c) => onMoveCol(t, c) : undefined}
+                onLongPress={onLongPress ? () => onLongPress(t) : undefined}
+                rootRef={idx === 0 && firstCardRef ? firstCardRef : undefined}
               />
               {showIndicator && idx === visible.length - 1 && indicatorIdx === visible.length && (
                 <DropIndicator />
