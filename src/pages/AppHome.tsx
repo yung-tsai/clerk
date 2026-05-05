@@ -6,6 +6,8 @@ import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { TaskCard, type ClerkCol, type TaskCardData } from "@/components/TaskCard";
 import { AddTaskCard } from "@/components/AddTaskCard";
 import { AppBar } from "@/components/AppBar";
+import { MoveTaskSheet } from "@/components/MoveTaskSheet";
+import { LongPressHint } from "@/components/LongPressHint";
 import { type CharacterVariant, normalizeCharacter, LEGACY_CHARACTERS } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
 import { isNewDay, planCarryOver } from "@/lib/carry-over";
