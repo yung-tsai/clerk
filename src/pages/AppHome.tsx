@@ -333,6 +333,12 @@ export default function AppHome() {
     setThinking(false);
     setBubbleVisible(false);
     setProposals(sorted);
+
+    // First-sort survey trigger (PostHog).
+    if (typeof window !== "undefined" && localStorage.getItem("clerk:first_sort_fired") !== "1") {
+      localStorage.setItem("clerk:first_sort_fired", "1");
+      track("first_sort_completed", { count: sorted.length });
+    }
   }
 
   async function acceptProposals() {
