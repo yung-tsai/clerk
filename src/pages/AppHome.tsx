@@ -9,7 +9,7 @@ import { AppBar } from "@/components/AppBar";
 import { MoveTaskSheet } from "@/components/MoveTaskSheet";
 import { MobileDragHandle } from "@/components/ui/drag-handle";
 import { LongPressHint } from "@/components/LongPressHint";
-import { type CharacterVariant, normalizeCharacter, LEGACY_CHARACTERS } from "@/lib/characters";
+import { type CharacterVariant, normalizeCharacter } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
 import { isNewDay, planCarryOver } from "@/lib/carry-over";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
@@ -20,6 +20,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
 import { CompletedModal } from "@/components/CompletedModal";
 import { TaskDetailModal, type TaskPatch } from "@/components/TaskDetailModal";
+import { UnlockCelebration } from "@/components/UnlockCelebration";
 import { cn } from "@/lib/utils";
 import { track, identify, resetAnalytics } from "@/lib/analytics";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -98,6 +99,7 @@ export default function AppHome() {
   const [moveSheetTask, setMoveSheetTask] = useState<Task | null>(null);
   const [showLongPressHint, setShowLongPressHint] = useState(false);
   const [firstCardEl, setFirstCardEl] = useState<HTMLDivElement | null>(null);
+  const [unlockOverlay, setUnlockOverlay] = useState<{ character: "rex" | "frank"; message: string } | null>(null);
   const bubbleTimer = useRef<number | null>(null);
   const loadedOnce = useRef(false);
   // When the user moves a task within ~10s of accepting a sort, treat it
@@ -182,9 +184,9 @@ export default function AppHome() {
           return;
         }
         const char = normalizeCharacter(p.character);
-        // Silent migration: legacy 'blue' / 'coral' values get persisted as 'wes'.
-        if (p.character && LEGACY_CHARACTERS.has(p.character)) {
-          supabase.from("profiles").update({ character: "wes" }).eq("id", user.id);
+        // Silent migration: persist any legacy character value as the normalized form.
+        if (p.character && p.character !== char) {
+          supabase.from("profiles").update({ character: char }).eq("id", user.id);
         }
         const vm = (p.view_mode as ViewMode) ?? "focus";
         setProfile({
@@ -230,6 +232,41 @@ export default function AppHome() {
     setBubbleVisible(true);
     if (bubbleTimer.current) window.clearTimeout(bubbleTimer.current);
     bubbleTimer.current = window.setTimeout(() => setBubbleVisible(false), ms);
+  }
+
+  /**
+   * Fires PostHog events + unlock overlays when streak/tasks cross thresholds.
+   * Each unlock celebration is one-shot per user (localStorage flag).
+   */
+  function maybeFireUnlocks(
+    prevStreak: number,
+    nextStreak: number,
+    prevTasks: number,
+    nextTasks: number,
+  ) {
+    if (typeof window === "undefined") return;
+
+    if (prevStreak < 7 && nextStreak >= 7) {
+      track("streak_7_reached", { streak: nextStreak });
+      if (localStorage.getItem("clerk:unlock_rex_seen") !== "1") {
+        localStorage.setItem("clerk:unlock_rex_seen", "1");
+        setUnlockOverlay({
+          character: "rex",
+          message: "Seven days in a row. That's not luck — that's a habit forming. I'm Rex. Let's keep this engine running.",
+        });
+      }
+    }
+
+    if (prevTasks < 30 && nextTasks >= 30) {
+      track("tasks_30_reached", { tasks: nextTasks });
+      if (localStorage.getItem("clerk:unlock_frank_seen") !== "1") {
+        localStorage.setItem("clerk:unlock_frank_seen", "1");
+        setUnlockOverlay({
+          character: "frank",
+          message: "Thirty tasks done. You actually did the things you said you'd do. I don't say this often: I'm impressed. — Frank.",
+        });
+      }
+    }
   }
 
   // Route global clerkSay() messages through the in-input Clerk bubble.
@@ -296,6 +333,12 @@ export default function AppHome() {
     setThinking(false);
     setBubbleVisible(false);
     setProposals(sorted);
+
+    // First-sort survey trigger (PostHog).
+    if (typeof window !== "undefined" && localStorage.getItem("clerk:first_sort_fired") !== "1") {
+      localStorage.setItem("clerk:first_sort_fired", "1");
+      track("first_sort_completed", { count: sorted.length });
+    }
   }
 
   async function acceptProposals() {
@@ -406,16 +449,8 @@ export default function AppHome() {
       showBubble(quip("complete.normal"));
     }
 
-    // One-shot Wes v3 unlock celebration when crossing 10 completed tasks.
-    if (
-      prevCompleted < 10 &&
-      nextCompleted >= 10 &&
-      typeof window !== "undefined" &&
-      localStorage.getItem("wes_v3_unlocked_seen") !== "1"
-    ) {
-      localStorage.setItem("wes_v3_unlocked_seen", "1");
-      toast.success("You unlocked Wes v3. Try it in Settings.");
-    }
+    // Unlocks: Frank when crossing 30 lifetime tasks; Rex covered in streak path below.
+    maybeFireUnlocks(prevStreak, nextStreak, prevCompleted, nextCompleted);
 
     await Promise.all([
       supabase.from("tasks").delete().eq("id", t.id),
@@ -451,6 +486,28 @@ export default function AppHome() {
     track("task_moved", { from: prevCol, to: col, source: "modal" });
     fireMoveQuip(prevCol, col);
     await supabase.from("tasks").update({ col }).eq("id", t.id);
+    // Streak: if moving away from Today emptied it for the day, count it as cleared.
+    if (prevCol === "today" && col !== "today") void bumpStreakIfTodayCleared(t.id);
+  }
+
+  /** Bump streak when Today goes empty (whether by complete OR move). */
+  async function bumpStreakIfTodayCleared(excludeId?: string) {
+    if (!user || !profile) return;
+    const remaining = tasks.filter((x) => x.col === "today" && x.id !== excludeId).length;
+    if (remaining > 0) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const last = profile.last_active_date ?? null;
+    if (last === today) return; // already counted today
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const prevStreak = profile.streak ?? 0;
+    const nextStreak = last === yesterday ? prevStreak + 1 : 1;
+    setProfile({ ...profile, streak: nextStreak, last_active_date: today });
+    maybeFireUnlocks(prevStreak, nextStreak, profile.tasks_completed, profile.tasks_completed);
+    const supabase = await getLovableCloudClient();
+    await supabase
+      .from("profiles")
+      .update({ streak: nextStreak, last_active_date: today })
+      .eq("id", user.id);
   }
 
   function handleAddToColumn(col: ClerkCol) {
@@ -1000,6 +1057,14 @@ export default function AppHome() {
       {showLongPressHint && isMobile && firstCardEl && !anyModalOpen && (
         <LongPressHint targetEl={firstCardEl} onDismiss={dismissLongPressHint} />
       )}
+
+      {/* ── Unlock celebration (Rex / Frank) ── */}
+      <UnlockCelebration
+        open={!!unlockOverlay}
+        character={unlockOverlay?.character ?? "rex"}
+        message={unlockOverlay?.message ?? ""}
+        onDismiss={() => setUnlockOverlay(null)}
+      />
     </div>
   );
 }
