@@ -268,6 +268,7 @@ const REX_V1: VariantCfg = {
   pupilL: { cx: 64.0161 + 9.48324, cy: 68.7424 + 11.6049, rx: 9.48324, ry: 11.6049 },
   pupilR: { cx: 98.7998 + 9.48324, cy: 68.1387 + 11.6049, rx: 9.48324, ry: 11.6049 },
   determinedPupilR: { cx: 98.7998 + 9.48324, cy: 68.1387 + 11.6049, rx: 9.48, ry: 11.6 },
+  renderScale: 1.15,
 };
 
 // Rex v2 — squarer burst (orange)
