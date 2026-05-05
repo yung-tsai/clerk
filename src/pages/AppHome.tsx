@@ -9,13 +9,13 @@ import { AppBar } from "@/components/AppBar";
 import { MoveTaskSheet } from "@/components/MoveTaskSheet";
 import { MobileDragHandle } from "@/components/ui/drag-handle";
 import { LongPressHint } from "@/components/LongPressHint";
-import { type CharacterVariant, normalizeCharacter } from "@/lib/characters";
+import { type CharacterVariant, normalizeCharacter, parseVariant } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
 import { isNewDay, planCarryOver } from "@/lib/carry-over";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
 import { clerkSay, subscribeClerk } from "@/lib/clerk-say";
-import { quip, quipForMove } from "@/lib/clerk-quips";
+import { quip, quipForMove, setActiveTone } from "@/lib/clerk-quips";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
 import { CompletedModal } from "@/components/CompletedModal";
@@ -188,6 +188,8 @@ export default function AppHome() {
         if (p.character && p.character !== char) {
           supabase.from("profiles").update({ character: char }).eq("id", user.id);
         }
+        // Set tone immediately so the greeting below uses the right voice.
+        setActiveTone(parseVariant(char).character);
         const vm = (p.view_mode as ViewMode) ?? "focus";
         setProfile({
           display_name: p.display_name,
@@ -663,6 +665,10 @@ export default function AppHome() {
   }
 
   const variant: CharacterVariant = normalizeCharacter(profile?.character);
+  // Route every quip through the active character's tone.
+  useEffect(() => {
+    setActiveTone(parseVariant(variant).character);
+  }, [variant]);
   const isMobile = useIsMobile();
 
   // Show one-time long-press coachmark on mobile after the user has tasks.

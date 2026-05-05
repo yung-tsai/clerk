@@ -98,8 +98,9 @@ export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>
     onClick?.();
   };
 
-  const w = size;
-  const h = (size / cfg.viewW) * cfg.viewH;
+  const scale = cfg.renderScale ?? 1;
+  const w = size * scale;
+  const h = (size / cfg.viewW) * cfg.viewH * scale;
   const clipIdL = `clerk-clip-l-${uid}`;
   const clipIdR = `clerk-clip-r-${uid}`;
   const gradId = `clerk-grad-${uid}`;
@@ -145,7 +146,9 @@ export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>
           </defs>
         )}
         <path d={cfg.body} fill={bodyFill} stroke={cfg.bodyStroke} strokeWidth={cfg.bodyStroke ? 1 : undefined} />
-        <path d={cfg.smile} stroke="#000" strokeWidth={cfg.smileW} strokeLinecap="round" />
+        {!cfg.smileOnTop && (
+          <path d={cfg.smile} stroke="#000" strokeWidth={cfg.smileW} strokeLinecap="round" />
+        )}
         <ellipse cx={cfg.eyeL.cx} cy={cfg.eyeL.cy} rx={cfg.eyeL.rx} ry={cfg.eyeL.ry} fill="white" />
         <ellipse
           ref={pupilLRef}
@@ -188,6 +191,9 @@ export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>
           fill={cfg.lidColor ?? cfg.bodyFill}
           clipPath={`url(#${clipIdR})`}
         />
+        {cfg.smileOnTop && (
+          <path d={cfg.smile} stroke="#000" strokeWidth={cfg.smileW} strokeLinecap="round" />
+        )}
       </svg>
     </button>
   );
@@ -210,6 +216,10 @@ type VariantCfg = {
   pupilR: Ellipse;
   determinedPupilR: Ellipse;
   lidColor?: string;
+  /** Visual scale multiplier vs. requested `size`. Lets us nudge characters that read smaller. */
+  renderScale?: number;
+  /** Render the `smile`/brow path on top of the eyes (used when it's actually an eyebrow that should overlap). */
+  smileOnTop?: boolean;
 };
 
 // Wes v1 — peaked blob with three humps on top
@@ -265,6 +275,7 @@ const REX_V1: VariantCfg = {
   pupilL: { cx: 64.0161 + 9.48324, cy: 68.7424 + 11.6049, rx: 9.48324, ry: 11.6049 },
   pupilR: { cx: 98.7998 + 9.48324, cy: 68.1387 + 11.6049, rx: 9.48324, ry: 11.6049 },
   determinedPupilR: { cx: 98.7998 + 9.48324, cy: 68.1387 + 11.6049, rx: 9.48, ry: 11.6 },
+  renderScale: 1.15,
 };
 
 // Rex v2 — squarer burst (orange)
@@ -284,6 +295,7 @@ const REX_V2: VariantCfg = {
   pupilL: { cx: 55.2345 + 10.1611, cy: 54.9663 + 12.4345, rx: 10.1611, ry: 12.4345 },
   pupilR: { cx: 92.5046 + 10.1611, cy: 54.3196 + 12.4345, rx: 10.1611, ry: 12.4345 },
   determinedPupilR: { cx: 92.5046 + 10.1611, cy: 54.3196 + 12.4345, rx: 10.16, ry: 12.43 },
+  renderScale: 1.15,
 };
 
 // Frank v1 — folder/tag shape (purple)
@@ -295,9 +307,11 @@ const FRANK_V1: VariantCfg = {
   bodyStroke: "#795EB0",
   body:
     "M3.50627 99.848L7.00902 10.1881C7.18469 5.69164 11.033 2.22461 15.5234 2.51737L104.237 8.30124C108.169 8.55759 111.329 11.6389 111.684 15.5632L118.431 90.1078C118.828 94.4964 115.602 98.3799 111.215 98.7936L12.2512 108.125C7.43259 108.579 3.31733 104.684 3.50627 99.848Z",
+  // Eyebrow line — drawn on top of the eyes so it actually crosses the upper rim.
   smile:
-    "M27.2164 32.4052C39.0272 32.4052 49.7478 32.1831 67.772 32.405C88.3712 32.6586 94.9489 32.405 108.325 32.405",
+    "M27.2164 45.4052C39.0272 45.4052 49.7478 45.1831 67.772 45.405C88.3712 45.6586 94.9489 45.405 108.325 45.405",
   smileW: 5,
+  smileOnTop: true,
   eyeR: { cx: 68.6222 + 21.6617, cy: 30.2153 + 23.7273, rx: 21.6617, ry: 23.7273 },
   eyeL: { cx: 28.4065 + 21.6617, cy: 29.3293 + 23.7273, rx: 21.6617, ry: 23.7273 },
   // Left pupil in source is a path approximating a tilted ellipse — center ≈ (54.6, 53.3)
@@ -315,9 +329,11 @@ const FRANK_V2: VariantCfg = {
   bodyStroke: "#795EB0",
   body:
     "M3.50775 95.1521L7.20769 10.1521C7.39394 5.87318 10.9171 2.5 15.2001 2.5H111.055C115.271 2.5 118.763 5.77179 119.038 9.97876L124.588 94.9788C124.889 99.5923 121.228 103.5 116.605 103.5H11.5002C6.94538 103.5 3.30967 99.7026 3.50775 95.1521Z",
+  // Eyebrow line — drawn on top of the eyes so it actually crosses the upper rim.
   smile:
-    "M26.2358 29.9477C38.322 29.9477 49.2924 29.7204 67.7369 29.9475C88.8163 30.207 95.5474 29.9475 109.236 29.9475",
+    "M26.2358 43.9477C38.322 43.9477 49.2924 43.7204 67.7369 43.9475C88.8163 44.207 95.5474 43.9475 109.236 43.9475",
   smileW: 5,
+  smileOnTop: true,
   eyeR: { cx: 68.6069 + 22.1667, cy: 27.7068 + 24.2805, rx: 22.1667, ry: 24.2805 },
   eyeL: { cx: 27.4537 + 22.1667, cy: 26.7998 + 24.2805, rx: 22.1667, ry: 24.2805 },
   pupilL: { cx: 54.3, cy: 51.3, rx: 11.08, ry: 13.56 },
