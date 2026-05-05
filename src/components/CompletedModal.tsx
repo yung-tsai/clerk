@@ -185,7 +185,7 @@ export function CompletedModal({ open, onOpenChange, userId, variant }: Props) {
             </div>
 
             {/* Body */}
-            <div className="overflow-y-auto px-5 pt-5 pb-28 md:pb-7 flex-1">
+            <div className="overflow-y-auto px-5 pt-5 pb-[max(env(safe-area-inset-bottom),32px)] md:pb-7 flex-1">
               {loading ? (
                 <p className="font-mono-plex text-[12px] text-[#9CA3AF] text-center py-12">Loading…</p>
               ) : rows.length === 0 ? (

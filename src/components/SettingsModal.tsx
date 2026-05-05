@@ -124,7 +124,7 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
 
           </div>
 
-          <div className="overflow-y-auto px-5 pt-5 pb-28 md:pb-7">
+          <div className="overflow-y-auto px-5 pt-5 pb-[max(env(safe-area-inset-bottom),32px)] md:pb-7">
             {/* ── PROFILE ── */}
             <SectionLabel>Profile</SectionLabel>
             <Card>
