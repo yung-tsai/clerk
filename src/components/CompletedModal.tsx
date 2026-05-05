@@ -16,6 +16,7 @@ import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { clerkSay } from "@/lib/clerk-say";
+import { MobileDragHandle } from "@/components/ui/drag-handle";
 
 interface Props {
   open: boolean;
