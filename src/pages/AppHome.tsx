@@ -6,6 +6,8 @@ import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { TaskCard, type ClerkCol, type TaskCardData } from "@/components/TaskCard";
 import { AddTaskCard } from "@/components/AddTaskCard";
 import { AppBar } from "@/components/AppBar";
+import { MoveTaskSheet } from "@/components/MoveTaskSheet";
+import { LongPressHint } from "@/components/LongPressHint";
 import { type CharacterVariant, normalizeCharacter, LEGACY_CHARACTERS } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
 import { isNewDay, planCarryOver } from "@/lib/carry-over";
@@ -92,6 +94,9 @@ export default function AppHome() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [completedOpen, setCompletedOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [moveSheetTask, setMoveSheetTask] = useState<Task | null>(null);
+  const [showLongPressHint, setShowLongPressHint] = useState(false);
+  const [firstCardEl, setFirstCardEl] = useState<HTMLDivElement | null>(null);
   const bubbleTimer = useRef<number | null>(null);
   const loadedOnce = useRef(false);
   // When the user moves a task within ~10s of accepting a sort, treat it
@@ -549,6 +554,9 @@ export default function AppHome() {
     if (!target) return;
     const { col: targetCol, index: insertIdx } = target;
 
+    // Mobile: cross-column drag is disabled — long-press → Move sheet is the path.
+    if (isMobile && targetCol !== activeTask.col) return;
+
     const colTasks = tasks.filter((x) => x.col === targetCol && x.id !== activeId);
     const before = colTasks[insertIdx - 1];
     const after = colTasks[insertIdx];
@@ -599,8 +607,29 @@ export default function AppHome() {
   const variant: CharacterVariant = normalizeCharacter(profile?.character);
   const isMobile = useIsMobile();
 
+  // Show one-time long-press coachmark on mobile after the user has tasks.
+  useEffect(() => {
+    if (!isMobile) return;
+    if (tasks.length === 0) return;
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem("clerk_hint_longpress_seen") === "1") return;
+    setShowLongPressHint(true);
+  }, [isMobile, tasks.length]);
+
+  const dismissLongPressHint = () => {
+    setShowLongPressHint(false);
+    try {
+      localStorage.setItem("clerk_hint_longpress_seen", "1");
+    } catch {}
+  };
+
+  const handleLongPress = (t: Task) => {
+    setMoveSheetTask(t);
+    if (showLongPressHint) dismissLongPressHint();
+  };
+
   // Idle fade — Focus view only; bubble visibility forces chrome back.
-  const anyModalOpen = !!proposals || settingsOpen || completedOpen || !!selectedTask;
+  const anyModalOpen = !!proposals || settingsOpen || completedOpen || !!selectedTask || !!moveSheetTask;
   const idleEnabled = view === "focus" && !anyModalOpen;
   const idle = useIdle(4000, idleEnabled);
   const focusIdleHidden = view === "focus" && idle && !bubbleVisible && !anyModalOpen;
@@ -677,9 +706,9 @@ export default function AppHome() {
           onDragCancel={() => { setActiveId(null); setDropTarget(null); }}
         >
           {view === "focus" ? (
-            <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} onAddTask={handleAddToColumn} onMoveCol={moveTask} />
+            <FocusView tasks={grouped.today} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} onAddTask={handleAddToColumn} onLongPress={isMobile ? handleLongPress : undefined} firstCardRef={setFirstCardEl} />
           ) : (
-            <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} onAddTask={handleAddToColumn} onMoveCol={moveTask} />
+            <PlannerView grouped={grouped} onComplete={completeTask} onOpen={setSelectedTask} dropTarget={dropTarget} activeId={activeId} onAddTask={handleAddToColumn} onLongPress={isMobile ? handleLongPress : undefined} firstCardRef={setFirstCardEl} />
           )}
           <DragOverlay dropAnimation={{ duration: 180, easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)" }}>
             {activeTaskOverlay ? (
@@ -931,6 +960,26 @@ export default function AppHome() {
           variant={variant}
         />
       )}
+
+      {/* ── Move task sheet (mobile) ── */}
+      <MoveTaskSheet
+        task={moveSheetTask}
+        onOpenChange={(o) => {
+          if (!o) setMoveSheetTask(null);
+        }}
+        onMove={(col) => {
+          if (moveSheetTask) {
+            moveTask(moveSheetTask, col);
+            toast.success(`Moved to ${COL_TITLES[col]}`);
+          }
+          setMoveSheetTask(null);
+        }}
+      />
+
+      {/* ── First-task long-press coachmark (mobile, one-time) ── */}
+      {showLongPressHint && isMobile && firstCardEl && !anyModalOpen && (
+        <LongPressHint targetEl={firstCardEl} onDismiss={dismissLongPressHint} />
+      )}
     </div>
   );
 }
@@ -943,7 +992,8 @@ function FocusView({
   dropTarget,
   activeId,
   onAddTask,
-  onMoveCol,
+  onLongPress,
+  firstCardRef,
 }: {
   tasks: Task[];
   onComplete: (t: Task) => void;
@@ -951,7 +1001,8 @@ function FocusView({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
-  onMoveCol?: (t: Task, col: ClerkCol) => void;
+  onLongPress?: (t: Task) => void;
+  firstCardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const today = new Date();
   return (
@@ -977,7 +1028,8 @@ function FocusView({
           dropTarget={dropTarget}
           activeId={activeId}
           onAddTask={onAddTask}
-          onMoveCol={onMoveCol}
+          onLongPress={onLongPress}
+          firstCardRef={firstCardRef}
         />
       </div>
     </div>
@@ -992,7 +1044,8 @@ function PlannerView(props: {
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
-  onMoveCol?: (t: Task, col: ClerkCol) => void;
+  onLongPress?: (t: Task) => void;
+  firstCardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const isMobile = useIsMobile();
   return isMobile ? <PlannerMobile {...props} /> : <PlannerDesktop {...props} />;
@@ -1006,7 +1059,8 @@ function PlannerMobile({
   dropTarget,
   activeId,
   onAddTask,
-  onMoveCol,
+  onLongPress,
+  firstCardRef,
 }: {
   grouped: Record<ClerkCol, Task[]>;
   onComplete: (t: Task) => void;
@@ -1014,7 +1068,8 @@ function PlannerMobile({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
-  onMoveCol?: (t: Task, col: ClerkCol) => void;
+  onLongPress?: (t: Task) => void;
+  firstCardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -1132,7 +1187,8 @@ function PlannerMobile({
                   dropTarget={dropTarget}
                   activeId={activeId}
                   onAddTask={onAddTask}
-                  onMoveCol={onMoveCol}
+                  onLongPress={onLongPress}
+                  firstCardRef={i === 0 ? firstCardRef : undefined}
                 />
               </div>
             </div>
@@ -1153,7 +1209,8 @@ function PlannerDesktop({
   dropTarget,
   activeId,
   onAddTask,
-  onMoveCol,
+  onLongPress,
+  firstCardRef,
 }: {
   grouped: Record<ClerkCol, Task[]>;
   onComplete: (t: Task) => void;
@@ -1161,7 +1218,8 @@ function PlannerDesktop({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
-  onMoveCol?: (t: Task, col: ClerkCol) => void;
+  onLongPress?: (t: Task) => void;
+  firstCardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -1203,7 +1261,8 @@ function PlannerDesktop({
                 dropTarget={dropTarget}
                 activeId={activeId}
                 onAddTask={onAddTask}
-                onMoveCol={onMoveCol}
+                onLongPress={onLongPress}
+                firstCardRef={i === 0 ? firstCardRef : undefined}
               />
             </div>
           ))}
@@ -1232,7 +1291,8 @@ function DroppableColumn({
   dropTarget,
   activeId,
   onAddTask,
-  onMoveCol,
+  onLongPress,
+  firstCardRef,
 }: {
   col: ClerkCol;
   tasks: Task[];
@@ -1241,7 +1301,8 @@ function DroppableColumn({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask?: (col: ClerkCol) => void;
-  onMoveCol?: (t: Task, col: ClerkCol) => void;
+  onLongPress?: (t: Task) => void;
+  firstCardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${col}` });
   // Visible tasks exclude the active dragging card (it's in the overlay)
@@ -1268,7 +1329,8 @@ function DroppableColumn({
                 task={t}
                 onComplete={() => onComplete(t)}
                 onOpen={() => onOpen(t)}
-                onMoveCol={onMoveCol ? (c) => onMoveCol(t, c) : undefined}
+                onLongPress={onLongPress ? () => onLongPress(t) : undefined}
+                rootRef={idx === 0 && firstCardRef ? firstCardRef : undefined}
               />
               {showIndicator && idx === visible.length - 1 && indicatorIdx === visible.length && (
                 <DropIndicator />
