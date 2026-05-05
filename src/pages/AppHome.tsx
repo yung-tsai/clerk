@@ -1021,7 +1021,8 @@ function PlannerView(props: {
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
-  onMoveCol?: (t: Task, col: ClerkCol) => void;
+  onLongPress?: (t: Task) => void;
+  firstCardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const isMobile = useIsMobile();
   return isMobile ? <PlannerMobile {...props} /> : <PlannerDesktop {...props} />;
@@ -1035,7 +1036,8 @@ function PlannerMobile({
   dropTarget,
   activeId,
   onAddTask,
-  onMoveCol,
+  onLongPress,
+  firstCardRef,
 }: {
   grouped: Record<ClerkCol, Task[]>;
   onComplete: (t: Task) => void;
@@ -1043,7 +1045,8 @@ function PlannerMobile({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
-  onMoveCol?: (t: Task, col: ClerkCol) => void;
+  onLongPress?: (t: Task) => void;
+  firstCardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -1161,7 +1164,8 @@ function PlannerMobile({
                   dropTarget={dropTarget}
                   activeId={activeId}
                   onAddTask={onAddTask}
-                  onMoveCol={onMoveCol}
+                  onLongPress={onLongPress}
+                firstCardRef={firstCardRef}
                 />
               </div>
             </div>
@@ -1182,7 +1186,8 @@ function PlannerDesktop({
   dropTarget,
   activeId,
   onAddTask,
-  onMoveCol,
+  onLongPress,
+  firstCardRef,
 }: {
   grouped: Record<ClerkCol, Task[]>;
   onComplete: (t: Task) => void;
@@ -1190,7 +1195,8 @@ function PlannerDesktop({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
-  onMoveCol?: (t: Task, col: ClerkCol) => void;
+  onLongPress?: (t: Task) => void;
+  firstCardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -1232,7 +1238,8 @@ function PlannerDesktop({
                 dropTarget={dropTarget}
                 activeId={activeId}
                 onAddTask={onAddTask}
-                onMoveCol={onMoveCol}
+                onLongPress={onLongPress}
+                firstCardRef={firstCardRef}
               />
             </div>
           ))}
@@ -1261,7 +1268,8 @@ function DroppableColumn({
   dropTarget,
   activeId,
   onAddTask,
-  onMoveCol,
+  onLongPress,
+  firstCardRef,
 }: {
   col: ClerkCol;
   tasks: Task[];
@@ -1270,7 +1278,8 @@ function DroppableColumn({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask?: (col: ClerkCol) => void;
-  onMoveCol?: (t: Task, col: ClerkCol) => void;
+  onLongPress?: (t: Task) => void;
+  firstCardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col:${col}` });
   // Visible tasks exclude the active dragging card (it's in the overlay)
