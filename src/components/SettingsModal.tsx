@@ -97,7 +97,7 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
         className="max-w-[640px] p-0 gap-0 border-none shadow-none bg-transparent [&>button]:hidden"
       >
         <div
-          className="rounded-[20px] overflow-hidden max-h-[86dvh] md:max-h-[88vh] flex flex-col"
+          className="rounded-[20px] overflow-hidden max-h-[95svh] md:max-h-[88vh] flex flex-col"
           style={{
             background:
               "radial-gradient(ellipse 60% 50% at 10% 10%, rgba(255,190,130,0.3) 0%, transparent 100%), radial-gradient(ellipse 50% 45% at 90% 5%, rgba(185,205,255,0.35) 0%, transparent 100%), #F5F5F3",

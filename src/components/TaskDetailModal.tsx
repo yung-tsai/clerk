@@ -79,7 +79,7 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
           </span>
           <span className="w-[44px]" aria-hidden />
         </div>
-        <div className="overflow-y-auto max-h-[86dvh] md:max-h-none pb-[max(env(safe-area-inset-bottom),32px)] md:pb-0">
+        <div className="overflow-y-auto max-h-[calc(95svh-56px)] md:max-h-none pb-[max(env(safe-area-inset-bottom),24px)] md:pb-0">
         <div className="grid md:grid-cols-[1fr_280px] gap-0">
           {/* Left */}
           <div className="p-7 pr-5 flex flex-col gap-7 min-w-0">
@@ -127,7 +127,7 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
                 value={local.task_time ?? ""}
                 onChange={(e) => update({ task_time: e.target.value || null })}
                 placeholder="e.g. 9:00 AM"
-                className="w-full bg-transparent border-none outline-none font-plex text-[14px] text-[#2A2A2A] placeholder:text-[#C4C8CC]"
+                className="w-full bg-transparent border-none outline-none font-plex text-[16px] md:text-[14px] text-[#2A2A2A] placeholder:text-[#C4C8CC]"
               />
             </Field>
             <Field label="Location">
@@ -135,7 +135,7 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
                 value={local.location ?? ""}
                 onChange={(e) => update({ location: e.target.value || null })}
                 placeholder="e.g. Target"
-                className="w-full bg-transparent border-none outline-none font-plex text-[14px] text-[#2A2A2A] placeholder:text-[#C4C8CC]"
+                className="w-full bg-transparent border-none outline-none font-plex text-[16px] md:text-[14px] text-[#2A2A2A] placeholder:text-[#C4C8CC]"
               />
             </Field>
             <Field label="Tag">
@@ -144,7 +144,7 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
                   value={local.category ?? ""}
                   onChange={(e) => update({ category: e.target.value || null })}
                   placeholder="e.g. Work"
-                  className="flex-1 min-w-0 bg-transparent border-none outline-none font-plex text-[14px] text-[#2A2A2A] placeholder:text-[#C4C8CC]"
+                  className="flex-1 min-w-0 bg-transparent border-none outline-none font-plex text-[16px] md:text-[14px] text-[#2A2A2A] placeholder:text-[#C4C8CC]"
                 />
                 <div className="flex items-center gap-1">
                   {SWATCHES.map((bg, i) => (
@@ -168,11 +168,11 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
                 value={local.due_date ?? ""}
                 onChange={(e) => update({ due_date: e.target.value || null })}
                 placeholder="e.g. Friday"
-                className="w-full bg-transparent border-none outline-none font-plex text-[14px] text-[#2A2A2A] placeholder:text-[#C4C8CC]"
+                className="w-full bg-transparent border-none outline-none font-plex text-[16px] md:text-[14px] text-[#2A2A2A] placeholder:text-[#C4C8CC]"
               />
             </Field>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end md:static sticky bottom-0 bg-background pt-3 -mx-7 px-7 md:mx-0 md:px-0 md:pt-0 md:bg-transparent md:border-0 border-t border-black/[0.06] pb-[max(env(safe-area-inset-bottom),12px)] md:pb-0">
               <button
                 type="button"
                 onClick={() => onDelete(local)}
