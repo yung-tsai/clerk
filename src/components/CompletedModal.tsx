@@ -130,8 +130,16 @@ export function CompletedModal({ open, onOpenChange, userId, variant }: Props) {
             {/* Header */}
             <MobileDragHandle />
             {/* Mobile header: title + clear (no close — drag handle / tap-outside) */}
-            <div className="md:hidden flex items-center justify-between px-5 pt-1 pb-3 border-b border-black/[0.06]">
-              <span className="text-[15px] font-semibold tracking-[-0.01em] text-[#1A1A1A]">
+            <div className="md:hidden flex items-center justify-between px-4 pt-1 pb-3 border-b border-black/[0.06] gap-2">
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                aria-label="Close"
+                className="min-h-[44px] min-w-[44px] -ml-2 px-2 flex items-center text-[13px] font-medium text-[#1A1A1A]"
+              >
+                Close
+              </button>
+              <span className="text-[15px] font-semibold tracking-[-0.01em] text-[#1A1A1A] truncate">
                 Completed
                 {!loading && rows.length > 0 && (
                   <span className="ml-2 font-mono-plex text-[11px] font-light text-[#9CA3AF]">
@@ -139,14 +147,16 @@ export function CompletedModal({ open, onOpenChange, userId, variant }: Props) {
                   </span>
                 )}
               </span>
-              {rows.length > 0 && (
+              {rows.length > 0 ? (
                 <button
                   type="button"
                   onClick={() => setConfirmClear(true)}
-                  className="text-[12px] font-medium text-[#DC2626] hover:opacity-70 transition-opacity"
+                  className="min-h-[44px] -mr-2 px-2 text-[12px] font-medium text-[#DC2626]"
                 >
                   Clear
                 </button>
+              ) : (
+                <span className="w-[44px]" aria-hidden />
               )}
             </div>
             <div
