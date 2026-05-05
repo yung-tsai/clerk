@@ -146,7 +146,9 @@ export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>
           </defs>
         )}
         <path d={cfg.body} fill={bodyFill} stroke={cfg.bodyStroke} strokeWidth={cfg.bodyStroke ? 1 : undefined} />
-        <path d={cfg.smile} stroke="#000" strokeWidth={cfg.smileW} strokeLinecap="round" />
+        {!cfg.smileOnTop && (
+          <path d={cfg.smile} stroke="#000" strokeWidth={cfg.smileW} strokeLinecap="round" />
+        )}
         <ellipse cx={cfg.eyeL.cx} cy={cfg.eyeL.cy} rx={cfg.eyeL.rx} ry={cfg.eyeL.ry} fill="white" />
         <ellipse
           ref={pupilLRef}
