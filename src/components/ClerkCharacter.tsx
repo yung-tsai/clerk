@@ -288,6 +288,7 @@ const REX_V2: VariantCfg = {
   pupilL: { cx: 55.2345 + 10.1611, cy: 54.9663 + 12.4345, rx: 10.1611, ry: 12.4345 },
   pupilR: { cx: 92.5046 + 10.1611, cy: 54.3196 + 12.4345, rx: 10.1611, ry: 12.4345 },
   determinedPupilR: { cx: 92.5046 + 10.1611, cy: 54.3196 + 12.4345, rx: 10.16, ry: 12.43 },
+  renderScale: 1.15,
 };
 
 // Frank v1 — folder/tag shape (purple)
