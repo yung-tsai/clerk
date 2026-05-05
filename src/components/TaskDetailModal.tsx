@@ -65,7 +65,20 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
     <Dialog open={!!task} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[720px] p-0 overflow-hidden bg-background [&>button]:hidden md:[&>button]:inline-flex">
         <MobileDragHandle />
-        <div className="overflow-y-auto max-h-[92vh] md:max-h-none pb-28 md:pb-0">
+        <div className="md:hidden flex items-center justify-between px-5 pt-1 pb-3 border-b border-black/[0.06]">
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="font-mono-plex text-[12px] font-light text-[#6A7282]"
+          >
+            Close
+          </button>
+          <span className="text-[14px] font-semibold tracking-[-0.01em] text-[#1A1A1A]">
+            {COL_TITLES[local.col]}
+          </span>
+          <span className="w-[40px]" aria-hidden />
+        </div>
+        <div className="overflow-y-auto max-h-[92vh] md:max-h-none pb-[max(env(safe-area-inset-bottom),32px)] md:pb-0">
         <div className="grid md:grid-cols-[1fr_280px] gap-0">
           {/* Left */}
           <div className="p-7 pr-5 flex flex-col gap-7 min-w-0">
