@@ -764,18 +764,19 @@ export default function AppHome() {
         <DialogContent className="max-w-[440px] p-0 overflow-hidden bg-background [&>button]:hidden md:[&>button]:inline-flex">
           <MobileDragHandle />
           {/* Mobile-only top bar with explicit Close — matches the other sheets */}
-          <div className="md:hidden flex items-center justify-between px-5 pt-1 pb-3 border-b border-black/[0.06]">
+          <div className="md:hidden flex items-center justify-between px-4 pt-1 pb-3 border-b border-black/[0.06]">
             <button
               type="button"
               onClick={() => proposals && acceptProposals()}
-              className="font-mono-plex text-[12px] font-light text-[#6A7282]"
+              aria-label="Close"
+              className="min-h-[44px] min-w-[44px] -ml-2 px-2 flex items-center text-[13px] font-medium text-[#1A1A1A]"
             >
               Close
             </button>
             <span className="text-[14px] font-semibold tracking-[-0.01em] text-[#1A1A1A]">
               Here's what I'd do
             </span>
-            <span className="w-[40px]" aria-hidden />
+            <span className="w-[44px]" aria-hidden />
           </div>
           <div className="hidden md:flex px-6 pt-6 pb-3 items-center gap-3">
             <ClerkCharacter variant={variant} size={36} />

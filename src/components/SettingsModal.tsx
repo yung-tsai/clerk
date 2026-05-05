@@ -97,7 +97,7 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
         className="max-w-[640px] p-0 gap-0 border-none shadow-none bg-transparent [&>button]:hidden"
       >
         <div
-          className="rounded-[20px] overflow-hidden max-h-[92vh] md:max-h-[88vh] flex flex-col"
+          className="rounded-[20px] overflow-hidden max-h-[86dvh] md:max-h-[88vh] flex flex-col"
           style={{
             background:
               "radial-gradient(ellipse 60% 50% at 10% 10%, rgba(255,190,130,0.3) 0%, transparent 100%), radial-gradient(ellipse 50% 45% at 90% 5%, rgba(185,205,255,0.35) 0%, transparent 100%), #F5F5F3",
@@ -105,6 +105,19 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
         >
           {/* ── HEADER ── */}
           <MobileDragHandle />
+          {/* Mobile header: explicit Close + title — visible on every phone */}
+          <div className="md:hidden flex items-center justify-between px-4 pt-1 pb-3 border-b border-black/[0.06]">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              aria-label="Close settings"
+              className="min-h-[44px] min-w-[44px] -ml-2 px-2 flex items-center text-[13px] font-medium text-[#1A1A1A]"
+            >
+              Close
+            </button>
+            <span className="text-[15px] font-semibold tracking-[-0.01em] text-[#1A1A1A]">Settings</span>
+            <span className="w-[44px]" aria-hidden />
+          </div>
           <div
             className="hidden md:flex items-center justify-between px-5 py-4 border-b border-black/[0.06]"
             style={{ background: "rgba(245,245,243,0.85)", backdropFilter: "blur(12px)" }}

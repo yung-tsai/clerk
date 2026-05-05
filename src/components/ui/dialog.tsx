@@ -39,8 +39,9 @@ const DialogContent = React.forwardRef<
         // Base
         "fixed z-50 grid w-full gap-4 bg-background shadow-lg duration-200",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-        // Mobile (default): bottom sheet
-        "inset-x-0 bottom-0 max-h-[92vh] border-t rounded-t-[20px] p-6",
+        // Mobile (default): bottom sheet — leaves ~14dvh above so users see page context
+        // and can reach the top edge with their thumb. dvh adapts to mobile browser chrome.
+        "inset-x-0 bottom-0 max-h-[86dvh] border-t rounded-t-[20px] p-6",
         "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
         // Desktop (md+): centered dialog — overrides mobile values
         "md:inset-x-auto md:bottom-auto md:left-[50%] md:top-[50%] md:max-h-none md:max-w-lg md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-lg md:border",
