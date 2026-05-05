@@ -29,6 +29,7 @@ export default function Landing() {
         <video
           className="absolute inset-0 w-full h-full object-cover object-center z-0"
           src="/landing-hero.mp4"
+          poster="/landing-hero-poster.png"
           autoPlay
           muted
           loop
