@@ -1064,7 +1064,7 @@ export default function AppHome() {
         character={unlockOverlay?.character ?? "rex"}
         message={unlockOverlay?.message ?? ""}
         onDismiss={() => setUnlockOverlay(null)}
-      )}
+      />
     </div>
   );
 }
