@@ -119,8 +119,7 @@ export default function Onboarding() {
       {step === 2 && (
         <button
           onClick={skipDemo}
-          className="fixed bottom-5 right-5 sm:bottom-8 sm:right-6 font-plex-mono text-[11px] font-light tracking-[0.04em] text-faint hover:text-muted-foreground z-10"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          className="fixed top-5 right-5 sm:top-8 sm:right-6 font-plex-mono text-[11px] font-light tracking-[0.04em] text-faint hover:text-muted-foreground z-20"
         >
           skip demo
         </button>
