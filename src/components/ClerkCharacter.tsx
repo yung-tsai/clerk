@@ -211,6 +211,8 @@ type VariantCfg = {
   pupilR: Ellipse;
   determinedPupilR: Ellipse;
   lidColor?: string;
+  /** Visual scale multiplier vs. requested `size`. Lets us nudge characters that read smaller. */
+  renderScale?: number;
 };
 
 // Wes v1 — peaked blob with three humps on top
