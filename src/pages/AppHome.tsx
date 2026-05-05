@@ -7,6 +7,7 @@ import { TaskCard, type ClerkCol, type TaskCardData } from "@/components/TaskCar
 import { AddTaskCard } from "@/components/AddTaskCard";
 import { AppBar } from "@/components/AppBar";
 import { MoveTaskSheet } from "@/components/MoveTaskSheet";
+import { MobileDragHandle } from "@/components/ui/drag-handle";
 import { LongPressHint } from "@/components/LongPressHint";
 import { type CharacterVariant, normalizeCharacter, LEGACY_CHARACTERS } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
