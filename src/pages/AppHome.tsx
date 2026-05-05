@@ -188,6 +188,8 @@ export default function AppHome() {
         if (p.character && p.character !== char) {
           supabase.from("profiles").update({ character: char }).eq("id", user.id);
         }
+        // Set tone immediately so the greeting below uses the right voice.
+        setActiveTone(parseVariant(char).character);
         const vm = (p.view_mode as ViewMode) ?? "focus";
         setProfile({
           display_name: p.display_name,
