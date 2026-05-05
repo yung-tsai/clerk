@@ -124,7 +124,7 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
 
           </div>
 
-          <div className="overflow-y-auto px-5 pt-5 pb-28 md:pb-7">
+          <div className="overflow-y-auto px-5 pt-5 pb-[max(env(safe-area-inset-bottom),32px)] md:pb-7">
             {/* ── PROFILE ── */}
             <SectionLabel>Profile</SectionLabel>
             <Card>
@@ -316,6 +316,12 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
 
             <p className="text-center font-mono-plex text-[10px] font-light text-[#9CA3AF] tracking-[0.04em] mt-8">
               Clerk · Early Access
+            </p>
+            <p
+              className="text-center font-mono-plex text-[10px] font-light text-[#C4C8CC] tracking-[0.04em] mt-1.5 select-all"
+              title="Build identifier — useful for debugging stale cached versions"
+            >
+              build {__BUILD_HASH__} · {__BUILD_TIME__}
             </p>
           </div>
         </div>

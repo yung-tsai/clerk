@@ -1,43 +1,80 @@
-## Goal
-Make all four mobile modals dismissible the same way: **iOS-style drag handle on top + tap-outside to close**. No header bar, no explicit Close button on mobile. Desktop behavior is unchanged.
+## What I found
 
-## Affected modals
-1. **Settings** (`src/components/SettingsModal.tsx`)
-2. **Completed** (`src/components/CompletedModal.tsx`)
-3. **Task detail** (`src/components/TaskDetailModal.tsx`) — also covers the per-column "+" new-task flow, since `handleAddToColumn` opens this same modal with a draft.
-4. **Move task sheet** (`src/components/MoveTaskSheet.tsx`) — already uses Radix sheet; will get the same treatment for consistency.
+The current code already includes the drag-handle modal changes, and the live published bundle at `getclerks.com` contains those updated modal styles. So if your phone still shows the old full-page-looking task/settings/completed screens after 12 hours and cache clearing, the likely cause is not the JS bundle itself — it is the app running in an installed/mobile web-app mode or browser session that is preserving viewport/app-shell behavior.
 
-(The AppBar pop-up menu in IMG_1611 is a popover, not a modal — tapping outside already closes it. Out of scope unless you flag it.)
+I also found that Clerk is configured as installable:
+- `manifest.json` has `display: "standalone"`
+- `index.html` includes Apple mobile web app meta tags
+- there is no service worker, so this is not a classic PWA cache issue, but iOS can still pin install-related behavior and old app sessions more aggressively than normal tabs.
 
-## Approach
+## Plan
 
-### 1. Add a shared `MobileDragHandle` component
-New file `src/components/ui/drag-handle.tsx` — a small centered pill (`h-1 w-9 rounded-full bg-black/15`) with ~10px top padding. Used at the top of every mobile sheet body.
+### 1. Add a visible build/version footer in Settings
+Add the build timestamp/hash we discussed earlier, but make it practical for debugging:
+- Show a small version row at the bottom of Settings.
+- Include a short build hash and build time.
+- Make it easy to compare Preview vs published vs mobile.
 
-### 2. Update `DialogContent` (`src/components/ui/dialog.tsx`)
-- On mobile, the X button in the top-right corner is currently always shown. Hide it on mobile (`[&>button]:hidden md:[&>button]:inline-flex` is already a per-modal opt-out — we'll bake it into the base so every Dialog gets it for free).
-- Tap-outside-to-close already works (Radix default via overlay click). No change needed.
-- Add a small mobile-only safe-area top padding so the drag handle sits cleanly under the notch.
+This gives us a reliable way to answer: “Is this phone actually running the newest build?”
 
-### 3. Replace mobile headers in each modal
-- **TaskDetailModal**: remove the `MobileSheetHeader` block; render `<MobileDragHandle />` instead at the top of the scroll container.
-- **SettingsModal**: today renders a custom mobile header with a "Close" text button (lines ~110-119). Replace with `<MobileDragHandle />` on mobile; keep desktop layout intact.
-- **CompletedModal**: same — replace the "Close" button (lines ~134-143) with `<MobileDragHandle />` on mobile.
-- **MoveTaskSheet**: it's a bottom Sheet using `MobileSheetHeader`. Swap the header for `<MobileDragHandle />` and a small inline title row (so the user still sees "Move task").
+### 2. Add a lightweight stale-build detector
+Add a small client-side check that compares the currently loaded build hash to a tiny generated version file.
 
-### 4. Keep destructive confirmation flows unchanged
-The nested AlertDialogs (clear tasks, delete account, clear completed) stay as-is — they're confirm prompts, not the main modal.
+Behavior:
+- On app load and when the tab becomes visible, check if a newer build exists.
+- If yes, show a soft in-app banner/toast: “New Clerk update available” with a “Refresh” action.
+- The refresh action reloads the page.
 
-### 5. Drag-to-dismiss (gesture)
-Radix Dialog/Sheet doesn't support drag-down-to-dismiss natively. The drag handle will be **visual only** — tap outside or swipe-down on the OS browser still works, and the handle communicates "this is a sheet you can dismiss." If you want true drag-to-dismiss later, we'd swap to `vaul` Drawer (already in the project), but that's a bigger refactor — flagging for a follow-up if you want it.
+Important: this will not add a service worker or full PWA caching. It is just a small published-version check.
 
-## Files touched
-- `src/components/ui/dialog.tsx` (hide X on mobile by default)
-- `src/components/ui/drag-handle.tsx` (new)
+### 3. Update the Proposal modal for modal consistency
+The proposal modal currently still uses the older centered modal pattern and visible desktop close button behavior. I’ll update it to match the new mobile sheet language:
+- Add the mobile drag handle at the top.
+- Hide the default X on mobile.
+- Keep tap-outside behavior, but preserve the existing behavior where dismissing accepts proposals.
+- Make the header read more like the landing example: “Here’s what I’d do.” / “Tap a column to move anything.”
+- Keep desktop layout clean and unchanged where possible.
+
+### 4. Improve the mobile task-detail/new-task modal layout
+Your screenshots show the modal is technically updated in code, but on actual mobile it still feels like a full-page editor with no obvious boundary, especially when Safari browser chrome is visible.
+
+I’ll tighten this up by making mobile dialogs more obviously “sheets”:
+- Ensure the modal surface has a visible rounded top, subtle border, and background separation from the page.
+- Keep the drag handle visible at the very top.
+- Add safer bottom padding so the Delete button/input fields don’t get trapped behind Safari’s bottom toolbar.
+- Keep desktop behavior unchanged.
+
+### 5. Improve the last screenshot: inline input + keyboard state
+The last screenshot shows the bottom app bar/input fighting the iOS keyboard:
+- The input pill floats above the keyboard, but the separate action toolbar underneath it creates a lot of vertical clutter.
+- The dashed add-card stays visible high on the screen, which makes the focused input state feel visually disconnected.
+- The keyboard state should feel more like “I’m adding a task now,” not like the normal nav bar plus extra controls.
+
+I’ll improve this by adjusting the focused mobile input state:
+- When the input is focused on mobile, simplify the bottom bar so it becomes a compact compose state.
+- Keep the text field prominent.
+- Avoid showing extra navigation/menu affordances that compete with the keyboard.
+- Keep the normal AppBar/menu behavior when the keyboard is not open.
+
+### 6. Verify the actual published behavior path
+After implementation, I’ll check the code paths that determine modal visibility and app-shell behavior:
+- confirm no service worker exists/registers
+- confirm version footer renders in Settings
+- confirm proposal modal uses the same mobile sheet treatment
+- confirm the input focused state is cleaner on mobile widths
+
+## Files I expect to touch
+
+- `vite.config.ts`
+- `src/vite-env.d.ts`
+- `src/App.tsx` or a small new update-check component
+- `src/pages/AppHome.tsx`
 - `src/components/SettingsModal.tsx`
-- `src/components/CompletedModal.tsx`
 - `src/components/TaskDetailModal.tsx`
-- `src/components/MoveTaskSheet.tsx`
+- `src/components/AppBar.tsx`
+- possibly `src/components/ui/dialog.tsx`
+- possibly a generated/public version file pattern
 
-## Open question for after
-You mentioned another issue — ready to hear it once this plan is approved (or alongside, your call).
+## One note about mobile installs
+
+Because the app is installable on iOS, if you are launching Clerk from a home-screen icon, iOS may keep older install metadata/session behavior even without a service worker. The version footer will tell us immediately whether that’s happening. If the footer shows the new version but the UI still looks old, then we’ll know it’s a responsive/layout issue rather than deployment/caching.

@@ -7,6 +7,7 @@ import { TaskCard, type ClerkCol, type TaskCardData } from "@/components/TaskCar
 import { AddTaskCard } from "@/components/AddTaskCard";
 import { AppBar } from "@/components/AppBar";
 import { MoveTaskSheet } from "@/components/MoveTaskSheet";
+import { MobileDragHandle } from "@/components/ui/drag-handle";
 import { LongPressHint } from "@/components/LongPressHint";
 import { type CharacterVariant, normalizeCharacter, LEGACY_CHARACTERS } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
@@ -760,17 +761,35 @@ export default function AppHome() {
           if (!o && proposals) acceptProposals();
         }}
       >
-        <DialogContent className="max-w-[440px] p-0 overflow-hidden bg-background">
-          <div className="px-6 pt-6 pb-3 flex items-center gap-3">
+        <DialogContent className="max-w-[440px] p-0 overflow-hidden bg-background [&>button]:hidden md:[&>button]:inline-flex">
+          <MobileDragHandle />
+          {/* Mobile-only top bar with explicit Close — matches the other sheets */}
+          <div className="md:hidden flex items-center justify-between px-5 pt-1 pb-3 border-b border-black/[0.06]">
+            <button
+              type="button"
+              onClick={() => proposals && acceptProposals()}
+              className="font-mono-plex text-[12px] font-light text-[#6A7282]"
+            >
+              Close
+            </button>
+            <span className="text-[14px] font-semibold tracking-[-0.01em] text-[#1A1A1A]">
+              Here's what I'd do
+            </span>
+            <span className="w-[40px]" aria-hidden />
+          </div>
+          <div className="hidden md:flex px-6 pt-6 pb-3 items-center gap-3">
             <ClerkCharacter variant={variant} size={36} />
             <div>
-              <div className="font-plex text-[15px] font-medium">Here's where I'd put these.</div>
+              <div className="font-plex text-[15px] font-medium">Here's what I'd do.</div>
               <div className="font-plex-mono text-[11px] text-muted-foreground">
-                Tap a column to change it.
+                Tap a column to move anything.
               </div>
             </div>
           </div>
-          <div className="max-h-[60vh] overflow-y-auto px-6 pb-2 space-y-3">
+          <div className="md:hidden px-5 pt-3 pb-2 font-plex-mono text-[11px] text-muted-foreground">
+            Tap a column to move anything.
+          </div>
+          <div className="max-h-[60vh] md:max-h-[60vh] overflow-y-auto px-5 md:px-6 pb-2 space-y-3">
             {proposals?.map((p, i) => (
               <div key={i} className="rounded-[12px] border border-[#D7D7D7] bg-white/50 p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -807,7 +826,7 @@ export default function AppHome() {
               </div>
             ))}
           </div>
-          <div className="flex gap-2 px-6 py-4 border-t border-divider">
+          <div className="flex gap-2 px-5 md:px-6 py-4 border-t border-divider pb-[max(env(safe-area-inset-bottom),16px)]">
             <button
               onClick={acceptProposals}
               className="flex-1 rounded-full bg-foreground py-2.5 text-[13px] font-medium text-background"
