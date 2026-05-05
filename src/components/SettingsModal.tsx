@@ -103,8 +103,9 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
           }}
         >
           {/* ── HEADER ── */}
+          <MobileDragHandle />
           <div
-            className="flex items-center justify-between px-5 py-4 border-b border-black/[0.06]"
+            className="hidden md:flex items-center justify-between px-5 py-4 border-b border-black/[0.06]"
             style={{ background: "rgba(245,245,243,0.85)", backdropFilter: "blur(12px)" }}
           >
             <button
