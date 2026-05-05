@@ -86,7 +86,7 @@ export default function ResetPassword() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={!ready}
-            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-[14px] outline-none focus:border-foreground/40 disabled:opacity-50"
+            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-[16px] md:text-[14px] outline-none focus:border-foreground/40 disabled:opacity-50"
           />
           <input
             type="password"
@@ -96,8 +96,11 @@ export default function ResetPassword() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             disabled={!ready}
-            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-[14px] outline-none focus:border-foreground/40 disabled:opacity-50"
+            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-[16px] md:text-[14px] outline-none focus:border-foreground/40 disabled:opacity-50"
           />
+          <p className="font-mono-plex text-[11px] text-muted-foreground leading-[1.5] px-1">
+            8+ characters. Avoid common passwords (we check against known breaches).
+          </p>
           <button
             disabled={loading || !ready}
             className="w-full rounded-full bg-foreground py-3 font-plex text-[14px] font-medium text-background disabled:opacity-50"
