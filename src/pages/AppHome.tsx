@@ -234,6 +234,41 @@ export default function AppHome() {
     bubbleTimer.current = window.setTimeout(() => setBubbleVisible(false), ms);
   }
 
+  /**
+   * Fires PostHog events + unlock overlays when streak/tasks cross thresholds.
+   * Each unlock celebration is one-shot per user (localStorage flag).
+   */
+  function maybeFireUnlocks(
+    prevStreak: number,
+    nextStreak: number,
+    prevTasks: number,
+    nextTasks: number,
+  ) {
+    if (typeof window === "undefined") return;
+
+    if (prevStreak < 7 && nextStreak >= 7) {
+      track("streak_7_reached", { streak: nextStreak });
+      if (localStorage.getItem("clerk:unlock_rex_seen") !== "1") {
+        localStorage.setItem("clerk:unlock_rex_seen", "1");
+        setUnlockOverlay({
+          character: "rex",
+          message: "Seven days in a row. That's not luck — that's a habit forming. I'm Rex. Let's keep this engine running.",
+        });
+      }
+    }
+
+    if (prevTasks < 30 && nextTasks >= 30) {
+      track("tasks_30_reached", { tasks: nextTasks });
+      if (localStorage.getItem("clerk:unlock_frank_seen") !== "1") {
+        localStorage.setItem("clerk:unlock_frank_seen", "1");
+        setUnlockOverlay({
+          character: "frank",
+          message: "Thirty tasks done. You actually did the things you said you'd do. I don't say this often: I'm impressed. — Frank.",
+        });
+      }
+    }
+  }
+
   // Route global clerkSay() messages through the in-input Clerk bubble.
   useEffect(() => {
     return subscribeClerk((msg, duration) => showBubble(msg, duration));
