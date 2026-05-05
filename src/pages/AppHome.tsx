@@ -9,7 +9,7 @@ import { AppBar } from "@/components/AppBar";
 import { MoveTaskSheet } from "@/components/MoveTaskSheet";
 import { MobileDragHandle } from "@/components/ui/drag-handle";
 import { LongPressHint } from "@/components/LongPressHint";
-import { type CharacterVariant, normalizeCharacter, LEGACY_CHARACTERS } from "@/lib/characters";
+import { type CharacterVariant, normalizeCharacter } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
 import { isNewDay, planCarryOver } from "@/lib/carry-over";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
@@ -184,9 +184,9 @@ export default function AppHome() {
           return;
         }
         const char = normalizeCharacter(p.character);
-        // Silent migration: legacy 'blue' / 'coral' values get persisted as 'wes'.
-        if (p.character && LEGACY_CHARACTERS.has(p.character)) {
-          supabase.from("profiles").update({ character: "wes" }).eq("id", user.id);
+        // Silent migration: persist any legacy character value as the normalized form.
+        if (p.character && p.character !== char) {
+          supabase.from("profiles").update({ character: char }).eq("id", user.id);
         }
         const vm = (p.view_mode as ViewMode) ?? "focus";
         setProfile({
