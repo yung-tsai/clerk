@@ -157,18 +157,25 @@ export default function Auth() {
             placeholder="you@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-[14px] outline-none focus:border-foreground/40"
+            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-[16px] md:text-[14px] outline-none focus:border-foreground/40"
           />
           {mode !== "forgot" && (
-            <input
-              type="password"
-              required
-              minLength={8}
-              placeholder="Password (8+ characters)"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-border bg-white px-4 py-3 text-[14px] outline-none focus:border-foreground/40"
-            />
+            <>
+              <input
+                type="password"
+                required
+                minLength={8}
+                placeholder="Password (8+ characters)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-border bg-white px-4 py-3 text-[16px] md:text-[14px] outline-none focus:border-foreground/40"
+              />
+              {mode === "signup" && (
+                <p className="font-mono-plex text-[11px] text-muted-foreground leading-[1.5] px-1">
+                  8+ characters. Avoid common passwords (we check against known breaches).
+                </p>
+              )}
+            </>
           )}
           <button
             disabled={loading || googleLoading}

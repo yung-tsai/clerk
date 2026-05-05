@@ -1,80 +1,33 @@
-## What I found
+Three small mobile UX fixes:
 
-The current code already includes the drag-handle modal changes, and the live published bundle at `getclerks.com` contains those updated modal styles. So if your phone still shows the old full-page-looking task/settings/completed screens after 12 hours and cache clearing, the likely cause is not the JS bundle itself — it is the app running in an installed/mobile web-app mode or browser session that is preserving viewport/app-shell behavior.
+## 1. iOS zoom on auth inputs
 
-I also found that Clerk is configured as installable:
-- `manifest.json` has `display: "standalone"`
-- `index.html` includes Apple mobile web app meta tags
-- there is no service worker, so this is not a classic PWA cache issue, but iOS can still pin install-related behavior and old app sessions more aggressively than normal tabs.
+`src/pages/Auth.tsx` and `src/pages/ResetPassword.tsx` use raw `<input>` tags with `text-[14px]`. iOS Safari zooms any input under 16px. We already fixed this everywhere else; these two pages were missed.
 
-## Plan
+**Fix:** change input classes from `text-[14px]` → `text-[16px] md:text-[14px]` on:
+- email + password inputs in `Auth.tsx` (3 inputs)
+- new password + confirm inputs in `ResetPassword.tsx` (2 inputs)
 
-### 1. Add a visible build/version footer in Settings
-Add the build timestamp/hash we discussed earlier, but make it practical for debugging:
-- Show a small version row at the bottom of Settings.
-- Include a short build hash and build time.
-- Make it easy to compare Preview vs published vs mobile.
+This is the same pattern we used for the AppBar/TaskDetailModal fix — full size on mobile so iOS doesn't zoom, smaller on desktop where zoom isn't a concern.
 
-This gives us a reliable way to answer: “Is this phone actually running the newest build?”
+## 2. Password requirements not visible
 
-### 2. Add a lightweight stale-build detector
-Add a small client-side check that compares the currently loaded build hash to a tiny generated version file.
+Right now the only feedback is "Password is known to be weak" *after* submit, with no upfront guidance. Supabase's password policy (Cloud default) requires 8+ characters and rejects breached passwords (HaveIBeenPwned check).
 
-Behavior:
-- On app load and when the tab becomes visible, check if a newer build exists.
-- If yes, show a soft in-app banner/toast: “New Clerk update available” with a “Refresh” action.
-- The refresh action reloads the page.
+**Fix:** add a small helper line under the password field on signup and the new-password fields on reset:
 
-Important: this will not add a service worker or full PWA caching. It is just a small published-version check.
+> `8+ characters. Avoid common passwords (we check against known breaches).`
 
-### 3. Update the Proposal modal for modal consistency
-The proposal modal currently still uses the older centered modal pattern and visible desktop close button behavior. I’ll update it to match the new mobile sheet language:
-- Add the mobile drag handle at the top.
-- Hide the default X on mobile.
-- Keep tap-outside behavior, but preserve the existing behavior where dismissing accepts proposals.
-- Make the header read more like the landing example: “Here’s what I’d do.” / “Tap a column to move anything.”
-- Keep desktop layout clean and unchanged where possible.
+Styled as `font-mono-plex text-[11px] text-muted-foreground` to match existing microcopy. Only shown on signup and reset-password screens, not signin.
 
-### 4. Improve the mobile task-detail/new-task modal layout
-Your screenshots show the modal is technically updated in code, but on actual mobile it still feels like a full-page editor with no obvious boundary, especially when Safari browser chrome is visible.
+## 3. Onboarding "skip demo" button stuck at bottom
 
-I’ll tighten this up by making mobile dialogs more obviously “sheets”:
-- Ensure the modal surface has a visible rounded top, subtle border, and background separation from the page.
-- Keep the drag handle visible at the very top.
-- Add safer bottom padding so the Delete button/input fields don’t get trapped behind Safari’s bottom toolbar.
-- Keep desktop behavior unchanged.
+On step 2 (the demo), `skip demo` is `fixed bottom-5 right-5`. On mobile the demo content is short and the button floats way below it in dead space. With Safari's chrome bar it's even further out of reach.
 
-### 5. Improve the last screenshot: inline input + keyboard state
-The last screenshot shows the bottom app bar/input fighting the iOS keyboard:
-- The input pill floats above the keyboard, but the separate action toolbar underneath it creates a lot of vertical clutter.
-- The dashed add-card stays visible high on the screen, which makes the focused input state feel visually disconnected.
-- The keyboard state should feel more like “I’m adding a task now,” not like the normal nav bar plus extra controls.
+**Fix:** move it to `fixed top-5 right-5` (same side as the progress dots area, but in the corner so it doesn't collide). Keep it small + faint so it stays a quiet escape hatch, not a primary action. Remove the safe-area-bottom padding since it's no longer at the bottom.
 
-I’ll improve this by adjusting the focused mobile input state:
-- When the input is focused on mobile, simplify the bottom bar so it becomes a compact compose state.
-- Keep the text field prominent.
-- Avoid showing extra navigation/menu affordances that compete with the keyboard.
-- Keep the normal AppBar/menu behavior when the keyboard is not open.
+## Files
 
-### 6. Verify the actual published behavior path
-After implementation, I’ll check the code paths that determine modal visibility and app-shell behavior:
-- confirm no service worker exists/registers
-- confirm version footer renders in Settings
-- confirm proposal modal uses the same mobile sheet treatment
-- confirm the input focused state is cleaner on mobile widths
-
-## Files I expect to touch
-
-- `vite.config.ts`
-- `src/vite-env.d.ts`
-- `src/App.tsx` or a small new update-check component
-- `src/pages/AppHome.tsx`
-- `src/components/SettingsModal.tsx`
-- `src/components/TaskDetailModal.tsx`
-- `src/components/AppBar.tsx`
-- possibly `src/components/ui/dialog.tsx`
-- possibly a generated/public version file pattern
-
-## One note about mobile installs
-
-Because the app is installable on iOS, if you are launching Clerk from a home-screen icon, iOS may keep older install metadata/session behavior even without a service worker. The version footer will tell us immediately whether that’s happening. If the footer shows the new version but the UI still looks old, then we’ll know it’s a responsive/layout issue rather than deployment/caching.
+- `src/pages/Auth.tsx` — bump input font-size on mobile, add password helper text under signup password field
+- `src/pages/ResetPassword.tsx` — bump input font-size on mobile, add password helper text
+- `src/pages/Onboarding.tsx` — move skip button from bottom-right to top-right
