@@ -153,7 +153,7 @@ export function AppBar({
                 }
               }}
               placeholder={thinking ? "Thinking..." : "What needs doing?"}
-              className="flex-1 min-w-0 w-0 border-none bg-transparent font-sans text-[14px] text-[#2A2A2A] placeholder:text-[#B0B0B0] outline-none px-2 py-1"
+              className="flex-1 min-w-0 w-0 border-none bg-transparent font-sans text-[16px] md:text-[14px] text-[#2A2A2A] placeholder:text-[#B0B0B0] outline-none px-2 py-1"
             />
 
             {/* Character */}
