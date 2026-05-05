@@ -14,6 +14,7 @@ import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { CHARACTERS, CHARACTER_LABELS, isUnlocked, UNLOCK_THRESHOLDS, type CharacterVariant } from "@/lib/characters";
 import { cn } from "@/lib/utils";
 import { clerkSay } from "@/lib/clerk-say";
+import { MobileDragHandle } from "@/components/ui/drag-handle";
 
 export interface SettingsData {
   display_name: string | null;
@@ -103,8 +104,9 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
           }}
         >
           {/* ── HEADER ── */}
+          <MobileDragHandle />
           <div
-            className="flex items-center justify-between px-5 py-4 border-b border-black/[0.06]"
+            className="hidden md:flex items-center justify-between px-5 py-4 border-b border-black/[0.06]"
             style={{ background: "rgba(245,245,243,0.85)", backdropFilter: "blur(12px)" }}
           >
             <button

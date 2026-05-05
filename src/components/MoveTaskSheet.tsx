@@ -1,5 +1,5 @@
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { MobileSheetHeader } from "@/components/ui/sheet-header";
+import { MobileDragHandle } from "@/components/ui/drag-handle";
 import { cn } from "@/lib/utils";
 import type { ClerkCol, TaskCardData } from "@/components/TaskCard";
 
@@ -28,9 +28,12 @@ export function MoveTaskSheet({ task, onOpenChange, onMove }: Props) {
     <Sheet open={!!task} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="p-0 rounded-t-[20px] border-t max-h-[80vh]"
+        className="p-0 rounded-t-[20px] border-t max-h-[80vh] [&>button]:hidden"
       >
-        <MobileSheetHeader title="Move task" onClose={() => onOpenChange(false)} />
+        <MobileDragHandle />
+        <div className="px-5 pt-1 pb-3 text-center text-[15px] font-semibold tracking-[-0.01em] text-[#1A1A1A] border-b border-black/[0.06]">
+          Move task
+        </div>
         {task && (
           <div className="px-5 pt-4 pb-6">
             <div className="font-plex text-[15px] text-[#2A2A2A] mb-4 line-clamp-2">

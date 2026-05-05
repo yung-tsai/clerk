@@ -16,6 +16,7 @@ import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { clerkSay } from "@/lib/clerk-say";
+import { MobileDragHandle } from "@/components/ui/drag-handle";
 
 interface Props {
   open: boolean;
@@ -127,8 +128,29 @@ export function CompletedModal({ open, onOpenChange, userId, variant }: Props) {
             }}
           >
             {/* Header */}
+            <MobileDragHandle />
+            {/* Mobile header: title + clear (no close — drag handle / tap-outside) */}
+            <div className="md:hidden flex items-center justify-between px-5 pt-1 pb-3 border-b border-black/[0.06]">
+              <span className="text-[15px] font-semibold tracking-[-0.01em] text-[#1A1A1A]">
+                Completed
+                {!loading && rows.length > 0 && (
+                  <span className="ml-2 font-mono-plex text-[11px] font-light text-[#9CA3AF]">
+                    {rows.length}{rows.length === 200 ? "+" : ""}
+                  </span>
+                )}
+              </span>
+              {rows.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmClear(true)}
+                  className="text-[12px] font-medium text-[#DC2626] hover:opacity-70 transition-opacity"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <div
-              className="flex items-center justify-between px-5 py-4 border-b border-black/[0.06]"
+              className="hidden md:flex items-center justify-between px-5 py-4 border-b border-black/[0.06]"
               style={{ background: "rgba(245,245,243,0.85)", backdropFilter: "blur(12px)" }}
             >
               <button
