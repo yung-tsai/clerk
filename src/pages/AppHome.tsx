@@ -626,7 +626,7 @@ export default function AppHome() {
   };
 
   // Idle fade — Focus view only; bubble visibility forces chrome back.
-  const anyModalOpen = !!proposals || settingsOpen || completedOpen || !!selectedTask;
+  const anyModalOpen = !!proposals || settingsOpen || completedOpen || !!selectedTask || !!moveSheetTask;
   const idleEnabled = view === "focus" && !anyModalOpen;
   const idle = useIdle(4000, idleEnabled);
   const focusIdleHidden = view === "focus" && idle && !bubbleVisible && !anyModalOpen;
