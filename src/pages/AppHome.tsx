@@ -94,6 +94,9 @@ export default function AppHome() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [completedOpen, setCompletedOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [moveSheetTask, setMoveSheetTask] = useState<Task | null>(null);
+  const [showLongPressHint, setShowLongPressHint] = useState(false);
+  const [firstCardEl, setFirstCardEl] = useState<HTMLDivElement | null>(null);
   const bubbleTimer = useRef<number | null>(null);
   const loadedOnce = useRef(false);
   // When the user moves a task within ~10s of accepting a sort, treat it
