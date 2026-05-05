@@ -1,5 +1,5 @@
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { MobileSheetHeader } from "@/components/ui/sheet-header";
+import { MobileDragHandle } from "@/components/ui/drag-handle";
 import { cn } from "@/lib/utils";
 import type { ClerkCol, TaskCardData } from "@/components/TaskCard";
 
