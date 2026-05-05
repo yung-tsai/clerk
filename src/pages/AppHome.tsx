@@ -1057,6 +1057,14 @@ export default function AppHome() {
       {showLongPressHint && isMobile && firstCardEl && !anyModalOpen && (
         <LongPressHint targetEl={firstCardEl} onDismiss={dismissLongPressHint} />
       )}
+
+      {/* ── Unlock celebration (Rex / Frank) ── */}
+      <UnlockCelebration
+        open={!!unlockOverlay}
+        character={unlockOverlay?.character ?? "rex"}
+        message={unlockOverlay?.message ?? ""}
+        onDismiss={() => setUnlockOverlay(null)}
+      )}
     </div>
   );
 }
