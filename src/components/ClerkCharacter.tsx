@@ -191,6 +191,9 @@ export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>
           fill={cfg.lidColor ?? cfg.bodyFill}
           clipPath={`url(#${clipIdR})`}
         />
+        {cfg.smileOnTop && (
+          <path d={cfg.smile} stroke="#000" strokeWidth={cfg.smileW} strokeLinecap="round" />
+        )}
       </svg>
     </button>
   );
