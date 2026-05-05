@@ -161,42 +161,13 @@ export function SettingsModal({ open, onOpenChange, data, onSave, onCharacterPre
 
               <div className="p-4">
                 <FieldLabel className="mb-2.5">Your Clerk</FieldLabel>
-                <div className="grid grid-cols-3 gap-2">
-                  {CHARACTERS.map((c) => {
-                    const unlocked = isUnlocked(c, data.tasks_completed);
-                    const threshold = UNLOCK_THRESHOLDS[c];
-                    return (
-                      <button
-                        key={c}
-                        type="button"
-                        disabled={!unlocked}
-                        onClick={() => unlocked && pickChar(c)}
-                        className={cn(
-                          "relative flex flex-col items-center gap-1.5 px-1.5 pt-3 pb-2.5 rounded-[14px] border-2 transition-all",
-                          !unlocked && "opacity-50 cursor-not-allowed bg-white/30 border-transparent",
-                          unlocked && character === c && "bg-white/90 border-[#1A1A1A]",
-                          unlocked && character !== c && "bg-white/40 border-transparent hover:bg-white/80 hover:-translate-y-0.5",
-                        )}
-                      >
-                        {!unlocked && (
-                          <span className="absolute top-1.5 right-1.5 text-[10px]" aria-hidden>🔒</span>
-                        )}
-                        <ClerkCharacter variant={c} size={40} animated={false} />
-                        <span className="font-mono-plex text-[9px] font-light text-[#6A7282] tracking-[0.04em]">
-                          {CHARACTER_LABELS[c]}
-                        </span>
-                        {!unlocked && threshold && (
-                          <span
-                            className="font-mono-plex text-[9px] font-light tracking-[0.04em]"
-                            style={{ color: "#9CA3AF" }}
-                          >
-                            {threshold} done
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                <CharacterPicker
+                  value={character}
+                  onChange={pickChar}
+                  streak={data.streak}
+                  tasksCompleted={data.tasks_completed}
+                  size="sm"
+                />
               </div>
             </Card>
 
