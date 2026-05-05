@@ -960,6 +960,26 @@ export default function AppHome() {
           variant={variant}
         />
       )}
+
+      {/* ── Move task sheet (mobile) ── */}
+      <MoveTaskSheet
+        task={moveSheetTask}
+        onOpenChange={(o) => {
+          if (!o) setMoveSheetTask(null);
+        }}
+        onMove={(col) => {
+          if (moveSheetTask) {
+            moveTask(moveSheetTask, col);
+            toast.success(`Moved to ${COL_TITLES[col]}`);
+          }
+          setMoveSheetTask(null);
+        }}
+      />
+
+      {/* ── First-task long-press coachmark (mobile, one-time) ── */}
+      {showLongPressHint && isMobile && firstCardEl && !anyModalOpen && (
+        <LongPressHint targetEl={firstCardEl} onDismiss={dismissLongPressHint} />
+      )}
     </div>
   );
 }
