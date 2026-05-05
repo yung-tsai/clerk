@@ -486,6 +486,28 @@ export default function AppHome() {
     track("task_moved", { from: prevCol, to: col, source: "modal" });
     fireMoveQuip(prevCol, col);
     await supabase.from("tasks").update({ col }).eq("id", t.id);
+    // Streak: if moving away from Today emptied it for the day, count it as cleared.
+    if (prevCol === "today" && col !== "today") void bumpStreakIfTodayCleared(t.id);
+  }
+
+  /** Bump streak when Today goes empty (whether by complete OR move). */
+  async function bumpStreakIfTodayCleared(excludeId?: string) {
+    if (!user || !profile) return;
+    const remaining = tasks.filter((x) => x.col === "today" && x.id !== excludeId).length;
+    if (remaining > 0) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const last = profile.last_active_date ?? null;
+    if (last === today) return; // already counted today
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const prevStreak = profile.streak ?? 0;
+    const nextStreak = last === yesterday ? prevStreak + 1 : 1;
+    setProfile({ ...profile, streak: nextStreak, last_active_date: today });
+    maybeFireUnlocks(prevStreak, nextStreak, profile.tasks_completed, profile.tasks_completed);
+    const supabase = await getLovableCloudClient();
+    await supabase
+      .from("profiles")
+      .update({ streak: nextStreak, last_active_date: today })
+      .eq("id", user.id);
   }
 
   function handleAddToColumn(col: ClerkCol) {
