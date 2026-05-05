@@ -36,7 +36,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
-  const [character, setCharacter] = useState<CharacterVariant>("wes");
+  const [character, setCharacter] = useState<CharacterVariant>("wes:v1");
   const [tasksDraft, setTasksDraft] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -207,47 +207,16 @@ function CharacterStep({
         Pick your Clerk, {name || "friend"}.
       </h2>
       <p className="font-plex-mono text-[12px] font-light text-muted-foreground text-center mb-7 sm:mb-9">
-        Three Wes flavors. v3 unlocks as you go.
+        Three personalities. Two looks each. Pick what fits your vibe.
       </p>
 
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full mb-7 sm:mb-8">
-        {CHARACTERS.map((c) => {
-          const unlocked = isUnlocked(c, 0);
-          const threshold = UNLOCK_THRESHOLDS[c];
-          return (
-            <button
-              key={c}
-              type="button"
-              disabled={!unlocked}
-              onClick={() => unlocked && setCharacter(c)}
-              className={cn(
-                "relative flex flex-col items-center gap-2 px-2 pt-3 sm:pt-4 pb-3 sm:pb-3.5 rounded-[18px] border-2 bg-white/50 transition-all",
-                !unlocked && "opacity-55 cursor-not-allowed",
-                unlocked && character === c && "bg-white/90 border-foreground",
-                unlocked && character !== c && "border-transparent hover:bg-white/80 hover:-translate-y-0.5",
-                !unlocked && "border-transparent",
-              )}
-            >
-              {!unlocked && (
-                <span className="absolute top-2 right-2 text-[11px]" aria-hidden>🔒</span>
-              )}
-              <div className="h-10 flex items-center justify-center">
-                <ClerkCharacter variant={c} size={48} animated={false} />
-              </div>
-              <span className="font-plex-mono text-[10px] font-light text-muted-foreground tracking-[0.04em]">
-                {CHARACTER_LABELS[c]}
-              </span>
-              {!unlocked && threshold && (
-                <span
-                  className="font-plex-mono text-[9px] font-light tracking-[0.04em] leading-tight text-center"
-                  style={{ color: "#9CA3AF" }}
-                >
-                  {threshold} done
-                </span>
-              )}
-            </button>
-          );
-        })}
+      <div className="w-full mb-7 sm:mb-8">
+        <CharacterPicker
+          value={character}
+          onChange={setCharacter}
+          streak={0}
+          tasksCompleted={0}
+        />
       </div>
 
       <button
