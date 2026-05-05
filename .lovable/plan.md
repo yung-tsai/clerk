@@ -1,77 +1,43 @@
-# Mobile move-between-columns + first-task hint
+## Goal
+Make all four mobile modals dismissible the same way: **iOS-style drag handle on top + tap-outside to close**. No header bar, no explicit Close button on mobile. Desktop behavior is unchanged.
 
-## Part 1 — Replace chip with long-press → Move sheet
+## Affected modals
+1. **Settings** (`src/components/SettingsModal.tsx`)
+2. **Completed** (`src/components/CompletedModal.tsx`)
+3. **Task detail** (`src/components/TaskDetailModal.tsx`) — also covers the per-column "+" new-task flow, since `handleAddToColumn` opens this same modal with a draft.
+4. **Move task sheet** (`src/components/MoveTaskSheet.tsx`) — already uses Radix sheet; will get the same treatment for consistency.
 
-The mobile column chip is the wrong affordance: it adds clutter to every card and competes with the card tap. Replace it with a long-press gesture that opens a bottom "Move task" sheet.
+(The AppBar pop-up menu in IMG_1611 is a popover, not a modal — tapping outside already closes it. Out of scope unless you flag it.)
 
-**Interaction (mobile only, <768px):**
-- Short tap card → opens Task Detail modal (unchanged).
-- Long-press card (~400ms) → opens "Move task" sheet with 4 large column buttons. Tap a column → moves task, sheet closes, toast confirms.
-- Vertical drag inside a column → reorder (unchanged).
-- Cross-column drag is disabled on mobile (long-press is the move path; horizontal drag fights the column swipe).
+## Approach
 
-**Files:**
+### 1. Add a shared `MobileDragHandle` component
+New file `src/components/ui/drag-handle.tsx` — a small centered pill (`h-1 w-9 rounded-full bg-black/15`) with ~10px top padding. Used at the top of every mobile sheet body.
 
-- **`src/components/TaskCard.tsx`**
-  - Remove the column chip + Popover and `onMoveCol` prop entirely.
-  - Add `onLongPress?: () => void` prop. Implement via pointerdown timer (400ms), cancelled on pointermove >6px or pointerup. When fired, suppress the subsequent click and skip `onOpen`.
-  - Keep existing drag listeners; long-press timer runs alongside and only fires if no drag movement occurred.
+### 2. Update `DialogContent` (`src/components/ui/dialog.tsx`)
+- On mobile, the X button in the top-right corner is currently always shown. Hide it on mobile (`[&>button]:hidden md:[&>button]:inline-flex` is already a per-modal opt-out — we'll bake it into the base so every Dialog gets it for free).
+- Tap-outside-to-close already works (Radix default via overlay click). No change needed.
+- Add a small mobile-only safe-area top padding so the drag handle sits cleanly under the notch.
 
-- **`src/components/MoveTaskSheet.tsx`** (new)
-  - Bottom `Sheet` with `MobileSheetHeader` ("Move task" + Close).
-  - Props: `task`, `onOpenChange`, `onMove(col)`.
-  - Renders 4 column buttons using existing column swatches (`#CEDAFF`, `#FFF7CE`, `#CEFFE7`, `#FFCEFB`). Current column is dimmed and labeled "Current".
-  - Tap → call `onMove`, close sheet, fire sonner toast ("Moved to Tomorrow").
+### 3. Replace mobile headers in each modal
+- **TaskDetailModal**: remove the `MobileSheetHeader` block; render `<MobileDragHandle />` instead at the top of the scroll container.
+- **SettingsModal**: today renders a custom mobile header with a "Close" text button (lines ~110-119). Replace with `<MobileDragHandle />` on mobile; keep desktop layout intact.
+- **CompletedModal**: same — replace the "Close" button (lines ~134-143) with `<MobileDragHandle />` on mobile.
+- **MoveTaskSheet**: it's a bottom Sheet using `MobileSheetHeader`. Swap the header for `<MobileDragHandle />` and a small inline title row (so the user still sees "Move task").
 
-- **`src/pages/AppHome.tsx`**
-  - Add `moveSheetTask` state at page level. Render `<MoveTaskSheet>` once, calling existing `moveTask(t, col)`.
-  - Thread `onLongPress={() => setMoveSheetTask(t)}` down through `FocusView` / `PlannerView` / `PlannerMobile` / `PlannerDesktop` / `DroppableColumn` to `TaskCard`. Gate on `useIsMobile()` so desktop passes `undefined`.
-  - Remove all `onMoveCol` plumbing added in the previous pass.
-  - dnd-kit: keep within-column reorder. Scope mobile collision so cross-column drops are ignored (within-column reorder still works).
+### 4. Keep destructive confirmation flows unchanged
+The nested AlertDialogs (clear tasks, delete account, clear completed) stay as-is — they're confirm prompts, not the main modal.
 
-**Keep as-is from previous pass:** the viewport-locked planner layout and fixed bottom AppBar fix. That part addressed the original bug correctly.
-
-## Part 2 — First-task long-press hint (same PR)
-
-After a user creates their first task, show a one-time mobile coachmark teaching the long-press gesture.
-
-**Trigger:** mobile-only, fires once when task count transitions from 0 → ≥1, gated by `localStorage.clerk_hint_longpress_seen`.
-
-**UI:** small pill anchored above the user's first card (no full-screen modal):
-
-```
-┌──────────────────────────┐
-│  [first task card]       │
-│                          │
-│   Hold to move ↓         │  ← coachmark pill
-│   between columns        │
-│        [Got it]          │
-└──────────────────────────┘
-```
-
-- Backdrop is light (rgba(0,0,0,0.15)) — card stays visible and tappable for the gesture.
-- Dismisses on: tap "Got it", tap backdrop, OR after the user successfully long-presses any card once (whichever first).
-- Sets `localStorage.clerk_hint_longpress_seen = "1"` on dismiss; never shows again.
-
-**Files:**
-
-- **`src/components/LongPressHint.tsx`** (new)
-  - Fixed-position overlay anchored to the first task card via `getBoundingClientRect()` on mount + resize.
-  - Pure CSS pill with arrow, "Got it" button, light backdrop.
-  - Props: `targetEl: HTMLElement | null`, `onDismiss: () => void`.
-
-- **`src/pages/AppHome.tsx`**
-  - Add `showLongPressHint` state. On task list update, if `isMobile && tasks.length === 1 && !localStorage.getItem("clerk_hint_longpress_seen")`, set true.
-  - Track ref to first card; pass to `<LongPressHint>`. Dismiss handler clears state + writes localStorage.
-  - When `MoveTaskSheet` opens via long-press, also dismiss the hint (success path).
-
-## Out of scope
-- Drag-to-open-modal mid-gesture (too fragile on touch).
-- Second nudge for repeat modal-movers (revisit after we see usage).
-- Any change to Task Detail modal's "Move to" buttons.
+### 5. Drag-to-dismiss (gesture)
+Radix Dialog/Sheet doesn't support drag-down-to-dismiss natively. The drag handle will be **visual only** — tap outside or swipe-down on the OS browser still works, and the handle communicates "this is a sheet you can dismiss." If you want true drag-to-dismiss later, we'd swap to `vaul` Drawer (already in the project), but that's a bigger refactor — flagging for a follow-up if you want it.
 
 ## Files touched
-- `src/components/TaskCard.tsx` — remove chip, add long-press
-- `src/components/MoveTaskSheet.tsx` — new
-- `src/components/LongPressHint.tsx` — new
-- `src/pages/AppHome.tsx` — wire long-press + hint, render sheet, scope mobile drag, remove old `onMoveCol` plumbing
+- `src/components/ui/dialog.tsx` (hide X on mobile by default)
+- `src/components/ui/drag-handle.tsx` (new)
+- `src/components/SettingsModal.tsx`
+- `src/components/CompletedModal.tsx`
+- `src/components/TaskDetailModal.tsx`
+- `src/components/MoveTaskSheet.tsx`
+
+## Open question for after
+You mentioned another issue — ready to hear it once this plan is approved (or alongside, your call).
