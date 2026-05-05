@@ -1005,7 +1005,8 @@ function FocusView({
           dropTarget={dropTarget}
           activeId={activeId}
           onAddTask={onAddTask}
-          onMoveCol={onMoveCol}
+          onLongPress={onLongPress}
+          firstCardRef={firstCardRef}
         />
       </div>
     </div>
