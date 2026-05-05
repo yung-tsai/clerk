@@ -554,6 +554,9 @@ export default function AppHome() {
     if (!target) return;
     const { col: targetCol, index: insertIdx } = target;
 
+    // Mobile: cross-column drag is disabled — long-press → Move sheet is the path.
+    if (isMobile && targetCol !== activeTask.col) return;
+
     const colTasks = tasks.filter((x) => x.col === targetCol && x.id !== activeId);
     const before = colTasks[insertIdx - 1];
     const after = colTasks[insertIdx];
