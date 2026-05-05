@@ -604,6 +604,27 @@ export default function AppHome() {
   const variant: CharacterVariant = normalizeCharacter(profile?.character);
   const isMobile = useIsMobile();
 
+  // Show one-time long-press coachmark on mobile after the user has tasks.
+  useEffect(() => {
+    if (!isMobile) return;
+    if (tasks.length === 0) return;
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem("clerk_hint_longpress_seen") === "1") return;
+    setShowLongPressHint(true);
+  }, [isMobile, tasks.length]);
+
+  const dismissLongPressHint = () => {
+    setShowLongPressHint(false);
+    try {
+      localStorage.setItem("clerk_hint_longpress_seen", "1");
+    } catch {}
+  };
+
+  const handleLongPress = (t: Task) => {
+    setMoveSheetTask(t);
+    if (showLongPressHint) dismissLongPressHint();
+  };
+
   // Idle fade — Focus view only; bubble visibility forces chrome back.
   const anyModalOpen = !!proposals || settingsOpen || completedOpen || !!selectedTask;
   const idleEnabled = view === "focus" && !anyModalOpen;
