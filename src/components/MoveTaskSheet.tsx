@@ -28,7 +28,7 @@ export function MoveTaskSheet({ task, onOpenChange, onMove }: Props) {
     <Sheet open={!!task} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="p-0 rounded-t-[20px] border-t max-h-[80vh] [&>button]:hidden"
+        className="p-0 rounded-t-[20px] border-t max-h-[80dvh] [&>button]:hidden"
       >
         <MobileDragHandle />
         <div className="px-5 pt-1 pb-3 text-center text-[15px] font-semibold tracking-[-0.01em] text-[#1A1A1A] border-b border-black/[0.06]">
