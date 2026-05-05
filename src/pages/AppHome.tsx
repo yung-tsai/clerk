@@ -1165,7 +1165,7 @@ function PlannerMobile({
                   activeId={activeId}
                   onAddTask={onAddTask}
                   onLongPress={onLongPress}
-                firstCardRef={firstCardRef}
+                  firstCardRef={i === 0 ? firstCardRef : undefined}
                 />
               </div>
             </div>
