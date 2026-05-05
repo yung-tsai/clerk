@@ -218,6 +218,8 @@ type VariantCfg = {
   lidColor?: string;
   /** Visual scale multiplier vs. requested `size`. Lets us nudge characters that read smaller. */
   renderScale?: number;
+  /** Render the `smile`/brow path on top of the eyes (used when it's actually an eyebrow that should overlap). */
+  smileOnTop?: boolean;
 };
 
 // Wes v1 — peaked blob with three humps on top
