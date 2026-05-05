@@ -20,6 +20,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SettingsModal } from "@/components/SettingsModal";
 import { CompletedModal } from "@/components/CompletedModal";
 import { TaskDetailModal, type TaskPatch } from "@/components/TaskDetailModal";
+import { UnlockCelebration } from "@/components/UnlockCelebration";
 import { cn } from "@/lib/utils";
 import { track, identify, resetAnalytics } from "@/lib/analytics";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -98,6 +99,7 @@ export default function AppHome() {
   const [moveSheetTask, setMoveSheetTask] = useState<Task | null>(null);
   const [showLongPressHint, setShowLongPressHint] = useState(false);
   const [firstCardEl, setFirstCardEl] = useState<HTMLDivElement | null>(null);
+  const [unlockOverlay, setUnlockOverlay] = useState<{ character: "rex" | "frank"; message: string } | null>(null);
   const bubbleTimer = useRef<number | null>(null);
   const loadedOnce = useRef(false);
   // When the user moves a task within ~10s of accepting a sort, treat it
