@@ -969,7 +969,8 @@ function FocusView({
   dropTarget,
   activeId,
   onAddTask,
-  onMoveCol,
+  onLongPress,
+  firstCardRef,
 }: {
   tasks: Task[];
   onComplete: (t: Task) => void;
@@ -977,7 +978,8 @@ function FocusView({
   dropTarget: { col: ClerkCol; index: number } | null;
   activeId: string | null;
   onAddTask: (col: ClerkCol) => void;
-  onMoveCol?: (t: Task, col: ClerkCol) => void;
+  onLongPress?: (t: Task) => void;
+  firstCardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const today = new Date();
   return (
