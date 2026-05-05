@@ -78,7 +78,7 @@ export function TaskDetailModal({ task, onOpenChange, onPatch, onMove, onDelete 
           </span>
           <span className="w-[40px]" aria-hidden />
         </div>
-        <div className="overflow-y-auto max-h-[92vh] md:max-h-none pb-[max(env(safe-area-inset-bottom),32px)] md:pb-0">
+        <div className="overflow-y-auto max-h-[86dvh] md:max-h-none pb-[max(env(safe-area-inset-bottom),32px)] md:pb-0">
         <div className="grid md:grid-cols-[1fr_280px] gap-0">
           {/* Left */}
           <div className="p-7 pr-5 flex flex-col gap-7 min-w-0">
