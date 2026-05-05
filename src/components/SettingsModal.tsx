@@ -14,6 +14,7 @@ import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { CHARACTERS, CHARACTER_LABELS, isUnlocked, UNLOCK_THRESHOLDS, type CharacterVariant } from "@/lib/characters";
 import { cn } from "@/lib/utils";
 import { clerkSay } from "@/lib/clerk-say";
+import { MobileDragHandle } from "@/components/ui/drag-handle";
 
 export interface SettingsData {
   display_name: string | null;
