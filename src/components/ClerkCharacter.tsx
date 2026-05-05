@@ -98,8 +98,9 @@ export const ClerkCharacter = forwardRef<HTMLButtonElement, ClerkCharacterProps>
     onClick?.();
   };
 
-  const w = size;
-  const h = (size / cfg.viewW) * cfg.viewH;
+  const scale = cfg.renderScale ?? 1;
+  const w = size * scale;
+  const h = (size / cfg.viewW) * cfg.viewH * scale;
   const clipIdL = `clerk-clip-l-${uid}`;
   const clipIdR = `clerk-clip-r-${uid}`;
   const gradId = `clerk-grad-${uid}`;
