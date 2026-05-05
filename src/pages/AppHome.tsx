@@ -663,6 +663,10 @@ export default function AppHome() {
   }
 
   const variant: CharacterVariant = normalizeCharacter(profile?.character);
+  // Route every quip through the active character's tone.
+  useEffect(() => {
+    setActiveTone(parseVariant(variant).character);
+  }, [variant]);
   const isMobile = useIsMobile();
 
   // Show one-time long-press coachmark on mobile after the user has tasks.
