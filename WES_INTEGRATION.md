@@ -9,7 +9,91 @@ How the Wes macOS desktop app connects to the Clerk Lovable Cloud backend.
 
 Both are safe to ship inside the Electron bundle. RLS enforces per-user isolation.
 
-## Auth — Google sign-in via OAuth loopback
+## Auth — Email/password (recommended for now)
+
+Google OAuth on the web app uses Lovable's managed broker (`lovable.auth.signInWithOAuth`). Wes can't use that broker — it would need its own provider secret in Cloud Auth settings, which isn't configured yet. **Until that's sorted, ship email/password as the primary (or only) sign-in method in Wes.**
+
+Use the Supabase JS SDK directly — no Lovable wrapper needed for password auth.
+
+### Client setup (password flow)
+
+```ts
+import { createClient } from '@supabase/supabase-js'
+
+export const supabase = createClient(URL, ANON_KEY, {
+  auth: {
+    persistSession: true,       // let supabase-js handle session restore
+    autoRefreshToken: true,
+    storage: electronSafeStorage, // see below
+  },
+})
+```
+
+### Sign in / sign up / reset
+
+```ts
+// Sign in
+const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+// Sign up (matches web app — 8+ chars, HIBP check is on)
+await supabase.auth.signUp({ email, password })
+// If email confirmation is required, data.session will be null — show
+// "check your email" UI, same as web Auth.tsx.
+
+// Forgot password — send the user back to the web app to reset
+await supabase.auth.resetPasswordForEmail(email, {
+  redirectTo: 'https://getclerks.com/reset-password',
+})
+```
+
+The web app already owns `/reset-password`. Don't try to handle recovery in Wes — opening the browser to getclerks.com is simpler and avoids another loopback flow.
+
+### Persistence — use Electron `safeStorage` (or keytar)
+
+`supabase-js` defaults to `localStorage`, which doesn't exist in the Electron main process and is plaintext in the renderer. Wrap Electron's `safeStorage` (Keychain-backed on macOS) as a `Storage`-shaped adapter:
+
+```ts
+import { safeStorage } from 'electron'
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs'
+import { join } from 'node:path'
+import { app } from 'electron'
+
+const file = (key: string) => join(app.getPath('userData'), `${key}.bin`)
+
+export const electronSafeStorage = {
+  getItem: (key: string) => {
+    const p = file(key)
+    if (!existsSync(p)) return null
+    try { return safeStorage.decryptString(readFileSync(p)) } catch { return null }
+  },
+  setItem: (key: string, value: string) => {
+    writeFileSync(file(key), safeStorage.encryptString(value))
+  },
+  removeItem: (key: string) => {
+    const p = file(key); if (existsSync(p)) unlinkSync(p)
+  },
+}
+```
+
+`keytar` is also fine if you'd rather store in Keychain directly — same shape, different backend.
+
+### Sign out
+
+```ts
+await supabase.auth.signOut({ scope: 'local' }) // don't kill web sessions
+```
+
+`scope: 'local'` keeps the user's getclerks.com session alive in their browser. Independent sessions per device.
+
+### UI parity with web
+
+Mirror `src/pages/Auth.tsx` in the web repo: email field, password field (8+ chars), sign-in / sign-up / forgot-password modes, "check your email" state after signup. Same copy is fine.
+
+---
+
+## Auth — Google sign-in via OAuth loopback (deferred)
+
+> **Status:** Blocked on Google OAuth provider secret in Cloud → Users → Auth settings. Ship password auth first; come back to this once the secret is configured.
 
 Wes uses the standard native-app loopback pattern. **No `wes://` custom scheme.**
 
