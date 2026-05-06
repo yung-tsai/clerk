@@ -1,82 +1,96 @@
-# Characters + Gamification
+# Wes desktop — Google sign-in via loopback redirect
 
-## Model
-- **3 characters**: Wes (unlocked), Rex (locks until 7-day streak), Frank (locks until 30 lifetime tasks).
-- **Each has 2 body variants** (v1, v2). User picks character, then variant toggle below.
-- DB stores a single string like `"wes:v1"`, `"rex:v2"` in the existing `profiles.character` column. Legacy values (`wes`, `wes-v2`, `wes-v3`, `blue`, `coral`) migrate silently to `"wes:v1"`.
+Goal: let the Wes Electron app sign a user in with Google against the Clerk Lovable Cloud backend, using the OAuth loopback pattern (no `wes://` custom scheme), with an independent per-device session.
 
-## 1. Character refactor
+This plan covers **only the Clerk side** (redirect allow-list + a small helper). The Electron implementation lives in the Wes repo — I'll give you a spec for it but won't build it here.
 
-`src/lib/characters.ts` — rewrite:
-- `Character = "wes" | "rex" | "frank"`, `Variant = "v1" | "v2"`
-- `CharacterChoice = { character: Character; variant: Variant }`
-- `CHARACTER_META`: label, description, unlock rule (`{type:"none"} | {type:"streak", value:7} | {type:"tasks", value:30}`)
-- `parseCharacter(raw)` / `serializeCharacter(choice)` — handles legacy strings
-- `isCharacterUnlocked(character, { streak, tasksCompleted })`
-- `unlockHint(character)` → `"7-day streak"` / `"30 tasks done"` / `null`
+---
 
-`src/components/ClerkCharacter.tsx`:
-- Props become `{ character: Character; variant: Variant; ... }`
-- Refresh `wes:v2` config from new `wes-v2-2.svg` (uploaded)
-- Add `rex:v1`, `rex:v2`, `frank:v1`, `frank:v2` configs (parse paths/eyes/pupils from uploaded SVGs, gradient stops from each)
-- Drop `wes:v3`
-
-Assets to copy from uploads → `src/assets/`: `wes-v2-2.svg`, `rex.svg`, `rex-v2.svg`, `frank.svg`, `frank-v2.svg`. Delete `wes-v3.svg` from registry (file can stay).
-
-## 2. Selector UI (Onboarding step 2 + Settings)
+## How the flow works
 
 ```text
-┌─────────────────────────────────────────┐
-│   [Wes]      [Rex 🔒]    [Frank 🔒]     │  ← character row
-│  selected   7-day streak  30 tasks      │
-├─────────────────────────────────────────┤
-│         (  v1  ) ( v2 )                 │  ← variant toggle (only for selected)
-└─────────────────────────────────────────┘
+Wes (Electron)                Browser                  Lovable Cloud (Supabase)
+──────────────                ───────                  ────────────────────────
+1. start local HTTP
+   server on 127.0.0.1:<port>
+2. open system browser ─────► Google consent screen
+                              user approves ────────► Supabase OAuth callback
+                              Supabase redirects ◄───  with ?code=...
+3. browser hits
+   http://127.0.0.1:<port>/callback?code=...
+4. Wes exchanges code
+   for session ───────────────────────────────────►  supabase.auth
+                                                      .exchangeCodeForSession
+5. Wes stores refresh token
+   in OS keychain (keytar)
+6. local server shuts down,
+   browser shows "you can close this tab"
 ```
 
-- Locked character tiles are disabled, show 🔒 + unlock hint copy.
-- Variant toggle hidden when selected character is locked (it can't be selected anyway — picking a locked tile is a no-op).
-- Save fires on either change. AppBar mascot live-previews.
+Independent session = Wes holds its own refresh token in the macOS Keychain. Signing out of getclerks.com in the browser does not sign Wes out, and vice versa.
 
-Touched: `src/pages/Onboarding.tsx` (CharacterStep), `src/components/SettingsModal.tsx` (Profile card character grid).
+---
 
-## 3. Streak: cleared by complete OR move
+## What needs to change in Clerk (this project)
 
-`src/pages/AppHome.tsx` already bumps streak when completing a task and Today goes empty (~line 351). Extend so move/delete that empties Today also runs the same bump (extract to helper `bumpStreakIfTodayCleared(profile)`).
+### 1. Redirect URL allow-list (manual — you do this)
 
-## 4. Unlock celebrations
+I can't edit the allow-list from here. In Lovable:
 
-New `src/components/UnlockCelebration.tsx` — fullscreen overlay with mascot + speech bubble + dismiss.
-- Triggered from `AppHome.tsx` when streak crosses 7 (Rex) or `tasks_completed` crosses 30 (Frank).
-- Speech copy is placeholder — flag for Claude to rewrite (mascot voice = Claude's territory).
-- Persisted in localStorage so it fires once per user.
+- Desktop: Cloud icon → **Users** → **Auth settings** (gear) → **URL Configuration**
+- Mobile: … → Cloud → Users → Auth settings → URL Configuration
 
-## 5. PostHog events
+Add these to **Redirect URLs**:
 
-Add `track()` calls (analytics already wired):
-- `first_sort_completed` — once after first AI sort returns (localStorage guard).
-- `streak_7_reached` — same moment as Rex unlock.
-- `tasks_30_reached` — same moment as Frank unlock.
+```text
+http://127.0.0.1/*
+http://localhost/*
+```
 
-You build the 2-question surveys in PostHog targeting these event names. No in-app survey UI.
+Wildcards on the loopback host are the standard pattern — Electron picks a random free port each launch, so we can't pin one. Do **not** add `wes://...`.
 
-## 6. Settings stats
+Leave the existing web redirects (getclerks.com, lovable.app preview) alone.
 
-Already shows `🔥 day streak` and `✓ tasks done` tiles + milestone list. No change needed — the request is already satisfied.
+### 2. No code changes required in the Clerk web app
 
-## Out of scope
-- In-app survey UI
-- "Premium" framing (you confirmed auto-unlock only)
-- Mascot speech-bubble wording (Claude rewrites)
-- AI prompt / sort logic
+The web app keeps using `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`. Nothing about its flow changes.
 
-## Files
-- `src/lib/characters.ts` (rewrite)
-- `src/components/ClerkCharacter.tsx` (props + 5 variant configs, drop v3)
-- `src/components/UnlockCelebration.tsx` (new)
-- `src/pages/AppHome.tsx` (move-clears-streak, unlock triggers, event fires)
-- `src/pages/Onboarding.tsx` (new selector)
-- `src/components/SettingsModal.tsx` (new selector, uses streak+tasks for lock check)
-- `src/assets/` (5 new SVGs copied from uploads)
+### 3. Optional: a `wes-handshake` edge function (recommended, small)
 
-No DB schema changes — `streak`, `tasks_completed`, `character` already exist.
+Purpose: give Wes a single endpoint that returns the Supabase auth URL it should open, so the URL construction lives server-side and can change without shipping a new Wes build.
+
+- Path: `supabase/functions/wes-handshake/index.ts`
+- `verify_jwt = false` (pre-auth)
+- GET `?port=54321&state=<random>` → returns `{ authUrl, expiresAt }`
+- Builds `https://<project>.supabase.co/auth/v1/authorize?provider=google&redirect_to=http://127.0.0.1:54321/callback&...`
+- Validates `port` is in the loopback range and `state` is a UUID
+
+If you'd rather keep it dead simple, skip this and have Wes construct the URL itself. Not strictly needed.
+
+---
+
+## Spec for the Wes (Electron) side — for the Wes repo, not this one
+
+Hand this to whoever builds Wes:
+
+- Use `@supabase/supabase-js` with the **same project URL + anon key** already shared, plus `auth: { persistSession: false }` (we manage tokens ourselves).
+- On "Sign in with Google":
+  1. Start an `http.createServer` on `127.0.0.1:0` (random free port).
+  2. Open Google flow via `shell.openExternal(authUrl)` where `redirect_to` is `http://127.0.0.1:<port>/callback`.
+  3. In the local server's `/callback` handler: read `code` from the query, call `supabase.auth.exchangeCodeForSession(code)`, render a tiny "Signed in — you can close this tab" HTML response, then `server.close()`.
+  4. Take the resulting `session.refresh_token` and store it in **macOS Keychain via `keytar`** under service `com.getclerks.wes`, account = user id.
+  5. On app launch, read refresh token from keychain → `supabase.auth.setSession({ refresh_token, access_token: '' })` → it auto-refreshes.
+- Add a `state` param to the auth URL and verify it on callback (CSRF).
+- Timeout the local server after ~2 min if no callback arrives.
+- Sign out = `supabase.auth.signOut({ scope: 'local' })` + `keytar.deletePassword(...)`. `scope: 'local'` keeps the web session alive — that's what "independent session" means.
+
+---
+
+## What I'll do when you hit "Implement plan"
+
+Honestly, very little — most of the work is in the Wes repo and in the Cloud UI:
+
+1. (Optional) Scaffold the `wes-handshake` edge function if you want it.
+2. Write a short `WES_INTEGRATION.md` in this repo documenting the redirect URLs, the anon key, the table shape (already shared earlier), and the loopback flow, so the Wes repo has a single source of truth to point at.
+
+Tell me if you want the edge function included or skipped, and whether the markdown doc is useful or noise.
