@@ -51,6 +51,10 @@ function daysUntilNamedDay(name: string, today: Date): number | null {
  * Returns null if no change needed.
  */
 function nextColForTask(t: CarryTask, today: Date): ClerkCol | null {
+  // Don't roll over tasks that were just created today — they're freshly
+  // planned (e.g. inserted by Wes as 'tomorrow'), not stale from yesterday.
+  if (isSameLocalDay(t.created_at, today)) return null;
+
   // tomorrow always becomes today on a new day
   if (t.col === "tomorrow") return "today";
 
