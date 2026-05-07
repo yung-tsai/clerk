@@ -1,0 +1,237 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Clerk design system. All colors HSL. */
+
+@layer base {
+  :root {
+    /* Core palette (Clerk) */
+    --background: 60 11% 96%;        /* #F5F5F3 */
+    --foreground: 210 11% 9%;         /* #11181C / #1A1A1A range */
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 11% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 11% 9%;
+
+    /* Character blue #567CF8 */
+    --primary: 224 92% 66%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Logo blue #3467FF */
+    --logo-blue: 222 100% 60%;
+
+    --secondary: 60 11% 92%;
+    --secondary-foreground: 210 11% 9%;
+
+    --muted: 60 11% 94%;
+    --muted-foreground: 218 11% 47%;  /* #6A7282 */
+    --faint: 218 11% 65%;              /* #9CA3AF */
+
+    --accent: 60 11% 92%;
+    --accent-foreground: 210 11% 9%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 84%;                /* #D7D7D7 */
+    --divider: 60 6% 94%;              /* #F0F0EF */
+    --input: 0 0% 84%;
+    --ring: 224 92% 66%;
+
+    --radius: 0.75rem;
+
+    /* Card spec */
+    --card-bg-translucent: 0 0% 100% / 0.5;
+
+    /* Tag colors */
+    --tag-blue: 224 100% 90%;          /* #CEDAFF */
+    --tag-yellow: 50 100% 90%;         /* #FFF7CE */
+    --tag-green: 145 100% 90%;         /* #CEFFE7 */
+    --tag-pink: 305 100% 90%;          /* #FFCEFB */
+
+    /* Soft warm landing background */
+    --landing-bg: 244 31% 95%;         /* #F0EFF8 */
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5% 26%;
+    --sidebar-primary: 240 6% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 240 6% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217 91% 60%;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 0 0% 98%;
+    --card: 222 47% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 224 92% 66%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 224 92% 66%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  .font-sans-plex { font-family: 'IBM Plex Sans', sans-serif; }
+  .font-mono-plex { font-family: 'IBM Plex Mono', monospace; }
+  .font-mono-jb   { font-family: 'JetBrains Mono', monospace; }
+
+  .clerk-card {
+    background: rgba(255,255,255,0.5);
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+  }
+
+  .landing-bg {
+    background:
+      radial-gradient(ellipse 65% 55% at 12% 18%, rgba(255,190,130,0.42) 0%, transparent 100%),
+      radial-gradient(ellipse 55% 50% at 88% 8%,  rgba(185,205,255,0.48) 0%, transparent 100%),
+      radial-gradient(ellipse 50% 60% at 62% 88%, rgba(200,215,255,0.35) 0%, transparent 100%),
+      radial-gradient(ellipse 48% 42% at 8%  88%, rgba(255,200,220,0.28) 0%, transparent 100%),
+      hsl(var(--landing-bg));
+    animation: bgDrift 16s ease-in-out infinite alternate;
+  }
+
+  .app-bg {
+    background:
+      radial-gradient(ellipse 60% 50% at 10% 10%, rgba(255,190,130,0.25) 0%, transparent 100%),
+      radial-gradient(ellipse 50% 45% at 90% 5%,  rgba(185,205,255,0.30) 0%, transparent 100%),
+      hsl(var(--background));
+  }
+}
+
+@keyframes bgDrift {
+  0%   { filter: hue-rotate(0deg)  brightness(1);    }
+  100% { filter: hue-rotate(18deg) brightness(0.97); }
+}
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+.animate-float { animation: float-soft 4s ease-in-out infinite; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fade-up 0.55s ease both; }
+
+/* ── Mascot float / thinking (matches reference HTML) ── */
+@keyframes char-float {
+  0%, 100% { transform: translateY(0px) rotate(-0.4deg); }
+  50%      { transform: translateY(-3px) rotate(0.4deg); }
+}
+@keyframes char-think {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+@keyframes char-squish {
+  0%   { transform: scale(1, 1); }
+  40%  { transform: scale(1.16, 0.87); }
+  70%  { transform: scale(0.93, 1.07); }
+  100% { transform: scale(1, 1); }
+}
+.char-float    { animation: char-float 3.4s ease-in-out infinite; will-change: transform; }
+.char-thinking { animation: char-think 0.8s ease-in-out infinite !important; }
+.char-squish   { animation: char-squish 0.28s ease forwards !important; }
+
+/* ── Speech bubble fade for rotating text ── */
+.bubble-text { transition: opacity 0.3s ease; }
+.bubble-text.fade-out { opacity: 0; }
+
+/* ── Preview card reveal ── */
+.preview-card-reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.preview-card-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Card fade-in ── */
+@keyframes card-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-card-in { animation: card-fade-in 0.25s ease both; }
+
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.94); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-bubble-in { animation: bubble-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both; transform-origin: bottom right; }
+
+/* No-scrollbar helper for planner horizontal scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Landing v2: dark cinematic hero ── */
+.hero-overlay-dark {
+  background:
+    linear-gradient(to right, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.15) 100%),
+    linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 40%);
+}
+@media (max-width: 768px) {
+  .hero-overlay-dark {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.7) 100%);
+  }
+}
+
+@keyframes scroll-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(6px); }
+}
+.animate-scroll-bounce { animation: scroll-bounce 2s ease-in-out infinite; }
+
+@keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.animate-cursor-blink { animation: cursor-blink 1s step-end infinite; }
+
+/* Respect reduced-motion: disable decorative animations + autoplay video */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-scroll-bounce,
+  .animate-cursor-blink {
+    animation: none !important;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  video[autoplay] {
+    display: none;
+  }
+}
+

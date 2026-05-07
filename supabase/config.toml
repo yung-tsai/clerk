@@ -1,0 +1,7 @@
+project_id = "jnhziusozbixowfvhloy"
+
+[functions.delete-account]
+verify_jwt = true
+
+[functions.sort-tasks]
+verify_jwt = true

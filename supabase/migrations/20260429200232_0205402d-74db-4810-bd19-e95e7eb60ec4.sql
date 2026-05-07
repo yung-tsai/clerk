@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS view_mode text NOT NULL DEFAULT 'focus';
