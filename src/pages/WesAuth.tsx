@@ -44,6 +44,12 @@ export default function WesAuth() {
     send();
   }, [loading, session, paramsValid, port, state, status]);
 
+  // Not signed in → bounce to /auth and come back here.
+  if (!loading && !session && paramsValid) {
+    const next = `/wes-auth?port=${port}&state=${encodeURIComponent(state)}`;
+    return <Navigate to={`/auth?next=${encodeURIComponent(next)}`} replace />;
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6">
       <div className="w-full max-w-[380px] flex flex-col items-center text-center">
