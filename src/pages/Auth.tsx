@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { toast } from "sonner";
 import { clerkSay } from "@/lib/clerk-say";
