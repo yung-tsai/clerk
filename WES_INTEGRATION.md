@@ -91,6 +91,104 @@ Mirror `src/pages/Auth.tsx` in the web repo: email field, password field (8+ cha
 
 ---
 
+## Auth — Google sign-in via browser handoff (recommended)
+
+The web app uses Lovable's **managed** Google OAuth broker. We're keeping it that way — no BYO Google credentials, no Google Cloud Console work, no provider-secret swap. Wes gets Google sign-in by punting to the browser, letting the user sign in to getclerks.com normally, and then handing the resulting session back to the desktop app over loopback.
+
+This flow also works for email/password sign-in for free — same handoff page.
+
+### Flow
+
+```text
+Wes (Electron)              Browser (getclerks.com)         Lovable Cloud
+──────────────              ───────────────────────         ─────────────
+1. Wes starts local server
+   on 127.0.0.1:<port>
+2. Wes opens browser ─────► /wes-auth?port=<port>&state=<uuid>
+3. /wes-auth checks for a
+   session. None? → /auth?next=/wes-auth?...
+4. User signs in (Google or
+   email) on the existing
+   web auth page ───────────────────────────────────────────► session created
+5. /wes-auth POSTs
+   { state, access_token,
+     refresh_token } to
+   http://127.0.0.1:<port>/handoff
+6. Wes verifies state,
+   stores tokens via
+   safeStorage, calls
+   supabase.auth.setSession(...)
+7. Page shows
+   "Signed into Wes — close
+   this tab"; local server
+   shuts down
+```
+
+### What Wes needs to do
+
+```ts
+import { createServer } from 'node:http'
+import { randomUUID } from 'node:crypto'
+import { shell } from 'electron'
+
+const state = randomUUID()
+
+const server = createServer((req, res) => {
+  // CORS preflight from getclerks.com
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': 'https://getclerks.com',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '600',
+    })
+    return res.end()
+  }
+
+  if (req.method !== 'POST' || req.url !== '/handoff') {
+    res.writeHead(404); return res.end()
+  }
+
+  let body = ''
+  req.on('data', chunk => { body += chunk })
+  req.on('end', async () => {
+    try {
+      const { state: s, access_token, refresh_token } = JSON.parse(body)
+      if (s !== state) throw new Error('state mismatch')
+      await supabase.auth.setSession({ access_token, refresh_token })
+      res.writeHead(200, {
+        'Access-Control-Allow-Origin': 'https://getclerks.com',
+        'Content-Type': 'application/json',
+      })
+      res.end(JSON.stringify({ ok: true }))
+      server.close()
+    } catch (err) {
+      res.writeHead(400, { 'Access-Control-Allow-Origin': 'https://getclerks.com' })
+      res.end(String(err))
+    }
+  })
+})
+
+server.listen(0, '127.0.0.1', () => {
+  const { port } = server.address() as { port: number }
+  shell.openExternal(`https://getclerks.com/wes-auth?port=${port}&state=${state}`)
+})
+
+// Timeout after 3 min
+setTimeout(() => server.close(), 3 * 60 * 1000)
+```
+
+### Notes
+
+- **State (CSRF):** Generate a UUID per attempt and reject any handoff whose `state` doesn't match.
+- **Port range:** Wes should let the OS pick (`listen(0, ...)`); the web page validates `port` is 1024–65535.
+- **CORS:** The browser fetches `http://127.0.0.1:<port>/handoff` from `https://getclerks.com`, so the local server must respond with `Access-Control-Allow-Origin: https://getclerks.com` on both the OPTIONS preflight and the POST.
+- **Persistence:** Same `safeStorage`-backed adapter described in the email/password section above. Don't roll a separate store for Google sessions.
+- **Independent session:** `signOut({ scope: 'local' })` only logs out Wes; the user stays signed in to getclerks.com.
+- **Local dev:** During Wes development, point the URL at `http://localhost:5173/wes-auth?...` (your local web dev server) and update the CORS origin accordingly.
+
+---
+
 ## Auth — Google sign-in via OAuth loopback (deferred)
 
 > **Status:** Blocked on Google OAuth provider secret in Cloud → Users → Auth settings. Ship password auth first; come back to this once the secret is configured.

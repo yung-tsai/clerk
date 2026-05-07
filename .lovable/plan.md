@@ -1,96 +1,92 @@
-# Wes desktop — Google sign-in via loopback redirect
+## Goal
 
-Goal: let the Wes Electron app sign a user in with Google against the Clerk Lovable Cloud backend, using the OAuth loopback pattern (no `wes://` custom scheme), with an independent per-device session.
+Get Google sign-in working in Wes **without** switching the web app off Lovable's managed Google OAuth. Web stays exactly as it is today; Wes gets Google via a browser handoff.
 
-This plan covers **only the Clerk side** (redirect allow-list + a small helper). The Electron implementation lives in the Wes repo — I'll give you a spec for it but won't build it here.
+## Why not Claude Code's plan
 
----
+Claude Code's three steps (create your own Google Cloud OAuth client → paste into Supabase → add `127.0.0.1` redirect) require switching this Supabase project's Google provider from **Lovable-managed** to **BYO credentials**. That's a one-way switch that affects the web app's consent screen and ownership model. You said keep web managed — so we route around it instead.
 
-## How the flow works
+## The approach: browser-assisted sign-in for Wes
 
 ```text
-Wes (Electron)                Browser                  Lovable Cloud (Supabase)
-──────────────                ───────                  ────────────────────────
-1. start local HTTP
+Wes (Electron)              Browser (getclerks.com)         Lovable Cloud
+──────────────              ───────────────────────         ─────────────
+1. Wes starts local
    server on 127.0.0.1:<port>
-2. open system browser ─────► Google consent screen
-                              user approves ────────► Supabase OAuth callback
-                              Supabase redirects ◄───  with ?code=...
-3. browser hits
-   http://127.0.0.1:<port>/callback?code=...
-4. Wes exchanges code
-   for session ───────────────────────────────────►  supabase.auth
-                                                      .exchangeCodeForSession
-5. Wes stores refresh token
-   in OS keychain (keytar)
-6. local server shuts down,
-   browser shows "you can close this tab"
+2. Wes opens browser ─────► /wes-auth?port=<port>&state=<uuid>
+3. User signs in (Google
+   or email) — uses the
+   web app's existing flow ────────────────────────────────► session created
+4. /wes-auth page detects
+   session, POSTs the
+   refresh_token + state
+   to http://127.0.0.1:<port>/handoff
+5. Wes verifies state,
+   stores refresh_token in
+   Electron safeStorage,
+   calls supabase.auth
+   .setSession(...)
+6. Browser shows "you can
+   close this tab"; local
+   server shuts down
 ```
 
-Independent session = Wes holds its own refresh token in the macOS Keychain. Signing out of getclerks.com in the browser does not sign Wes out, and vice versa.
+Independent session per device: Wes holds its own refresh token in Keychain (via `safeStorage`); web session is untouched.
 
----
+## What changes in this repo
 
-## What needs to change in Clerk (this project)
+### 1. New page: `src/pages/WesAuth.tsx` (route `/wes-auth`)
 
-### 1. Redirect URL allow-list (manual — you do this)
+- Reads `port` and `state` from query string. Validates `port` is 1024–65535 and `state` is a UUID.
+- If no session → renders the same `<Auth />` UI (or redirects to `/auth?next=/wes-auth?port=...&state=...`).
+- If session present → POSTs `{ refresh_token, access_token, state }` to `http://127.0.0.1:<port>/handoff`, then shows "Signed into Wes — you can close this tab."
+- Includes a "Cancel" link back to `/`.
+- Handles failure (port closed, fetch error) with a clear message and a "Try again in Wes" instruction.
 
-I can't edit the allow-list from here. In Lovable:
+### 2. Tiny tweak to `src/pages/Auth.tsx`
 
-- Desktop: Cloud icon → **Users** → **Auth settings** (gear) → **URL Configuration**
-- Mobile: … → Cloud → Users → Auth settings → URL Configuration
+- Honor a `?next=` query param: after successful sign-in (email or Google), redirect to `next` if it starts with `/wes-auth`. Today it hardcodes `/app` and `/onboarding`.
 
-Add these to **Redirect URLs**:
+### 3. Update `WES_INTEGRATION.md`
 
-```text
+- Add a third section: **"Google sign-in via browser handoff"** describing the `/wes-auth` flow, the JSON shape Wes must accept on `/handoff`, the state/CSRF check, and the timeout. Keep the deferred BYO loopback section as a "future option."
+
+## What Wes (Electron) needs to do — for the Wes repo
+
+- Start `http.createServer` on `127.0.0.1:0` listening for `POST /handoff`.
+- Open `https://getclerks.com/wes-auth?port=<port>&state=<uuid>` via `shell.openExternal`.
+- On `/handoff`: verify `state` matches, read `refresh_token` + `access_token`, respond 200, then `supabase.auth.setSession({ access_token, refresh_token })`. Store via `safeStorage` adapter (already documented).
+- Timeout after ~3 min, allow user to retry.
+- CORS: respond with `Access-Control-Allow-Origin: https://getclerks.com` on the OPTIONS preflight and the POST.
+
+## Manual config (you do this in Lovable Cloud → Users → Auth settings → URL Configuration)
+
+Add to **Redirect URLs** (still useful for future loopback option, harmless now):
+
+```
 http://127.0.0.1/*
 http://localhost/*
 ```
 
-Wildcards on the loopback host are the standard pattern — Electron picks a random free port each launch, so we can't pin one. Do **not** add `wes://...`.
+That's it. No Google Cloud Console work, no provider secret swap, no change to the web Google button.
 
-Leave the existing web redirects (getclerks.com, lovable.app preview) alone.
+## Tradeoffs vs pure loopback
 
-### 2. No code changes required in the Clerk web app
+- **Pro:** Zero change to managed Google OAuth. Web app untouched. One sign-in flow to maintain (the web one).
+- **Pro:** Works for both Google *and* email/password sign-in into Wes with no extra code.
+- **Con:** Requires the user to be online and have a browser open. (True of OAuth loopback too.)
+- **Con:** Slightly more moving parts than direct loopback — but the parts are small and live in code we control.
 
-The web app keeps using `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`. Nothing about its flow changes.
+## Out of scope
 
-### 3. Optional: a `wes-handshake` edge function (recommended, small)
+- No Google Cloud Console work.
+- No change to `lovable.auth.signInWithOAuth` on the web.
+- No edge functions.
+- Email/password fields in Wes are still recommended as a fallback (already in `WES_INTEGRATION.md`).
 
-Purpose: give Wes a single endpoint that returns the Supabase auth URL it should open, so the URL construction lives server-side and can change without shipping a new Wes build.
+## Files touched
 
-- Path: `supabase/functions/wes-handshake/index.ts`
-- `verify_jwt = false` (pre-auth)
-- GET `?port=54321&state=<random>` → returns `{ authUrl, expiresAt }`
-- Builds `https://<project>.supabase.co/auth/v1/authorize?provider=google&redirect_to=http://127.0.0.1:54321/callback&...`
-- Validates `port` is in the loopback range and `state` is a UUID
-
-If you'd rather keep it dead simple, skip this and have Wes construct the URL itself. Not strictly needed.
-
----
-
-## Spec for the Wes (Electron) side — for the Wes repo, not this one
-
-Hand this to whoever builds Wes:
-
-- Use `@supabase/supabase-js` with the **same project URL + anon key** already shared, plus `auth: { persistSession: false }` (we manage tokens ourselves).
-- On "Sign in with Google":
-  1. Start an `http.createServer` on `127.0.0.1:0` (random free port).
-  2. Open Google flow via `shell.openExternal(authUrl)` where `redirect_to` is `http://127.0.0.1:<port>/callback`.
-  3. In the local server's `/callback` handler: read `code` from the query, call `supabase.auth.exchangeCodeForSession(code)`, render a tiny "Signed in — you can close this tab" HTML response, then `server.close()`.
-  4. Take the resulting `session.refresh_token` and store it in **macOS Keychain via `keytar`** under service `com.getclerks.wes`, account = user id.
-  5. On app launch, read refresh token from keychain → `supabase.auth.setSession({ refresh_token, access_token: '' })` → it auto-refreshes.
-- Add a `state` param to the auth URL and verify it on callback (CSRF).
-- Timeout the local server after ~2 min if no callback arrives.
-- Sign out = `supabase.auth.signOut({ scope: 'local' })` + `keytar.deletePassword(...)`. `scope: 'local'` keeps the web session alive — that's what "independent session" means.
-
----
-
-## What I'll do when you hit "Implement plan"
-
-Honestly, very little — most of the work is in the Wes repo and in the Cloud UI:
-
-1. (Optional) Scaffold the `wes-handshake` edge function if you want it.
-2. Write a short `WES_INTEGRATION.md` in this repo documenting the redirect URLs, the anon key, the table shape (already shared earlier), and the loopback flow, so the Wes repo has a single source of truth to point at.
-
-Tell me if you want the edge function included or skipped, and whether the markdown doc is useful or noise.
+- New: `src/pages/WesAuth.tsx`
+- Edited: `src/App.tsx` (add `/wes-auth` route)
+- Edited: `src/pages/Auth.tsx` (honor `?next=` for `/wes-auth` only)
+- Edited: `WES_INTEGRATION.md` (add browser-handoff section)

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
 import { toast } from "sonner";
 import { clerkSay } from "@/lib/clerk-say";
@@ -11,6 +11,9 @@ type Mode = "signin" | "signup" | "forgot";
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextParam = searchParams.get("next");
+  const safeNext = nextParam && nextParam.startsWith("/wes-auth") ? nextParam : null;
   const [mode, setMode] = useState<Mode>("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,13 +54,13 @@ export default function Auth() {
         if (data.user) identify(data.user.id, { email: data.user.email ?? undefined });
         track("signup_completed", { method: "email" });
         clerkSay("Account created. Welcome.");
-        navigate("/onboarding");
+        navigate(safeNext ?? "/onboarding");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         if (data.user) identify(data.user.id, { email: data.user.email ?? undefined });
         track("signin_completed", { method: "email" });
-        navigate("/app");
+        navigate(safeNext ?? "/app");
       }
     } catch (err: any) {
       toast.error(err.message || "Something went wrong");
@@ -71,7 +74,7 @@ export default function Auth() {
     track("signup_started", { method: "google" });
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/app`,
+        redirect_uri: `${window.location.origin}${safeNext ?? "/app"}`,
       });
       if (result.error) {
         toast.error(result.error.message || "Could not sign in with Google");
@@ -82,8 +85,8 @@ export default function Auth() {
         // Browser is navigating to Google — nothing more to do.
         return;
       }
-      // Tokens received and session set — let AppHome decide where to go.
-      navigate("/app");
+      // Tokens received and session set — let the next page decide.
+      navigate(safeNext ?? "/app");
     } catch (err: any) {
       toast.error(err?.message || "Could not start Google sign-in");
       setGoogleLoading(false);
