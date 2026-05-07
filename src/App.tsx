@@ -8,6 +8,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import WesAuth from "./pages/WesAuth";
 import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import AppHome from "./pages/AppHome";
