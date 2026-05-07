@@ -54,13 +54,13 @@ export default function Auth() {
         if (data.user) identify(data.user.id, { email: data.user.email ?? undefined });
         track("signup_completed", { method: "email" });
         clerkSay("Account created. Welcome.");
-        navigate("/onboarding");
+        navigate(safeNext ?? "/onboarding");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         if (data.user) identify(data.user.id, { email: data.user.email ?? undefined });
         track("signin_completed", { method: "email" });
-        navigate("/app");
+        navigate(safeNext ?? "/app");
       }
     } catch (err: any) {
       toast.error(err.message || "Something went wrong");
