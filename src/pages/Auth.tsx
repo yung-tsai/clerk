@@ -74,7 +74,7 @@ export default function Auth() {
     track("signup_started", { method: "google" });
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/app`,
+        redirect_uri: `${window.location.origin}${safeNext ?? "/app"}`,
       });
       if (result.error) {
         toast.error(result.error.message || "Could not sign in with Google");
@@ -85,8 +85,8 @@ export default function Auth() {
         // Browser is navigating to Google — nothing more to do.
         return;
       }
-      // Tokens received and session set — let AppHome decide where to go.
-      navigate("/app");
+      // Tokens received and session set — let the next page decide.
+      navigate(safeNext ?? "/app");
     } catch (err: any) {
       toast.error(err?.message || "Could not start Google sign-in");
       setGoogleLoading(false);
