@@ -12,7 +12,20 @@ type CarryTask = {
   col: ClerkCol;
   title: string;
   due_date?: string | null;
+  created_at?: string | null;
 };
+
+// True if the ISO timestamp falls on the same local calendar day as `today`.
+function isSameLocalDay(iso: string | null | undefined, today: Date): boolean {
+  if (!iso) return false;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return false;
+  return (
+    d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate()
+  );
+}
 
 const DAYS = [
   "sunday",
