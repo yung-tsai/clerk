@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wes</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Login screen ─────────────────────────────────────────── -->
+  <div id="login-screen" class="hidden">
+    <div id="login-card">
+
+      <div id="win-controls">
+        <button id="close-btn"    title="Hide"></button>
+        <button id="minimize-btn" title="Minimize"></button>
+      </div>
+
+      <div id="login-face">
+        <svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="50" cy="46" rx="46" ry="42" fill="#4A90E2"/>
+          <rect x="18" y="18" width="64" height="9" rx="4.5" fill="#1a1a1a"/>
+          <ellipse cx="35" cy="46" rx="13" ry="15" fill="white"/>
+          <circle  cx="37" cy="48" r="8" fill="#1a1a1a"/>
+          <circle  cx="41" cy="43" r="3" fill="white"/>
+          <ellipse cx="65" cy="46" rx="13" ry="15" fill="white"/>
+          <circle  cx="67" cy="48" r="8" fill="#1a1a1a"/>
+          <circle  cx="71" cy="43" r="3" fill="white"/>
+        </svg>
+      </div>
+
+      <p id="login-title">Hey, I'm Wes</p>
+      <p id="login-sub">Sign in to see your tasks</p>
+
+      <input  type="email"    id="email-input"    placeholder="Email"    autocomplete="email" />
+      <input  type="password" id="password-input" placeholder="Password" autocomplete="current-password" />
+      <button id="signin-btn">Sign In</button>
+
+      <p id="login-status"></p>
+
+      <div class="or-divider"><span>or</span></div>
+
+      <button id="google-btn">
+        <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+          <path d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 6.294C4.672 4.167 6.656 3.58 9 3.58z" fill="#EA4335"/>
+        </svg>
+        Sign in with Google
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ── Wes mode ──────────────────────────────────────────────── -->
+  <div id="wes-mode" class="hidden">
+
+    <div id="wes-container">
+
+      <!-- Speech bubble -->
+      <div id="speech-bubble" class="hidden">
+        <span id="speech-text"></span>
+      </div>
+
+      <!-- Blob + badge -->
+      <div id="wes-wrapper">
+        <div id="wes">
+          <svg id="wes-svg" viewBox="0 0 148 113" xmlns="http://www.w3.org/2000/svg" fill="none">
+            <g filter="url(#filter0_dd)">
+              <path d="M69.5647 14C67.398 10.1667 62.0647 2 54.0647 2C42.0647 2 28.2181 9.52034 13.2631 44C-4.73688 85.5 3.56466 109 18.0647 109C29.6647 109 38.2314 99.3333 41.5647 95C42.5647 99.3333 47.7647 109 56.5647 109C65.3647 109 76.2313 100.333 80.5647 96C81.5647 100.333 85.9647 109 95.5647 109C107.565 109 123.763 103 138.065 63.5C149.331 32.3823 146.065 2 131.065 2C119.065 2 110.065 9.66667 107.065 13.5C106.398 9.66667 102.565 2 92.5647 2C82.5647 2 73.2313 10.1667 69.5647 14Z" fill="url(#wes-grad)"/>
+            </g>
+            <g filter="url(#filter1_dd)">
+              <ellipse cx="20.7236" cy="22.6998" rx="20.7236" ry="22.6998" transform="matrix(0.999672 0.0256145 -0.0245055 0.9997 79.6126 38.6416)" fill="white"/>
+            </g>
+            <g filter="url(#filter2_dd)">
+              <ellipse cx="20.7236" cy="22.6998" rx="20.7236" ry="22.6998" transform="matrix(0.999672 0.0256145 -0.0245055 0.9997 41.1385 37.6555)" fill="white"/>
+            </g>
+            <ellipse cx="10.3621" cy="12.6805" rx="10.3621" ry="12.6805" transform="matrix(0.99964 0.0268302 -0.0233948 0.999726 55.5933 47)" fill="#1a1a1a"/>
+            <ellipse cx="10.3621" cy="12.6805" rx="10.3621" ry="12.6805" transform="matrix(0.99964 0.0268302 -0.0233948 0.999726 93.5933 48)" fill="#1a1a1a"/>
+            <path d="M42.7007 36.6717C52.6002 33.0993 64.9631 29.5599 82.2067 29.7722C101.914 30.0148 114.185 33.8657 120.297 37.6374" stroke="#1a1a1a" stroke-width="5" stroke-linecap="round"/>
+            <ellipse id="blink-left"  cx="20.7236" cy="22.6998" rx="20.7236" ry="0" transform="matrix(0.999672 0.0256145 -0.0245055 0.9997 41.1385 37.6555)" fill="url(#wes-grad)"/>
+            <ellipse id="blink-right" cx="20.7236" cy="22.6998" rx="20.7236" ry="0" transform="matrix(0.999672 0.0256145 -0.0245055 0.9997 79.6126 38.6416)" fill="url(#wes-grad)"/>
+            <defs>
+              <linearGradient id="wes-grad" x1="142.5" y1="10" x2="13.5" y2="77" gradientUnits="userSpaceOnUse">
+                <stop offset="0.648" stop-color="#567CF8"/>
+                <stop offset="1" stop-color="#4167E2"/>
+              </linearGradient>
+              <filter id="filter0_dd" x="0" y="0" width="147.788" height="113" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                <feMorphology radius="1" operator="erode" in="SourceAlpha" result="effect1_dropShadow"/>
+                <feOffset dy="1"/><feGaussianBlur stdDeviation="1"/>
+                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+                <feBlend in2="BackgroundImageFix" result="effect1_dropShadow"/>
+                <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                <feOffset dy="1"/><feGaussianBlur stdDeviation="1.5"/>
+                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+                <feBlend in2="effect1_dropShadow" result="effect2_dropShadow"/>
+                <feBlend in="SourceGraphic" in2="effect2_dropShadow" result="shape"/>
+              </filter>
+              <filter id="filter1_dd" x="76.0487" y="37.166" width="47.4489" height="51.3987" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                <feMorphology radius="1" operator="erode" in="SourceAlpha" result="effect1_dropShadow"/>
+                <feOffset dy="1"/><feGaussianBlur stdDeviation="1"/>
+                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+                <feBlend in2="BackgroundImageFix" result="effect1_dropShadow"/>
+                <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                <feOffset dy="1"/><feGaussianBlur stdDeviation="1.5"/>
+                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+                <feBlend in2="effect1_dropShadow" result="effect2_dropShadow"/>
+                <feBlend in="SourceGraphic" in2="effect2_dropShadow" result="shape"/>
+              </filter>
+              <filter id="filter2_dd" x="37.5746" y="36.1799" width="47.4489" height="51.3987" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                <feMorphology radius="1" operator="erode" in="SourceAlpha" result="effect1_dropShadow"/>
+                <feOffset dy="1"/><feGaussianBlur stdDeviation="1"/>
+                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+                <feBlend in2="BackgroundImageFix" result="effect1_dropShadow"/>
+                <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                <feOffset dy="1"/><feGaussianBlur stdDeviation="1.5"/>
+                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+                <feBlend in2="effect1_dropShadow" result="effect2_dropShadow"/>
+                <feBlend in="SourceGraphic" in2="effect2_dropShadow" result="shape"/>
+              </filter>
+            </defs>
+          </svg>
+        </div>
+        <div id="badge" class="hidden">0</div>
+      </div>
+
+      <!-- Task panel -->
+      <div id="task-panel" class="hidden">
+        <div id="task-panel-inner">
+          <div id="panel-header">
+            <h3>Today</h3>
+            <button id="add-btn" type="button" title="Add task">+</button>
+          </div>
+          <ul id="task-list"></ul>
+          <div id="add-form" class="hidden">
+            <input id="add-input" type="text" placeholder="New task…" maxlength="120" autocomplete="off" />
+            <div id="col-picker">
+              <button type="button" class="col-btn active" data-col="today">Today</button>
+              <button type="button" class="col-btn" data-col="tomorrow">Tomorrow</button>
+              <button type="button" class="col-btn" data-col="upcoming">Upcoming</button>
+              <button type="button" class="col-btn" data-col="someday">Someday</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Mini Wes (when hidden) -->
+    <div id="mini-wes" class="hidden" title="Click to restore Wes">
+      <svg viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="18" cy="15" rx="10" ry="12" fill="white" opacity="0.92"/>
+        <circle  cx="20" cy="17" r="6"           fill="#1a1a1a"/>
+        <circle  cx="22" cy="14" r="2"           fill="white"/>
+        <ellipse cx="42" cy="15" rx="10" ry="12" fill="white" opacity="0.92"/>
+        <circle  cx="44" cy="17" r="6"           fill="#1a1a1a"/>
+        <circle  cx="46" cy="14" r="2"           fill="white"/>
+      </svg>
+    </div>
+
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
