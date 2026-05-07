@@ -20,12 +20,6 @@ export default function WesAuth() {
   const stateValid = UUID_RE.test(state);
   const paramsValid = portValid && stateValid;
 
-  // Not signed in → bounce to /auth and come back here.
-  if (!loading && !session && paramsValid) {
-    const next = `/wes-auth?port=${port}&state=${encodeURIComponent(state)}`;
-    return <Navigate to={`/auth?next=${encodeURIComponent(next)}`} replace />;
-  }
-
   useEffect(() => {
     if (loading || !session || !paramsValid || status !== "idle") return;
     const send = async () => {
