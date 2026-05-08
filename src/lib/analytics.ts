@@ -50,6 +50,15 @@ export function track(event: string, properties?: Record<string, unknown>) {
   }
 }
 
+export function capturePageview(properties?: Record<string, unknown>) {
+  if (!initialized) return;
+  try {
+    posthog.capture("$pageview", properties);
+  } catch {
+    /* swallow */
+  }
+}
+
 export function identify(userId: string, properties?: Record<string, unknown>) {
   if (!initialized) return;
   try {
