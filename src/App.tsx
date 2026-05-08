@@ -27,6 +27,7 @@ const App = () => (
         <Sonner />
         <UpdateBanner />
         <BrowserRouter>
+          <RouteTracker />
           <AuthProvider>
             <Routes>
               <Route path="/" element={<Landing />} />
