@@ -1,36 +1,71 @@
-## Problem
+## Why your PostHog data looks polluted
 
-When the web app loads on a new calendar day, `planCarryOver()` shifts every `col: "tomorrow"` task → `today`. That's correct for tasks the user planned yesterday — but it also catches tasks Wes (or anything else) just inserted with `col: "tomorrow"`, because the only check is "is today a new day vs. `last_active_date`?"
+Bots (and link scanners) crawl random URLs like `/cifinancial`, `/wp-admin`, `/.env`, etc. Because Clerk is a SPA:
 
-Result: a task Wes inserts as Tomorrow gets silently moved to Today the next time the web app opens on a different day from the last web visit.
+1. The server returns `index.html` with a **200** for any path.
+2. React Router renders `NotFound`, but PostHog's `capture_pageview: true` already fired a `$pageview` for that URL.
+3. Result: PostHog shows tons of "pages" that don't exist, inflating sessions, unique visitors, and bounce rate.
 
-## Fix
+`analytics.ts` currently has:
+```ts
+posthog.init(KEY, {
+  capture_pageview: true,
+  capture_pageleave: true,
+  ...
+});
+```
+No bot filter, no route allow-list, no 404 suppression.
 
-Add a "created today" guard to the rollover so a `tomorrow` task is only pulled forward to `today` if it was created **before today** (the user's local day).
+## Plan
 
-### Change 1 — `src/lib/carry-over.ts`
+Three small, layered fixes — defense in depth.
 
-- Extend `CarryTask` to include `created_at: string` (ISO timestamp from Supabase).
-- In `nextColForTask`, before returning `"today"` for a `tomorrow` task, compare the task's `created_at` date (in local time) to `today`. If they're the same calendar day, return `null` (leave it in Tomorrow).
-- Apply the same guard to the `upcoming → today` / `upcoming → tomorrow` branches for consistency, so a freshly-inserted `upcoming` task with a near due_date isn't yanked forward on first load.
-- Helper: `isSameLocalDay(iso: string, today: Date)` that compares year/month/date in local time.
+### 1. Tell PostHog to drop bot traffic
 
-### Change 2 — `src/pages/AppHome.tsx`
+In `src/lib/analytics.ts`, pass:
+```ts
+opt_out_useragent_filter: false, // (default) keep PostHog's built-in bot UA list
+before_send: (event) => {
+  // Drop events from headless / known crawlers PostHog might miss
+  const ua = navigator.userAgent || "";
+  if (/bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|axios|python-requests|curl|wget/i.test(ua)) {
+    return null;
+  }
+  return event;
+},
+```
+PostHog already filters common bots, but this catches the noisy ones (especially `HeadlessChrome` and scripted scrapers) that slip through.
 
-- The `Task` type already includes `created_at` (selected via `select("*")`), so `planCarryOver(loadedTasks)` will pass it through — no call-site changes needed beyond confirming the field flows in.
+### 2. Stop auto-capturing pageviews; capture them manually only for real routes
 
-### Change 3 — Tests (optional but cheap)
+Change to `capture_pageview: false` and add a tiny `RouteTracker` component inside `<BrowserRouter>` (in `src/App.tsx`) that calls `posthog.capture('$pageview')` **only when the matched route is one of our known routes** (`/`, `/auth`, `/wes-auth`, `/reset-password`, `/onboarding`, `/app`, `/privacy`, `/terms`).
 
-If `src/test/` has room, add a unit test covering:
-- `tomorrow` task created today → stays in `tomorrow`
-- `tomorrow` task created yesterday → moves to `today`
-- `upcoming` task created today with due_date today → stays in `upcoming`
+When the user lands on `*` (NotFound), we fire `pageview_404` with the path as a property instead — useful for debugging without polluting the main funnel.
 
-## Out of scope
+### 3. Tighten `public/robots.txt`
 
-- No DB migration. No trigger. No changes to Wes. No change to `last_active_date` stamping behavior.
-- No changes to AI prompt or sort logic (Claude's territory).
+Today it explicitly `Allow: /` for everyone, which encourages aggressive crawling of garbage paths. Switch to:
+```
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /onboarding
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /wes-auth
+```
+Keeps the marketing landing crawlable, blocks the app surface from being indexed, and signals well-behaved bots to stop probing app routes.
 
-## Why this works
+### What this fixes vs. doesn't
 
-`tasks.created_at` is set server-side by Postgres (`default now()`), so it's reliable regardless of which client (web or Wes) inserted the row. The guard means rollover only ever moves tasks the user planned on a previous day — exactly the original intent.
+- ✅ PostHog dashboards (sessions, pageviews, unique visitors, bounce rate) will reflect real users.
+- ✅ Random `/cifinancial`-style hits won't show up as "pages."
+- ⚠️ Won't stop bots from *requesting* the URL — only your own analytics. CDN/WAF rules would be needed to block at the edge, but that's overkill for what you're describing.
+
+## Files touched
+
+- `src/lib/analytics.ts` — add `before_send`, set `capture_pageview: false`, expose a `capturePageview()` helper.
+- `src/App.tsx` — add `<RouteTracker />` inside `<BrowserRouter>`.
+- `public/robots.txt` — disallow app routes.
+
+No backend or schema changes.

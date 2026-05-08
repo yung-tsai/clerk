@@ -16,11 +16,23 @@ export function initAnalytics() {
   try {
     posthog.init(POSTHOG_KEY, {
       api_host: POSTHOG_HOST,
-      capture_pageview: true,
+      capture_pageview: false,
       capture_pageleave: true,
       autocapture: false,
       persistence: "localStorage+cookie",
       person_profiles: "identified_only",
+      before_send: (event) => {
+        if (!event) return event;
+        const ua = (typeof navigator !== "undefined" && navigator.userAgent) || "";
+        if (
+          /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|axios|python-requests|curl|wget|phantom|puppeteer|playwright/i.test(
+            ua
+          )
+        ) {
+          return null;
+        }
+        return event;
+      },
     });
     initialized = true;
   } catch (err) {
@@ -33,6 +45,15 @@ export function track(event: string, properties?: Record<string, unknown>) {
   if (!initialized) return;
   try {
     posthog.capture(event, properties);
+  } catch {
+    /* swallow */
+  }
+}
+
+export function capturePageview(properties?: Record<string, unknown>) {
+  if (!initialized) return;
+  try {
+    posthog.capture("$pageview", properties);
   } catch {
     /* swallow */
   }
