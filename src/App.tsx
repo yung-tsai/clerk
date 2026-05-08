@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import { RouteTracker } from "@/components/RouteTracker";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import WesAuth from "./pages/WesAuth";
