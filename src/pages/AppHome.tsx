@@ -702,6 +702,16 @@ export default function AppHome() {
   const focusIdleHidden = view === "focus" && idle && !bubbleVisible && !anyModalOpen;
   const headerHiddenOnMobilePlanner = isMobile && view === "planner";
 
+  // Proactive nudges (overload / light day / avoidance) — single bubble at a time.
+  const { bubble: actionBubble, dismiss: dismissActionBubble } = useProactiveNudges({
+    tasks,
+    ready: loadedOnce.current && !!profile,
+    suppressed: anyModalOpen || thinking,
+    onMoveToSomeday: (t) => moveTask(t, "someday"),
+    onOpenMoveSheet: (t) => setMoveSheetTask(t),
+    onPullForward: (t) => moveTask(t, "today"),
+  });
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Fixed header ── (hidden on mobile when in Planner; faded when Focus is idle) */}
