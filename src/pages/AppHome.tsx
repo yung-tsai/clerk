@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { track, identify, resetAnalytics } from "@/lib/analytics";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIdle } from "@/hooks/use-idle";
+import { useProactiveNudges } from "@/hooks/use-proactive-nudges";
 import {
   DndContext,
   MouseSensor,
