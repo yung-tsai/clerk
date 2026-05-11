@@ -500,10 +500,10 @@ export default function AppHome() {
     if (!user || !profile) return;
     const remaining = tasks.filter((x) => x.col === "today" && x.id !== excludeId).length;
     if (remaining > 0) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     const last = profile.last_active_date ?? null;
     if (last === today) return; // already counted today
-    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const yesterday = localDateStr(new Date(Date.now() - 86_400_000));
     const prevStreak = profile.streak ?? 0;
     const nextStreak = last === yesterday ? prevStreak + 1 : 1;
     setProfile({ ...profile, streak: nextStreak, last_active_date: today });
