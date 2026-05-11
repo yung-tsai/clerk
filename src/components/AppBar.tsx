@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ClerkCharacter } from "@/components/ClerkCharacter";
+import { ActionBubble, type ActionBubbleData } from "@/components/ActionBubble";
 import type { CharacterVariant } from "@/lib/characters";
 import { cn } from "@/lib/utils";
 import { Calendar, Columns3, CheckCircle2, Settings, LogOut } from "lucide-react";
@@ -9,6 +10,9 @@ interface AppBarProps {
   thinking: boolean;
   bubble: string;
   bubbleVisible: boolean;
+  /** Interactive two-button bubble. Suppresses passive bubble while active. */
+  actionBubble?: ActionBubbleData | null;
+  onDismissActionBubble?: () => void;
   view: "focus" | "planner";
   inputValue: string;
   onInputChange: (v: string) => void;
@@ -24,6 +28,8 @@ export function AppBar({
   thinking,
   bubble,
   bubbleVisible,
+  actionBubble = null,
+  onDismissActionBubble,
   view,
   inputValue,
   onInputChange,
