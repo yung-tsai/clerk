@@ -815,6 +815,8 @@ export default function AppHome() {
             thinking={thinking}
             bubble={bubble}
             bubbleVisible={bubbleVisible}
+            actionBubble={actionBubble}
+            onDismissActionBubble={dismissActionBubble}
             view={view}
             inputValue={input}
             onInputChange={setInput}
