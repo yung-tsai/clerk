@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { track, identify, resetAnalytics } from "@/lib/analytics";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIdle } from "@/hooks/use-idle";
+import { useProactiveNudges } from "@/hooks/use-proactive-nudges";
 import {
   DndContext,
   MouseSensor,
@@ -500,10 +501,10 @@ export default function AppHome() {
     if (!user || !profile) return;
     const remaining = tasks.filter((x) => x.col === "today" && x.id !== excludeId).length;
     if (remaining > 0) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     const last = profile.last_active_date ?? null;
     if (last === today) return; // already counted today
-    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const yesterday = localDateStr(new Date(Date.now() - 86_400_000));
     const prevStreak = profile.streak ?? 0;
     const nextStreak = last === yesterday ? prevStreak + 1 : 1;
     setProfile({ ...profile, streak: nextStreak, last_active_date: today });
@@ -702,6 +703,16 @@ export default function AppHome() {
   const focusIdleHidden = view === "focus" && idle && !bubbleVisible && !anyModalOpen;
   const headerHiddenOnMobilePlanner = isMobile && view === "planner";
 
+  // Proactive nudges (overload / light day / avoidance) — single bubble at a time.
+  const { bubble: actionBubble, dismiss: dismissActionBubble } = useProactiveNudges({
+    tasks,
+    ready: loadedOnce.current && !!profile,
+    suppressed: anyModalOpen || thinking,
+    onMoveToSomeday: (t) => moveTask(t, "someday"),
+    onOpenMoveSheet: (t) => setMoveSheetTask(t),
+    onPullForward: (t) => moveTask(t, "today"),
+  });
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Fixed header ── (hidden on mobile when in Planner; faded when Focus is idle) */}
@@ -804,6 +815,8 @@ export default function AppHome() {
             thinking={thinking}
             bubble={bubble}
             bubbleVisible={bubbleVisible}
+            actionBubble={actionBubble}
+            onDismissActionBubble={dismissActionBubble}
             view={view}
             inputValue={input}
             onInputChange={setInput}
