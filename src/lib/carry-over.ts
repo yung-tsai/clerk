@@ -106,7 +106,17 @@ export function planCarryOver(tasks: CarryTask[], today = new Date()): CarryOver
  * but we'll still update last_active_date downstream).
  */
 export function isNewDay(lastActive: string | null, today = new Date()): boolean {
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = localDateStr(today);
   if (!lastActive) return false; // first load — nothing to carry yet
   return lastActive !== todayStr;
+}
+
+/**
+ * Returns YYYY-MM-DD in the user's LOCAL timezone (not UTC).
+ * Critical for day-boundary checks — using UTC causes the "new day" to
+ * trigger hours early for users west of UTC (e.g. Central Time at 7pm).
+ */
+export function localDateStr(date: Date = new Date()): string {
+  // 'en-CA' locale formats as YYYY-MM-DD
+  return date.toLocaleDateString("en-CA");
 }
