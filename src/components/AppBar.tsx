@@ -60,16 +60,20 @@ export function AppBar({
       style={{ bottom: 28 }}
     >
       <div className="relative flex flex-col items-center gap-2.5">
-        {/* Speech bubble */}
+        {/* Passive speech bubble — hidden while an action bubble is showing */}
         <div
           className={cn(
             "absolute right-0 z-[400] max-w-[280px] rounded-[10px] bg-[#1A1A1A] px-3 py-2 text-center font-sans text-[12px] font-normal leading-[1.4] text-white pointer-events-none transition-all duration-200",
-            bubbleVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1.5"
+            bubbleVisible && !actionBubble ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1.5"
           )}
           style={{ bottom: "calc(100% + 8px)" }}
         >
           {bubble}
         </div>
+
+        {/* Interactive action bubble (overload / light day / avoidance) */}
+        <ActionBubble bubble={actionBubble} onDismiss={() => onDismissActionBubble?.()} />
+
 
         {/* Glass pill */}
         <div
