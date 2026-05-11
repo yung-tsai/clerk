@@ -11,7 +11,7 @@ import { MobileDragHandle } from "@/components/ui/drag-handle";
 import { LongPressHint } from "@/components/LongPressHint";
 import { type CharacterVariant, normalizeCharacter, parseVariant } from "@/lib/characters";
 import { classify } from "@/lib/clerk-classify";
-import { isNewDay, planCarryOver } from "@/lib/carry-over";
+import { isNewDay, localDateStr, planCarryOver } from "@/lib/carry-over";
 import { getLovableCloudClient } from "@/lib/lovable-cloud";
 import { toast } from "sonner";
 import { clerkSay, subscribeClerk } from "@/lib/clerk-say";
@@ -172,7 +172,7 @@ export default function AppHome() {
         }
       }
       // Always stamp last_active_date on load so tomorrow's load knows a day passed.
-      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayStr = localDateStr();
       if (p && p.last_active_date !== todayStr) {
         supabase.from("profiles").update({ last_active_date: todayStr }).eq("id", user.id);
       }
@@ -393,13 +393,16 @@ export default function AppHome() {
     setTasks((prev) => prev.filter((x) => x.id !== t.id));
     track("task_completed", { col: t.col, has_category: !!t.category });
 
-    // Compute new streak / counters
-    const today = new Date().toISOString().slice(0, 10);
+    // Compute new streak / counters (local timezone, not UTC)
+    const now = new Date();
+    const today = localDateStr(now);
     const last = profile?.last_active_date ?? null;
     const prevStreak = profile?.streak ?? 0;
     let nextStreak = prevStreak;
     if (last !== today) {
-      const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+      const yesterday = localDateStr(
+        new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+      );
       nextStreak = last === yesterday ? prevStreak + 1 : 1;
     }
     const prevCompleted = profile?.tasks_completed ?? 0;
